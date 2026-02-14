@@ -137,12 +137,12 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       )}
 
       {/* Buy/Decline buttons */}
-      {state.phase === 'buying' && !isRolling && !isAnimating ? (
+      {state.phase === 'buying' && !isRolling ? (
         <div className="buyDeclineRow">
-          <button className="rollButton buyButton" onClick={() => dispatch({ type: 'BUY' })} disabled={disabled}>
+          <button className="rollButton buyButton" onClick={() => dispatch({ type: 'BUY' })} disabled={isAnimating}>
             Buy
           </button>
-          <button className="rollButton declineButton" onClick={() => dispatch({ type: 'DECLINE' })} disabled={disabled}>
+          <button className="rollButton declineButton" onClick={() => dispatch({ type: 'DECLINE' })} disabled={isAnimating}>
             Pass
           </button>
         </div>
