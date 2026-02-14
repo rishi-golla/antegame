@@ -188,6 +188,9 @@ export function resolveLanding(state: GameState): GameState {
         money: player.money - tile.amount,
       });
       const s = addLog(updated, `${player.name} paid $${tile.amount} in tax.`, state.currentPlayerIndex);
+      if (s.players[state.currentPlayerIndex].money < 0) {
+        return declareBankruptcy(s, state.currentPlayerIndex);
+      }
       return { ...s, phase: 'turn-end' };
     }
     case 'chance':
@@ -252,6 +255,11 @@ export function payRent(state: GameState, ownerIndex: number): GameState {
     `${player.name} paid $${rent} rent to ${s.players[ownerIndex].name}.`,
     state.currentPlayerIndex
   );
+
+  // Auto-bankrupt if money went negative
+  if (s.players[state.currentPlayerIndex].money < 0) {
+    return declareBankruptcy(s, state.currentPlayerIndex, ownerIndex);
+  }
 
   return { ...s, phase: 'turn-end' };
 }
@@ -513,6 +521,44 @@ export function endTurn(state: GameState): GameState {
 
 export function checkBankruptcy(state: GameState, playerIndex: number): boolean {
   return state.players[playerIndex].money < 0;
+}
+
+export function declareBankruptcy(
+  state: GameState,
+  playerIndex: number,
+  creditorIndex?: number
+): GameState {
+  const player = state.players[playerIndex];
+  let s = addLog(state, `${player.name} has gone bankrupt!`, playerIndex);
+
+  // Transfer properties to creditor or release to bank
+  if (creditorIndex !== undefined) {
+    const creditor = s.players[creditorIndex];
+    s = updatePlayer(s, creditorIndex, {
+      properties: [...creditor.properties, ...player.properties],
+    });
+  }
+
+  // Mark bankrupt: clear all assets, zero money
+  s = updatePlayer(s, playerIndex, {
+    bankrupt: true,
+    money: 0,
+    properties: [],
+    houses: {},
+    mortgaged: [],
+    getOutOfJailCards: 0,
+    inJail: false,
+  });
+
+  // Check if game is over
+  const activePlayers = s.players.filter((p) => !p.bankrupt);
+  if (activePlayers.length <= 1) {
+    const winner = activePlayers[0]?.id ?? null;
+    s = addLog(s, winner !== null ? `${s.players[winner].name} wins the game!` : 'Game over!');
+    return { ...s, phase: 'game-over', winner };
+  }
+
+  return s;
 }
 
 export function getNetWorth(state: GameState, playerIndex: number): number {

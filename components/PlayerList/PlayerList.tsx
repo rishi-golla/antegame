@@ -22,14 +22,19 @@ export default function PlayerList() {
               <div className="avatar" style={{ background: player.color }}>
                 {player.name[0]}
               </div>
-              <div>
+              <div className="playerInfo">
                 <strong>{player.name}</strong>
-                <p>${player.money.toLocaleString()}</p>
-                {player.properties.length > 0 && (
-                  <p className="propCount">{player.properties.length} properties</p>
-                )}
-                {player.inJail && <p className="jailBadge">In Jail</p>}
-                {player.bankrupt && <p className="bankruptBadge">Bankrupt</p>}
+                <p className="playerMoney">${player.money.toLocaleString()}</p>
+                <div className="playerMeta">
+                  {player.properties.length > 0 && (
+                    <span className="propCount">{player.properties.length} props</span>
+                  )}
+                  {worth > player.money && (
+                    <span className="netWorth">Net: ${worth.toLocaleString()}</span>
+                  )}
+                </div>
+                {player.inJail && <span className="jailBadge">In Jail</span>}
+                {player.bankrupt && <span className="bankruptBadge">Bankrupt</span>}
               </div>
             </li>
           );
