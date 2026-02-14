@@ -25,6 +25,9 @@ interface SocketContextValue {
   startGame: () => Promise<{ ok: boolean; error?: string }>;
   sendChat: (text: string) => void;
   sendGameAction: (action: string, data?: Record<string, unknown>) => void;
+  sendPropertyAction: (action: string, tileIndex: number) => void;
+  sendAuctionAction: (action: string, data?: Record<string, unknown>) => void;
+  sendTradeAction: (action: string, data?: Record<string, unknown>) => void;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -114,6 +117,40 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const sendPropertyAction = useCallback((action: string, tileIndex: number) => {
+    const socket = getSocket();
+    const eventMap: Record<string, string> = {
+      'build-house': 'game:build-house',
+      'sell-house': 'game:sell-house',
+      'mortgage': 'game:mortgage',
+      'unmortgage': 'game:unmortgage',
+    };
+    const event = eventMap[action];
+    if (event) {
+      socket.emit(event as any, { tileIndex });
+    }
+  }, []);
+
+  const sendAuctionAction = useCallback((action: string, data?: Record<string, unknown>) => {
+    const socket = getSocket();
+    if (action === 'bid' && data?.amount !== undefined) {
+      socket.emit('game:bid', { amount: data.amount as number });
+    } else if (action === 'pass') {
+      socket.emit('game:pass-auction');
+    }
+  }, []);
+
+  const sendTradeAction = useCallback((action: string, data?: Record<string, unknown>) => {
+    const socket = getSocket();
+    if (action === 'propose' && data?.offer) {
+      socket.emit('game:propose-trade', { offer: data.offer as any });
+    } else if (action === 'accept') {
+      socket.emit('game:accept-trade');
+    } else if (action === 'reject') {
+      socket.emit('game:reject-trade');
+    }
+  }, []);
+
   const sendChat = useCallback((text: string) => {
     if (!text.trim()) return;
     const socket = getSocket();
@@ -156,6 +193,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         startGame,
         sendChat,
         sendGameAction,
+        sendPropertyAction,
+        sendAuctionAction,
+        sendTradeAction,
       }}
     >
       {children}

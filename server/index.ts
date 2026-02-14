@@ -5,6 +5,9 @@ import { Server as SocketIOServer } from 'socket.io';
 import { RoomManager } from './roomManager';
 import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager';
 import { declareBankruptcy } from '@/lib/gameEngine';
+import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
+import { placeBid, passAuction } from '@/lib/auction';
+import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -264,6 +267,120 @@ nextApp.prepare().then(() => {
         }
       } catch {
         socket.emit('room:error', 'Cannot declare bankruptcy');
+      }
+    });
+
+    // Property actions (can be done on your turn)
+    const propertyActionHandler = (
+      action: 'build-house' | 'sell-house' | 'mortgage' | 'unmortgage',
+      data: { tileIndex: number }
+    ) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      if (!isCurrentPlayer(room, socket.id)) {
+        socket.emit('room:error', 'Not your turn');
+        return;
+      }
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) return;
+      try {
+        const fns = {
+          'build-house': () => buildHouse(room.gameState!, player.playerIndex, data.tileIndex),
+          'sell-house': () => sellHouse(room.gameState!, player.playerIndex, data.tileIndex),
+          'mortgage': () => mortgageProperty(room.gameState!, player.playerIndex, data.tileIndex),
+          'unmortgage': () => unmortgageProperty(room.gameState!, player.playerIndex, data.tileIndex),
+        };
+        room.gameState = fns[action]();
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Action failed');
+      }
+    };
+
+    socket.on('game:build-house', (data) => propertyActionHandler('build-house', data));
+    socket.on('game:sell-house', (data) => propertyActionHandler('sell-house', data));
+    socket.on('game:mortgage', (data) => propertyActionHandler('mortgage', data));
+    socket.on('game:unmortgage', (data) => propertyActionHandler('unmortgage', data));
+
+    // Auction actions
+    socket.on('game:bid', (data) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) return;
+      try {
+        room.gameState = placeBid(room.gameState, player.playerIndex, data.amount);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Bid failed');
+      }
+    });
+
+    socket.on('game:pass-auction', () => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) return;
+      try {
+        room.gameState = passAuction(room.gameState, player.playerIndex);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+        if (room.gameState.phase !== 'auction') {
+          broadcastRoomState(code);
+        }
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Pass failed');
+      }
+    });
+
+    // Trade actions
+    socket.on('game:propose-trade', (data) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      try {
+        room.gameState = proposeTrade(room.gameState, data.offer);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Trade proposal failed');
+      }
+    });
+
+    socket.on('game:accept-trade', () => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      try {
+        room.gameState = acceptTrade(room.gameState);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Accept trade failed');
+      }
+    });
+
+    socket.on('game:reject-trade', () => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      try {
+        room.gameState = rejectTrade(room.gameState);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Reject trade failed');
       }
     });
 

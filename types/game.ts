@@ -136,12 +136,31 @@ export type GamePhase =
   | 'applying-card'
   | 'in-jail'
   | 'turn-end'
+  | 'trading'
   | 'game-over';
 
 export interface GameLog {
   message: string;
   playerIndex?: number;
   timestamp: number;
+}
+
+export interface AuctionState {
+  tileIndex: number;
+  currentBid: number;
+  currentBidder: number | null;
+  biddingOrder: number[];
+  activeIndex: number;
+  passedPlayers: number[];
+}
+
+export interface TradeOffer {
+  fromPlayer: number;
+  toPlayer: number;
+  offerMoney: number;
+  requestMoney: number;
+  offerProperties: number[];
+  requestProperties: number[];
 }
 
 export interface GameState {
@@ -158,4 +177,7 @@ export interface GameState {
   drawnCard: Card | null;
   log: GameLog[];
   winner: number | null;
+  auctionState: AuctionState | null;
+  activeTradeOffer: TradeOffer | null;
+  previousPhase: GamePhase | null;
 }
