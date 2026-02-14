@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { getNetWorth } from '@/lib/gameEngine';
-import TradeModal from '@/components/Board/TradeModal';
 
-export default function PlayerList() {
+interface PlayerListProps {
+  onTrade?: (playerIndex: number) => void;
+}
+
+export default function PlayerList({ onTrade }: PlayerListProps) {
   const { state } = useGame();
-  const [tradeTarget, setTradeTarget] = useState<number | null>(null);
 
   return (
     <aside className="leftPanel panel">
@@ -41,12 +42,12 @@ export default function PlayerList() {
                 </div>
                 {player.inJail && <span className="jailBadge">In Jail</span>}
                 {player.bankrupt && <span className="bankruptBadge">Bankrupt</span>}
-                {canTrade && (
+                {canTrade && onTrade && (
                   <button
                     className="tradeBtn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setTradeTarget(player.id);
+                      onTrade(player.id);
                     }}
                   >
                     Trade
@@ -57,9 +58,6 @@ export default function PlayerList() {
           );
         })}
       </ul>
-      {tradeTarget !== null && (
-        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
-      )}
     </aside>
   );
 }
