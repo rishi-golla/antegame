@@ -13,7 +13,7 @@ import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
 import AuctionOverlay from '@/components/Board/AuctionOverlay';
-import { TradeOfferView } from '@/components/Board/TradeModal';
+import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
 
 type Screen = 'menu' | 'local-setup' | 'create' | 'join' | 'lobby' | 'local-game' | 'online-game';
 
@@ -40,15 +40,20 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 }
 
 function LocalGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
+  const [tradeTarget, setTradeTarget] = useState<number | null>(null);
+
   return (
     <>
       <main className="gameScreen">
-        <PlayerList />
+        <PlayerList onTrade={setTradeTarget} />
         <Board />
         <SidePanel />
       </main>
       <AuctionOverlay />
       <TradeOfferView />
+      {tradeTarget !== null && (
+        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
+      )}
       <GameOver onPlayAgain={onPlayAgain} />
     </>
   );
@@ -56,16 +61,20 @@ function LocalGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
 
 function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
   const { chatMessages, sendChat } = useSocket();
+  const [tradeTarget, setTradeTarget] = useState<number | null>(null);
 
   return (
     <MultiplayerGameProvider>
       <main className="gameScreen">
-        <PlayerList />
+        <PlayerList onTrade={setTradeTarget} />
         <Board />
         <SidePanel chatMessages={chatMessages} onSendChat={sendChat} />
       </main>
       <AuctionOverlay />
       <TradeOfferView />
+      {tradeTarget !== null && (
+        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
+      )}
       <GameOver onPlayAgain={onPlayAgain} />
     </MultiplayerGameProvider>
   );
