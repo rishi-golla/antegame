@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { getNetWorth } from '@/lib/gameEngine';
+import TradeModal from '@/components/Board/TradeModal';
 
 export default function PlayerList() {
   const { state } = useGame();
+  const [tradeTarget, setTradeTarget] = useState<number | null>(null);
 
   return (
     <aside className="leftPanel panel">
@@ -13,6 +16,9 @@ export default function PlayerList() {
         {state.players.map((player) => {
           const isActive = state.currentPlayerIndex === player.id;
           const worth = getNetWorth(state, player.id);
+          const canTrade = state.phase === 'turn-end' &&
+            player.id !== state.currentPlayerIndex &&
+            !player.bankrupt;
 
           return (
             <li
@@ -35,11 +41,25 @@ export default function PlayerList() {
                 </div>
                 {player.inJail && <span className="jailBadge">In Jail</span>}
                 {player.bankrupt && <span className="bankruptBadge">Bankrupt</span>}
+                {canTrade && (
+                  <button
+                    className="tradeBtn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTradeTarget(player.id);
+                    }}
+                  >
+                    Trade
+                  </button>
+                )}
               </div>
             </li>
           );
         })}
       </ul>
+      {tradeTarget !== null && (
+        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
+      )}
     </aside>
   );
 }
