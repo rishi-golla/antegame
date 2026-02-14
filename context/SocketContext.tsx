@@ -64,6 +64,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off('game:state');
       socket.off('chat:message');
       socket.off('chat:history');
+      disconnectSocket();
     };
   }, []);
 
@@ -133,6 +134,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       'draw-card': 'game:draw-card',
       'apply-card': 'game:apply-card',
       'resolve-card': 'game:resolve-card',
+      'bankruptcy': 'game:bankruptcy',
     };
     const event = eventMap[action];
     if (event) {

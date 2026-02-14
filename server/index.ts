@@ -3,7 +3,8 @@ import { createServer } from 'http';
 import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { RoomManager } from './roomManager';
-import { applyGameAction, applyJailEscape } from './gameManager';
+import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager';
+import { declareBankruptcy } from '@/lib/gameEngine';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -209,6 +210,63 @@ nextApp.prepare().then(() => {
       broadcastChat(code, msg);
     });
 
+    // Reconnect
+    socket.on('room:reconnect', (data, cb) => {
+      const code = data.code.toUpperCase();
+      const room = rm.getRoom(code);
+      if (!room) return cb({ ok: false, error: 'Room not found' });
+
+      // Find disconnected player by name
+      const disconnected = room.players.find(
+        (p) => p.name === data.name && !p.connected
+      );
+      if (!disconnected) return cb({ ok: false, error: 'No disconnected player with that name' });
+
+      const success = rm.reconnect(code, disconnected.id, socket.id);
+      if (!success) return cb({ ok: false, error: 'Reconnection failed' });
+
+      socket.join(code);
+      // Send chat history
+      socket.emit('chat:history', room.chatHistory);
+      systemMessage(code, `${data.name} reconnected.`);
+      io.to(code).emit('player:reconnected', { playerIndex: disconnected.playerIndex });
+      broadcastRoomState(code);
+      if (room.gameState) {
+        broadcastGameState(code);
+      }
+      cb({ ok: true });
+    });
+
+    // Game: Declare bankruptcy
+    socket.on('game:bankruptcy', () => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+
+      if (!isCurrentPlayer(room, socket.id)) {
+        socket.emit('room:error', 'Not your turn');
+        return;
+      }
+
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) return;
+
+      try {
+        room.gameState = declareBankruptcy(room.gameState, player.playerIndex);
+        room.lastActivity = Date.now();
+        if (room.gameState.phase === 'game-over') {
+          room.phase = 'finished';
+        }
+        broadcastGameState(code);
+        if (room.phase === 'finished') {
+          broadcastRoomState(code);
+        }
+      } catch {
+        socket.emit('room:error', 'Cannot declare bankruptcy');
+      }
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
       const code = rm.findRoomBySocket(socket.id);
@@ -238,7 +296,7 @@ nextApp.prepare().then(() => {
   });
 
   // Next.js handler
-  app.all('*', (req, res) => {
+  app.all('{*path}', (req, res) => {
     return handle(req, res);
   });
 

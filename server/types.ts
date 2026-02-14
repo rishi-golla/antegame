@@ -48,6 +48,8 @@ export interface ClientToServerEvents {
   'game:apply-card': () => void;
   'game:resolve-card': () => void;
   'game:jail-escape': (data: { method: 'bail' | 'card' | 'roll' }) => void;
+  'room:reconnect': (data: { code: string; name: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
+  'game:bankruptcy': () => void;
   'chat:send': (data: { text: string }) => void;
 }
 

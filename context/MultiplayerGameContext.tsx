@@ -13,7 +13,8 @@ type GameAction =
   | { type: 'DRAW_CARD' }
   | { type: 'APPLY_CARD' }
   | { type: 'RESOLVE_CARD' }
-  | { type: 'JAIL_ESCAPE'; method: 'bail' | 'card' | 'roll' };
+  | { type: 'JAIL_ESCAPE'; method: 'bail' | 'card' | 'roll' }
+  | { type: 'BANKRUPTCY' };
 
 export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
   const { gameState, sendGameAction } = useSocket();
@@ -47,6 +48,9 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         break;
       case 'JAIL_ESCAPE':
         sendGameAction('jail-escape', { method: action.method });
+        break;
+      case 'BANKRUPTCY':
+        sendGameAction('bankruptcy');
         break;
     }
   };

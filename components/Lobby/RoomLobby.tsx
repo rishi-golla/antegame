@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { useSocket } from '@/context/SocketContext';
 
-export default function RoomLobby() {
+interface RoomLobbyProps {
+  onLeave?: () => void;
+}
+
+export default function RoomLobby({ onLeave }: RoomLobbyProps) {
   const { roomState, toggleReady, startGame, leaveRoom, sendChat, chatMessages } = useSocket();
   const [chatInput, setChatInput] = useState('');
   const [startError, setStartError] = useState('');
@@ -78,7 +82,7 @@ export default function RoomLobby() {
                   Start Game
                 </button>
               )}
-              <button className="lobbyBackBtn" onClick={leaveRoom}>Leave</button>
+              <button className="lobbyBackBtn" onClick={onLeave ?? leaveRoom}>Leave</button>
             </div>
             {startError && <p className="lobbyError">{startError}</p>}
           </div>
