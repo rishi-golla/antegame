@@ -14,10 +14,19 @@ type GameAction =
   | { type: 'APPLY_CARD' }
   | { type: 'RESOLVE_CARD' }
   | { type: 'JAIL_ESCAPE'; method: 'bail' | 'card' | 'roll' }
-  | { type: 'BANKRUPTCY' };
+  | { type: 'BANKRUPTCY' }
+  | { type: 'BUILD_HOUSE'; tileIndex: number }
+  | { type: 'SELL_HOUSE'; tileIndex: number }
+  | { type: 'MORTGAGE'; tileIndex: number }
+  | { type: 'UNMORTGAGE'; tileIndex: number }
+  | { type: 'BID'; amount: number }
+  | { type: 'PASS_AUCTION' }
+  | { type: 'PROPOSE_TRADE'; offer: import('@/types/game').TradeOffer }
+  | { type: 'ACCEPT_TRADE' }
+  | { type: 'REJECT_TRADE' };
 
 export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
-  const { gameState, sendGameAction } = useSocket();
+  const { gameState, sendGameAction, sendPropertyAction, sendAuctionAction, sendTradeAction } = useSocket();
 
   if (!gameState) {
     return null;
@@ -51,6 +60,33 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         break;
       case 'BANKRUPTCY':
         sendGameAction('bankruptcy');
+        break;
+      case 'BUILD_HOUSE':
+        sendPropertyAction('build-house', action.tileIndex);
+        break;
+      case 'SELL_HOUSE':
+        sendPropertyAction('sell-house', action.tileIndex);
+        break;
+      case 'MORTGAGE':
+        sendPropertyAction('mortgage', action.tileIndex);
+        break;
+      case 'UNMORTGAGE':
+        sendPropertyAction('unmortgage', action.tileIndex);
+        break;
+      case 'BID':
+        sendAuctionAction('bid', { amount: action.amount });
+        break;
+      case 'PASS_AUCTION':
+        sendAuctionAction('pass');
+        break;
+      case 'PROPOSE_TRADE':
+        sendTradeAction('propose', { offer: action.offer });
+        break;
+      case 'ACCEPT_TRADE':
+        sendTradeAction('accept');
+        break;
+      case 'REJECT_TRADE':
+        sendTradeAction('reject');
         break;
     }
   };

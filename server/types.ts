@@ -50,6 +50,15 @@ export interface ClientToServerEvents {
   'game:jail-escape': (data: { method: 'bail' | 'card' | 'roll' }) => void;
   'room:reconnect': (data: { code: string; name: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
   'game:bankruptcy': () => void;
+  'game:build-house': (data: { tileIndex: number }) => void;
+  'game:sell-house': (data: { tileIndex: number }) => void;
+  'game:mortgage': (data: { tileIndex: number }) => void;
+  'game:unmortgage': (data: { tileIndex: number }) => void;
+  'game:bid': (data: { amount: number }) => void;
+  'game:pass-auction': () => void;
+  'game:propose-trade': (data: { offer: import('@/types/game').TradeOffer }) => void;
+  'game:accept-trade': () => void;
+  'game:reject-trade': () => void;
   'chat:send': (data: { text: string }) => void;
 }
 
