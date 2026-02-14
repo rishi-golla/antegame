@@ -908,6 +908,13 @@ input {
   gap: 10px;
 }
 
+.buyDeclineRow .rollButton {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+}
+
 .buyButton {
   background: linear-gradient(180deg, #6bdf8a, #3ab85c) !important;
   border-color: #5ce090 !important;
