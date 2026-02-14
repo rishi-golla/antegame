@@ -222,8 +222,8 @@ input {
     0 20px 26px rgba(9, 17, 44, 0.45),
     0 34px 50px rgba(4, 8, 26, 0.55);
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  grid-template-rows: repeat(11, 1fr);
+  grid-template-columns: repeat(13, 1fr);
+  grid-template-rows: repeat(13, 1fr);
   gap: var(--tile-gap);
   border: 6px solid var(--board-navy);
   transition: transform 260ms ease, filter 260ms ease;
@@ -348,8 +348,8 @@ input {
 }
 
 .boardCenterArt {
-  grid-column: 3 / span 7;
-  grid-row: 3 / span 7;
+  grid-column: 3 / span 9;
+  grid-row: 3 / span 9;
   border-radius: 12px;
   position: relative;
   display: block;
@@ -848,6 +848,82 @@ input {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.buyDeclineRow {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  gap: 10px;
+}
+
+.buyButton {
+  background: linear-gradient(180deg, #6bdf8a, #3ab85c) !important;
+  border-color: #5ce090 !important;
+}
+
+.declineButton {
+  background: linear-gradient(180deg, #ff7676, #e04545) !important;
+  border-color: #ff8a8a !important;
+}
+
+.jailActions {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 4;
+}
+
+.jailBtn {
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.jailBtn:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.14));
+}
+
+.activePlayer {
+  border-color: rgba(255, 220, 100, 0.7) !important;
+  box-shadow: 0 0 12px rgba(255, 220, 100, 0.25) !important;
+}
+
+.bankruptPlayer {
+  opacity: 0.45;
+}
+
+.propCount {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.jailBadge {
+  font-size: 0.68rem;
+  color: #ff9b6b;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bankruptBadge {
+  font-size: 0.68rem;
+  color: #ff6b6b;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 @media (max-width: 1180px) {
