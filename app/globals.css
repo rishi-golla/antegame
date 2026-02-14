@@ -1988,3 +1988,85 @@ input {
   background: #60a5fa;
   color: #0a0a0a;
 }
+
+/* Trade Notification Card (in-panel) */
+.tradeNotification {
+  background: #16213e;
+  border: 1px solid #ffd166;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  animation: tradeNotifSlide 0.3s ease-out;
+}
+@keyframes tradeNotifSlide {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tradeNotifHeader {
+  margin-bottom: 6px;
+}
+.tradeNotifIcon {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffd166;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tradeNotifFromTo {
+  font-size: 0.82rem;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+.tradeNotifDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.tradeNotifSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.tradeNotifLabel {
+  font-size: 0.72rem;
+  color: #888;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.tradeNotifProp {
+  font-size: 0.75rem;
+  background: #0f1123;
+  color: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.tradeNotifActions {
+  display: flex;
+  gap: 6px;
+}
+.tradeNotifAccept {
+  flex: 1;
+  padding: 7px 0;
+  border: none;
+  border-radius: 6px;
+  background: #4ade80;
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.tradeNotifAccept:hover { filter: brightness(1.1); }
+.tradeNotifReject {
+  flex: 1;
+  padding: 7px 0;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: transparent;
+  color: #f87171;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.tradeNotifReject:hover { background: #2a1a1a; }

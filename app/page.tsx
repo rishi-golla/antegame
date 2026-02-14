@@ -13,7 +13,7 @@ import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
 import AuctionOverlay from '@/components/Board/AuctionOverlay';
-import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
+import TradeModal from '@/components/Board/TradeModal';
 
 type Screen = 'menu' | 'local-setup' | 'create' | 'join' | 'lobby' | 'local-game' | 'online-game';
 
@@ -50,7 +50,6 @@ function LocalGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <SidePanel />
       </main>
       <AuctionOverlay />
-      <TradeOfferView />
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
@@ -71,7 +70,6 @@ function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <SidePanel chatMessages={chatMessages} onSendChat={sendChat} />
       </main>
       <AuctionOverlay />
-      <TradeOfferView />
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
