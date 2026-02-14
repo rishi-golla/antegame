@@ -2,8 +2,6 @@ import type {
   GameState,
   Player,
   Card,
-  Tile,
-  PropertyTile,
   GameLog,
   ColorGroup,
   GamePhase,
@@ -100,6 +98,7 @@ export function createGame(playerNames: string[]): GameState {
     money: STARTING_MONEY,
     position: 0,
     properties: [],
+    mortgaged: [],
     houses: {},
     inJail: false,
     jailTurns: 0,
@@ -118,6 +117,7 @@ export function createGame(playerNames: string[]): GameState {
     dice: [1, 1],
     doublesCount: 0,
     phase: 'rolling',
+    drawnCard: null,
     log: [{ message: 'Game started!', timestamp: Date.now() }],
     winner: null,
   };
@@ -207,6 +207,10 @@ export function resolveLanding(state: GameState): GameState {
       if (state.players[owner].bankrupt) {
         return { ...state, phase: 'turn-end' };
       }
+      // No rent on mortgaged properties
+      if (state.players[owner].mortgaged.includes(player.position)) {
+        return { ...state, phase: 'turn-end' };
+      }
       // Owned by someone else — pay rent
       return payRent(state, owner);
     }
@@ -223,8 +227,7 @@ export function payRent(state: GameState, ownerIndex: number): GameState {
   if (tile.type === 'property') {
     const houseCount = state.players[ownerIndex].houses[tile.index] || 0;
     if (houseCount > 0) {
-      // rent[2] = 1 house, rent[3] = 2 houses, etc. rent[5] doesn't exist, hotel is index 5
-      // Actually: rent array is [base, set, 1h, 2h, 3h, 4h/hotel]
+      // rent: [0:base, 1:set, 2:1house, 3:2houses, 4:3houses, 5:4houses/hotel]
       rent = tile.rent[Math.min(houseCount + 1, 5)];
     } else if (ownsFullGroup(state, ownerIndex, tile.colorGroup)) {
       rent = tile.rent[1]; // double rent for color set
@@ -263,7 +266,8 @@ export function buyProperty(state: GameState): GameState {
 
   const price = tile.price;
   if (player.money < price) {
-    return addLog(state, `${player.name} cannot afford ${tile.name} ($${price}).`, state.currentPlayerIndex);
+    let s = addLog(state, `${player.name} cannot afford ${tile.name} ($${price}).`, state.currentPlayerIndex);
+    return { ...s, phase: 'turn-end' };
   }
 
   let s = updateCurrentPlayer(state, {
@@ -305,6 +309,14 @@ export function drawCard(state: GameState): GameState {
 
   s = addLog(s, `${currentPlayer(s).name} drew: "${card.text}"`, state.currentPlayerIndex);
 
+  // Store card for UI display, wait for player to acknowledge
+  return { ...s, drawnCard: card, phase: 'drawing-card' };
+}
+
+export function applyDrawnCard(state: GameState): GameState {
+  if (!state.drawnCard) return state;
+  const card = state.drawnCard;
+  const s = { ...state, drawnCard: null };
   return applyCardEffect(s, card);
 }
 
@@ -469,7 +481,7 @@ export function endTurn(state: GameState): GameState {
 
   // If rolled doubles and not in jail, same player goes again
   if (state.doublesCount > 0 && !player.inJail) {
-    return { ...state, phase: player.inJail ? 'in-jail' : 'rolling' };
+    return { ...state, phase: 'rolling' };
   }
 
   // Find next non-bankrupt player
@@ -514,7 +526,7 @@ export function getNetWorth(state: GameState, playerIndex: number): number {
     }
     const houses = player.houses[tileIdx] || 0;
     if (tile.type === 'property' && houses > 0) {
-      worth += houses * tile.houseCost;
+      worth += houses * (tile.houseCost / 2);
     }
   }
 

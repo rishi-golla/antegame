@@ -335,7 +335,7 @@ describe('getNetWorth', () => {
         i === 0 ? { ...p, properties: [1] } : p
       ),
     };
-    expect(getNetWorth(state, 0)).toBe(1530); // 1500 + 30
+    expect(getNetWorth(state, 0)).toBe(1530); // 1500 + 30 (mortgage value of Coral Street)
   });
 });
 
