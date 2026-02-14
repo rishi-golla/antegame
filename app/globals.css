@@ -903,7 +903,7 @@ input {
   left: 50%;
   bottom: 22%;
   transform: translateX(-50%);
-  z-index: 4;
+  z-index: 10;
   display: flex;
   gap: 10px;
 }
@@ -911,11 +911,19 @@ input {
 .buyButton {
   background: linear-gradient(180deg, #6bdf8a, #3ab85c) !important;
   border-color: #5ce090 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 8px 0 rgba(34, 120, 50, 0.6),
+    0 0 18px rgba(91, 224, 144, 0.32) !important;
 }
 
 .declineButton {
   background: linear-gradient(180deg, #ff7676, #e04545) !important;
   border-color: #ff8a8a !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 8px 0 rgba(180, 40, 40, 0.6),
+    0 0 18px rgba(255, 100, 100, 0.32) !important;
 }
 
 .jailActions {
