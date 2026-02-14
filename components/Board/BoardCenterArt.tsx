@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 
 interface BoardCenterArtProps {
@@ -9,6 +10,19 @@ interface BoardCenterArtProps {
 
 export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterArtProps) {
   const { state, dispatch } = useGame();
+
+  // Auto-resolve card effect after overlay dismisses
+  const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (state.phase === 'applying-card' && !isAnimating) {
+      resolveTimerRef.current = setTimeout(() => {
+        dispatch({ type: 'RESOLVE_CARD' });
+      }, 400); // brief pause after card overlay fades
+    }
+    return () => {
+      if (resolveTimerRef.current) clearTimeout(resolveTimerRef.current);
+    };
+  }, [state.phase, isAnimating, dispatch]);
   const player = state.players[state.currentPlayerIndex];
   const disabled = isRolling || isAnimating || state.phase === 'game-over';
 
@@ -40,6 +54,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         return 'Buy / Decline';
       case 'drawing-card':
         return state.drawnCard ? 'Continue' : 'Draw Card';
+      case 'applying-card':
+        return 'Applying...';
       case 'turn-end':
         return state.doublesCount > 0 ? 'Doubles! Roll Again' : 'End Turn';
       case 'game-over':
@@ -64,6 +80,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       }
       case 'drawing-card':
         return state.drawnCard ? state.drawnCard.text : 'Press To Draw';
+      case 'applying-card':
+        return 'Card effect resolving...';
       case 'turn-end':
         return state.doublesCount > 0 ? `${player.name} rolled doubles!` : `${player.name}'s turn is over`;
       case 'game-over':
