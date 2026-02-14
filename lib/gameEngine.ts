@@ -98,6 +98,7 @@ export function createGame(playerNames: string[]): GameState {
     money: STARTING_MONEY,
     position: 0,
     properties: [],
+    mortgaged: [],
     houses: {},
     inJail: false,
     jailTurns: 0,
@@ -116,6 +117,7 @@ export function createGame(playerNames: string[]): GameState {
     dice: [1, 1],
     doublesCount: 0,
     phase: 'rolling',
+    drawnCard: null,
     log: [{ message: 'Game started!', timestamp: Date.now() }],
     winner: null,
   };
@@ -203,6 +205,10 @@ export function resolveLanding(state: GameState): GameState {
         return { ...state, phase: 'turn-end' };
       }
       if (state.players[owner].bankrupt) {
+        return { ...state, phase: 'turn-end' };
+      }
+      // No rent on mortgaged properties
+      if (state.players[owner].mortgaged.includes(player.position)) {
         return { ...state, phase: 'turn-end' };
       }
       // Owned by someone else — pay rent
@@ -303,6 +309,14 @@ export function drawCard(state: GameState): GameState {
 
   s = addLog(s, `${currentPlayer(s).name} drew: "${card.text}"`, state.currentPlayerIndex);
 
+  // Store card for UI display, wait for player to acknowledge
+  return { ...s, drawnCard: card, phase: 'drawing-card' };
+}
+
+export function applyDrawnCard(state: GameState): GameState {
+  if (!state.drawnCard) return state;
+  const card = state.drawnCard;
+  const s = { ...state, drawnCard: null };
   return applyCardEffect(s, card);
 }
 

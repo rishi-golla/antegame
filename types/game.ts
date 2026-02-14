@@ -117,6 +117,7 @@ export interface Player {
   money: number;
   position: number;
   properties: number[];
+  mortgaged: number[]; // tile indices of mortgaged properties
   houses: Record<number, number>; // tileIndex -> house count (5 = hotel)
   inJail: boolean;
   jailTurns: number;
@@ -153,6 +154,7 @@ export interface GameState {
   dice: [number, number];
   doublesCount: number;
   phase: GamePhase;
+  drawnCard: Card | null;
   log: GameLog[];
   winner: number | null;
 }
