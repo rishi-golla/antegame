@@ -3,9 +3,21 @@
 import { useState } from 'react';
 import ChatView from './ChatView';
 import GameLogView from './GameLogView';
+import type { ChatMessage } from '@/server/types';
 
-export default function SidePanel() {
+interface SidePanelProps {
+  chatMessages?: ChatMessage[];
+  onSendChat?: (text: string) => void;
+}
+
+export default function SidePanel({ chatMessages = [], onSendChat }: SidePanelProps) {
   const [mode, setMode] = useState<'chat' | 'log'>('log');
+
+  const handleSend = (text: string) => {
+    if (onSendChat) {
+      onSendChat(text);
+    }
+  };
 
   return (
     <aside className="rightPanel panel">
@@ -18,7 +30,11 @@ export default function SidePanel() {
         </button>
       </div>
       <div className="rightPanelBody">
-        {mode === 'chat' ? <ChatView /> : <GameLogView />}
+        {mode === 'chat' ? (
+          <ChatView messages={chatMessages} onSend={handleSend} />
+        ) : (
+          <GameLogView />
+        )}
       </div>
     </aside>
   );

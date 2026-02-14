@@ -58,7 +58,7 @@ interface GameContextValue {
   dispatch: Dispatch<GameAction>;
 }
 
-const GameContext = createContext<GameContextValue | null>(null);
+export const GameContext = createContext<GameContextValue | null>(null);
 
 interface GameProviderProps {
   children: ReactNode;

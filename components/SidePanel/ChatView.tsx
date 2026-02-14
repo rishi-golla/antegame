@@ -1,35 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-interface ChatMessage {
-  from: string;
-  color: string;
-  text: string;
+interface ChatViewProps {
+  messages: Array<{
+    id: string;
+    senderName: string;
+    senderColor: string;
+    text: string;
+    system: boolean;
+  }>;
+  onSend: (text: string) => void;
 }
 
-// Placeholder chat - will be real in multiplayer batch
-const staticMessages: ChatMessage[] = [
-  { from: 'Ava', color: '#ff6b6b', text: 'I am buying Boardwalk!' },
-  { from: 'Kai', color: '#5cd6c0', text: 'Nooo, that is expensive.' },
-  { from: 'Maya', color: '#ffd166', text: 'Rent time soon.' },
-  { from: 'Leo', color: '#8fb8ff', text: 'Rolling big next turn.' },
-];
-
-export default function ChatView() {
+export default function ChatView({ messages, onSend }: ChatViewProps) {
   const [input, setInput] = useState('');
+  const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (feedRef.current) {
+      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    }
+  }, [messages.length]);
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    onSend(input.trim());
+    setInput('');
+  };
 
   return (
     <div className="sideContent chatContent">
-      <div className="feed chatFeed">
-        {staticMessages.map((message, i) => (
-          <div key={i} className="bubble" style={{ animationDelay: `${i * 60}ms` }}>
-            <div className="bubbleAvatar" style={{ background: message.color }}>
-              {message.from[0]}
-            </div>
+      <div className="feed chatFeed" ref={feedRef}>
+        {messages.length === 0 && (
+          <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.78rem', padding: '20px 0' }}>
+            No messages yet. Say something!
+          </p>
+        )}
+        {messages.map((msg) => (
+          <div key={msg.id} className={`bubble ${msg.system ? 'systemBubble' : ''}`} style={{ animationDelay: '0ms' }}>
+            {!msg.system && (
+              <div className="bubbleAvatar" style={{ background: msg.senderColor }}>
+                {msg.senderName[0]}
+              </div>
+            )}
             <div className="bubbleText">
-              <strong style={{ color: message.color }}>{message.from}</strong>
-              <p>{message.text}</p>
+              {!msg.system && <strong style={{ color: msg.senderColor }}>{msg.senderName}</strong>}
+              <p style={{ fontStyle: msg.system ? 'italic' : 'normal', color: msg.system ? 'var(--muted)' : '#d5e4ff' }}>
+                {msg.text}
+              </p>
             </div>
           </div>
         ))}
@@ -39,8 +58,9 @@ export default function ChatView() {
           placeholder="Drop a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
         />
-        <button>Send</button>
+        <button onClick={handleSend}>Send</button>
       </div>
     </div>
   );
