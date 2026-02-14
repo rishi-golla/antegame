@@ -6,14 +6,10 @@ import Tile from './Tile';
 import type { BoardTile } from './Tile';
 import DicePips from './DicePips';
 import BoardCenterArt from './BoardCenterArt';
+import PropertyPopup from './PropertyPopup';
+import MoneyFloat, { useMoneyFloats } from './MoneyFloat';
 import { TILES } from '@/lib/gameData';
 
-/**
- * Build a 40-tile board layout on a 13x13 grid.
- * Each side has 9 non-corner tiles + 4 corner tiles (2x2 each).
- * Corners at grid positions: (12,12), (12,1), (1,1), (1,12)
- * Edges: 9 tiles per side between corners.
- */
 function buildBoardTiles(): BoardTile[] {
   const tiles: BoardTile[] = [];
   let idx = 0;
@@ -27,21 +23,14 @@ function buildBoardTiles(): BoardTile[] {
     idx += 1;
   };
 
-  // Bottom row, right to left: GO (corner) + 9 tiles + Jail (corner)
-  push(12, 12, 2, 2, 'corner', true); // 0: GO
-  for (let col = 11; col >= 3; col--) push(12, col, 2, 1, 'bottom'); // 1-9
-  push(12, 1, 2, 2, 'corner', true); // 10: Jail
-
-  // Left column, bottom to top: 9 tiles + Free Parking (corner)
-  for (let row = 11; row >= 3; row--) push(row, 1, 1, 2, 'left'); // 11-19
-  push(1, 1, 2, 2, 'corner', true); // 20: Free Parking
-
-  // Top row, left to right: 9 tiles + Go To Jail (corner)
-  for (let col = 3; col <= 11; col++) push(1, col, 2, 1, 'top'); // 21-29
-  push(1, 12, 2, 2, 'corner', true); // 30: Go To Jail
-
-  // Right column, top to bottom: 9 tiles
-  for (let row = 3; row <= 11; row++) push(row, 12, 1, 2, 'right'); // 31-39
+  push(12, 12, 2, 2, 'corner', true);
+  for (let col = 11; col >= 3; col--) push(12, col, 2, 1, 'bottom');
+  push(12, 1, 2, 2, 'corner', true);
+  for (let row = 11; row >= 3; row--) push(row, 1, 1, 2, 'left');
+  push(1, 1, 2, 2, 'corner', true);
+  for (let col = 3; col <= 11; col++) push(1, col, 2, 1, 'top');
+  push(1, 12, 2, 2, 'corner', true);
+  for (let row = 3; row <= 11; row++) push(row, 12, 1, 2, 'right');
 
   return tiles;
 }
@@ -50,16 +39,124 @@ const boardTiles = buildBoardTiles();
 
 export default function Board() {
   const { state } = useGame();
-  const [isRolling, setIsRolling] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [displayPositions, setDisplayPositions] = useState<number[]>([]);
   const [displayDice, setDisplayDice] = useState<[number, number]>([1, 1]);
   const [isDiceFocus, setIsDiceFocus] = useState(false);
   const [rollPhase, setRollPhase] = useState('idle');
   const [impactPulse, setImpactPulse] = useState(false);
   const [activeTile, setActiveTile] = useState(0);
   const [boardSize, setBoardSize] = useState(0);
+  const [popupTile, setPopupTile] = useState<number | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const prevDiceRef = useRef(state.dice);
   const prevPhaseRef = useRef(state.phase);
+  const prevPositionsRef = useRef<number[]>([]);
+  const { floats, addFloat } = useMoneyFloats();
+
+  // Stable position key for tracking changes
+  const positionKey = state.players.map((p) => p.position).join(',');
+
+  // Initialize display positions
+  useEffect(() => {
+    if (displayPositions.length === 0 && state.players.length > 0) {
+      const positions = state.players.map((p) => p.position);
+      setDisplayPositions(positions);
+      prevPositionsRef.current = positions;
+    }
+  }, [state.players.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Animate token movement step-by-step
+  useEffect(() => {
+    if (displayPositions.length === 0) return;
+
+    const currentPositions = state.players.map((p) => p.position);
+    let cancelled = false;
+
+    // Find which players moved
+    for (let playerIdx = 0; playerIdx < currentPositions.length; playerIdx++) {
+      const prev = prevPositionsRef.current[playerIdx];
+      const curr = currentPositions[playerIdx];
+
+      if (prev === undefined || prev === curr) continue;
+
+      // Detect jail teleport (sent to jail = position jumps to 10 without passing through)
+      const isJailTeleport = curr === 10 && state.players[playerIdx].inJail;
+      // Detect backward movement or large jumps (> 12 steps forward = likely teleport)
+      const forwardSteps = curr > prev ? curr - prev : 40 - prev + curr;
+
+      if (isJailTeleport || forwardSteps > 12) {
+        // Direct jump — no animation
+        setDisplayPositions((dp) => {
+          const next = [...dp];
+          next[playerIdx] = curr;
+          return next;
+        });
+        setActiveTile(curr);
+        continue;
+      }
+
+      // Build step sequence
+      const steps: number[] = [];
+      let pos = prev;
+      for (let i = 0; i < forwardSteps; i++) {
+        pos = (pos + 1) % 40;
+        steps.push(pos);
+      }
+
+      if (steps.length === 0) continue;
+
+      // Animate steps
+      setIsAnimating(true);
+      let stepIdx = 0;
+
+      const interval = setInterval(() => {
+        if (cancelled || stepIdx >= steps.length) {
+          clearInterval(interval);
+          if (!cancelled) {
+            setIsAnimating(false);
+            setActiveTile(curr);
+          }
+          return;
+        }
+
+        const nextPos = steps[stepIdx];
+        setDisplayPositions((dp) => {
+          const next = [...dp];
+          next[playerIdx] = nextPos;
+          return next;
+        });
+        setActiveTile(nextPos);
+        stepIdx++;
+      }, 150);
+    }
+
+    prevPositionsRef.current = currentPositions;
+
+    return () => { cancelled = true; };
+  }, [positionKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Track money changes for floats
+  const prevMoneyRef = useRef<number[]>([]);
+  const moneyKey = state.players.map((p) => p.money).join(',');
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    const currentMoney = state.players.map((p) => p.money);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      prevMoneyRef.current = currentMoney;
+      return;
+    }
+    if (prevMoneyRef.current.length > 0) {
+      state.players.forEach((player, i) => {
+        const diff = currentMoney[i] - prevMoneyRef.current[i];
+        if (diff !== 0 && !player.bankrupt) {
+          addFloat(diff, player.color);
+        }
+      });
+    }
+    prevMoneyRef.current = currentMoney;
+  }, [moneyKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!frameRef.current) return;
@@ -75,7 +172,6 @@ export default function Board() {
   }, []);
 
   const animateRoll = useCallback((finalDice: [number, number]) => {
-    setIsRolling(true);
     setIsDiceFocus(true);
     setRollPhase('charge');
 
@@ -97,7 +193,6 @@ export default function Board() {
       setTimeout(() => {
         setIsDiceFocus(false);
         setRollPhase('idle');
-        setIsRolling(false);
       }, 300);
     }, 980);
   }, []);
@@ -111,10 +206,11 @@ export default function Board() {
     prevDiceRef.current = state.dice;
   }, [state.dice, state.phase, animateRoll]);
 
-  useEffect(() => {
-    const player = state.players[state.currentPlayerIndex];
-    if (player) setActiveTile(player.position);
-  }, [state.players, state.currentPlayerIndex]);
+  // Build a "display players" with animated positions
+  const displayPlayers = state.players.map((p, i) => ({
+    ...p,
+    position: displayPositions[i] ?? p.position,
+  }));
 
   return (
     <section className="boardWrap">
@@ -125,10 +221,12 @@ export default function Board() {
               key={tile.index}
               tile={tile}
               activeTile={activeTile}
-              players={state.players}
+              players={displayPlayers}
+              onTileClick={(idx) => setPopupTile(idx)}
             />
           ))}
-          <BoardCenterArt isRolling={isRolling} />
+          <BoardCenterArt isRolling={isDiceFocus} isAnimating={isAnimating} />
+          <MoneyFloat floats={floats} />
         </div>
 
         {isDiceFocus && (
@@ -146,6 +244,10 @@ export default function Board() {
           </div>
         )}
       </div>
+
+      {popupTile !== null && (
+        <PropertyPopup tileIndex={popupTile} onClose={() => setPopupTile(null)} />
+      )}
     </section>
   );
 }
