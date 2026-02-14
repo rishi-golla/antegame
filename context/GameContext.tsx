@@ -16,6 +16,7 @@ import {
   endTurn,
   drawCard,
   applyDrawnCard,
+  resolveCard,
   attemptJailEscape,
 } from '@/lib/gameEngine';
 
@@ -26,6 +27,7 @@ type GameAction =
   | { type: 'END_TURN' }
   | { type: 'DRAW_CARD' }
   | { type: 'APPLY_CARD' }
+  | { type: 'RESOLVE_CARD' }
   | { type: 'JAIL_ESCAPE'; method: 'bail' | 'card' | 'roll' };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -42,6 +44,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return drawCard(state);
     case 'APPLY_CARD':
       return applyDrawnCard(state);
+    case 'RESOLVE_CARD':
+      return resolveCard(state);
     case 'JAIL_ESCAPE':
       return attemptJailEscape(state, action.method);
     default:

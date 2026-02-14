@@ -323,9 +323,19 @@ export function drawCard(state: GameState): GameState {
 
 export function applyDrawnCard(state: GameState): GameState {
   if (!state.drawnCard) return state;
-  const card = state.drawnCard;
-  const s = { ...state, drawnCard: null };
-  return applyCardEffect(s, card);
+  // Keep the card in pendingCard for resolveCard to use, clear drawnCard (hides overlay)
+  return { ...state, drawnCard: null, phase: 'applying-card' };
+}
+
+export function resolveCard(state: GameState): GameState {
+  // Find the last drawn card from the discard pile
+  const lastChance = state.chanceDiscard[state.chanceDiscard.length - 1];
+  const lastChest = state.communityChestDiscard[state.communityChestDiscard.length - 1];
+  // Determine which was most recently drawn by checking the log
+  const tile = state.tiles[currentPlayer(state).position];
+  const card = tile.type === 'chance' ? lastChance : lastChest;
+  if (!card) return { ...state, phase: 'turn-end' };
+  return applyCardEffect(state, card);
 }
 
 export function applyCardEffect(state: GameState, card: Card): GameState {
