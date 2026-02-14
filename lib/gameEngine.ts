@@ -6,6 +6,7 @@ import type {
   ColorGroup,
   GamePhase,
 } from '@/types/game';
+import { startAuction } from './auction';
 import {
   TILES,
   CHANCE_CARDS,
@@ -120,6 +121,8 @@ export function createGame(playerNames: string[]): GameState {
     drawnCard: null,
     log: [{ message: 'Game started!', timestamp: Date.now() }],
     winner: null,
+    auctionState: null,
+    activeTradeOffer: null,
   };
 }
 
@@ -290,9 +293,8 @@ export function buyProperty(state: GameState): GameState {
 export function declinePurchase(state: GameState): GameState {
   const player = currentPlayer(state);
   const tile = state.tiles[player.position];
-  let s = addLog(state, `${player.name} declined to buy ${tile.name}.`, state.currentPlayerIndex);
-  // TODO: auction system in Batch 3
-  return { ...s, phase: 'turn-end' };
+  let s = addLog(state, `${player.name} declined to buy ${tile.name}. Auction begins!`, state.currentPlayerIndex);
+  return startAuction(s, player.position);
 }
 
 export function drawCard(state: GameState): GameState {
