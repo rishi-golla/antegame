@@ -1,7 +1,8 @@
 'use client';
 
 import { useGame } from '@/context/GameContext';
-import type { Tile } from '@/types/game';
+import type { Tile, PropertyTile } from '@/types/game';
+import { COLOR_GROUPS } from '@/lib/gameData';
 
 interface PropertyPopupProps {
   tileIndex: number;
@@ -84,8 +85,105 @@ export default function PropertyPopup({ tileIndex, onClose }: PropertyPopupProps
           <p className="popupPrice">{getCornerDesc(tile.cornerKind)}</p>
         )}
 
+        {owner && owner.id === state.currentPlayerIndex && (
+          <PropertyActions
+            tile={tile}
+            tileIndex={tileIndex}
+            owner={owner}
+            state={state}
+          />
+        )}
+
         <button className="popupClose" onClick={onClose}>Close</button>
       </div>
+    </div>
+  );
+}
+
+function PropertyActions({
+  tile,
+  tileIndex,
+  owner,
+  state,
+}: {
+  tile: Tile;
+  tileIndex: number;
+  owner: (typeof state.players)[number];
+  state: ReturnType<typeof useGame>['state'];
+}) {
+  const { dispatch } = useGame();
+  const houses = owner.houses[tileIndex] || 0;
+  const isMortgaged = owner.mortgaged.includes(tileIndex);
+
+  const canBuildHouse = (() => {
+    if (tile.type !== 'property') return false;
+    if (isMortgaged) return false;
+    if (houses >= 5) return false;
+    const group = COLOR_GROUPS[tile.colorGroup as keyof typeof COLOR_GROUPS];
+    if (!group) return false;
+    if (!group.every((idx) => owner.properties.includes(idx))) return false;
+    if (owner.mortgaged.some((idx) => {
+      const t = state.tiles[idx];
+      return t.type === 'property' && t.colorGroup === tile.colorGroup;
+    })) return false;
+    const minInGroup = Math.min(...group.map((idx) => owner.houses[idx] || 0));
+    if (houses > minInGroup) return false;
+    if (owner.money < tile.houseCost) return false;
+    return true;
+  })();
+
+  const canSellHouse = (() => {
+    if (tile.type !== 'property') return false;
+    if (houses <= 0) return false;
+    const group = COLOR_GROUPS[tile.colorGroup as keyof typeof COLOR_GROUPS];
+    const maxInGroup = Math.max(...group.map((idx) => owner.houses[idx] || 0));
+    return houses >= maxInGroup;
+  })();
+
+  const canMortgage = !isMortgaged && houses === 0 &&
+    (tile.type !== 'property' || !(() => {
+      const group = COLOR_GROUPS[tile.colorGroup as keyof typeof COLOR_GROUPS];
+      return group?.some((idx) => (owner.houses[idx] || 0) > 0);
+    })());
+
+  const canUnmortgage = isMortgaged &&
+    'mortgageValue' in tile &&
+    owner.money >= Math.ceil((tile as any).mortgageValue * 1.1);
+
+  return (
+    <div className="popupActions">
+      {canBuildHouse && (
+        <button
+          className="popupActionBtn popupBuildBtn"
+          onClick={() => dispatch({ type: 'BUILD_HOUSE', tileIndex })}
+        >
+          Build House (${(tile as PropertyTile).houseCost})
+        </button>
+      )}
+      {canSellHouse && (
+        <button
+          className="popupActionBtn popupSellBtn"
+          onClick={() => dispatch({ type: 'SELL_HOUSE', tileIndex })}
+        >
+          Sell House (+${Math.floor((tile as PropertyTile).houseCost / 2)})
+        </button>
+      )}
+      {canMortgage && (
+        <button
+          className="popupActionBtn popupMortgageBtn"
+          onClick={() => dispatch({ type: 'MORTGAGE', tileIndex })}
+        >
+          Mortgage (+${(tile as any).mortgageValue})
+        </button>
+      )}
+      {canUnmortgage && (
+        <button
+          className="popupActionBtn popupUnmortgageBtn"
+          onClick={() => dispatch({ type: 'UNMORTGAGE', tileIndex })}
+        >
+          Unmortgage (-${Math.ceil((tile as any).mortgageValue * 1.1)})
+        </button>
+      )}
     </div>
   );
 }
