@@ -6,7 +6,7 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
   const { state, dispatch } = useGame();
   const player = state.players[state.currentPlayerIndex];
 
-  const handleRoll = () => {
+  const handleMainAction = () => {
     if (isRolling) return;
 
     if (state.phase === 'in-jail') {
@@ -14,9 +14,11 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
     } else if (state.phase === 'rolling') {
       dispatch({ type: 'ROLL' });
     } else if (state.phase === 'buying') {
-      // Handled by buy/decline buttons, but roll button shows context
-    } else if (state.phase === 'drawing-card') {
+      // Handled by buy/decline buttons
+    } else if (state.phase === 'drawing-card' && !state.drawnCard) {
       dispatch({ type: 'DRAW_CARD' });
+    } else if (state.phase === 'drawing-card' && state.drawnCard) {
+      dispatch({ type: 'APPLY_CARD' });
     } else if (state.phase === 'turn-end') {
       dispatch({ type: 'END_TURN' });
     }
@@ -32,7 +34,7 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
       case 'buying':
         return 'Buy / Decline';
       case 'drawing-card':
-        return 'Draw Card';
+        return state.drawnCard ? 'Continue' : 'Draw Card';
       case 'turn-end':
         return 'End Turn';
       case 'game-over':
@@ -57,7 +59,7 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
         return `${tile.name} - $${price}`;
       }
       case 'drawing-card':
-        return 'Press To Draw';
+        return state.drawnCard ? state.drawnCard.text : 'Press To Draw';
       case 'turn-end':
         return 'Press To Continue';
       case 'game-over':
@@ -99,13 +101,24 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
       ) : (
         <button
           className="rollButton"
-          onClick={handleRoll}
+          onClick={handleMainAction}
           disabled={isRolling || state.phase === 'game-over'}
         >
           {getButtonLabel()}
         </button>
       )}
       <p className="rollHint">{getHint()}</p>
+
+      {state.drawnCard && !isRolling && (
+        <div className="drawnCardOverlay">
+          <div className={`drawnCard ${state.drawnCard.deckType === 'chance' ? 'drawnCardChance' : 'drawnCardChest'}`}>
+            <span className="drawnCardType">
+              {state.drawnCard.deckType === 'chance' ? 'Chance' : 'Community Chest'}
+            </span>
+            <p className="drawnCardText">{state.drawnCard.text}</p>
+          </div>
+        </div>
+      )}
 
       {state.phase === 'in-jail' && !isRolling && (
         <div className="jailActions">
