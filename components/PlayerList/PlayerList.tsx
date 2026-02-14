@@ -8,11 +8,21 @@ interface PlayerListProps {
 }
 
 export default function PlayerList({ onTrade }: PlayerListProps) {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
+  const offer = state.activeTradeOffer;
 
   return (
     <aside className="leftPanel panel">
       <h2>Players</h2>
+
+      {offer && (
+        <TradeNotification
+          state={state}
+          onAccept={() => dispatch({ type: 'ACCEPT_TRADE' })}
+          onReject={() => dispatch({ type: 'REJECT_TRADE' })}
+        />
+      )}
+
       <ul>
         {state.players.map((player) => {
           const isActive = state.currentPlayerIndex === player.id;
@@ -61,5 +71,58 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
         })}
       </ul>
     </aside>
+  );
+}
+
+function TradeNotification({
+  state,
+  onAccept,
+  onReject,
+}: {
+  state: ReturnType<typeof useGame>['state'];
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  const offer = state.activeTradeOffer!;
+  const from = state.players[offer.fromPlayer];
+  const to = state.players[offer.toPlayer];
+
+  return (
+    <div className="tradeNotification">
+      <div className="tradeNotifHeader">
+        <span className="tradeNotifIcon">Trade Offer</span>
+      </div>
+      <p className="tradeNotifFromTo">
+        <span style={{ color: from.color, fontWeight: 700 }}>{from.name}</span>
+        {' -> '}
+        <span style={{ color: to.color, fontWeight: 700 }}>{to.name}</span>
+      </p>
+
+      <div className="tradeNotifDetails">
+        {(offer.offerProperties.length > 0 || offer.offerMoney > 0) && (
+          <div className="tradeNotifSection">
+            <span className="tradeNotifLabel">Offering:</span>
+            {offer.offerProperties.map((idx) => (
+              <span key={idx} className="tradeNotifProp">{state.tiles[idx].name}</span>
+            ))}
+            {offer.offerMoney > 0 && <span className="tradeNotifProp">${offer.offerMoney}</span>}
+          </div>
+        )}
+        {(offer.requestProperties.length > 0 || offer.requestMoney > 0) && (
+          <div className="tradeNotifSection">
+            <span className="tradeNotifLabel">Requesting:</span>
+            {offer.requestProperties.map((idx) => (
+              <span key={idx} className="tradeNotifProp">{state.tiles[idx].name}</span>
+            ))}
+            {offer.requestMoney > 0 && <span className="tradeNotifProp">${offer.requestMoney}</span>}
+          </div>
+        )}
+      </div>
+
+      <div className="tradeNotifActions">
+        <button className="tradeNotifAccept" onClick={onAccept}>Accept</button>
+        <button className="tradeNotifReject" onClick={onReject}>Reject</button>
+      </div>
+    </div>
   );
 }
