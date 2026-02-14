@@ -2,19 +2,23 @@
 
 import { useGame } from '@/context/GameContext';
 
-export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
+interface BoardCenterArtProps {
+  isRolling: boolean;
+  isAnimating: boolean;
+}
+
+export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterArtProps) {
   const { state, dispatch } = useGame();
   const player = state.players[state.currentPlayerIndex];
+  const disabled = isRolling || isAnimating || state.phase === 'game-over';
 
   const handleMainAction = () => {
-    if (isRolling) return;
+    if (disabled) return;
 
     if (state.phase === 'in-jail') {
       dispatch({ type: 'JAIL_ESCAPE', method: 'roll' });
     } else if (state.phase === 'rolling') {
       dispatch({ type: 'ROLL' });
-    } else if (state.phase === 'buying') {
-      // Handled by buy/decline buttons
     } else if (state.phase === 'drawing-card' && !state.drawnCard) {
       dispatch({ type: 'DRAW_CARD' });
     } else if (state.phase === 'drawing-card' && state.drawnCard) {
@@ -26,21 +30,20 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
 
   const getButtonLabel = () => {
     if (isRolling) return 'Rolling...';
+    if (isAnimating) return 'Moving...';
     switch (state.phase) {
       case 'rolling':
-        return `${player.name} Roll`;
+        return `Roll Dice`;
       case 'in-jail':
-        return `${player.name} (Jail)`;
+        return 'Roll for Doubles';
       case 'buying':
         return 'Buy / Decline';
       case 'drawing-card':
         return state.drawnCard ? 'Continue' : 'Draw Card';
       case 'turn-end':
-        return 'End Turn';
+        return state.doublesCount > 0 ? 'Doubles! Roll Again' : 'End Turn';
       case 'game-over':
-        return state.winner !== null
-          ? `${state.players[state.winner].name} Wins!`
-          : 'Game Over';
+        return 'Game Over';
       default:
         return 'Wait...';
     }
@@ -48,9 +51,10 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
 
   const getHint = () => {
     if (isRolling) return 'Dice In Motion';
+    if (isAnimating) return 'Token Moving...';
     switch (state.phase) {
       case 'rolling':
-        return 'Press Roll To Throw';
+        return `${player.name}'s Turn`;
       case 'in-jail':
         return 'Roll Doubles To Escape';
       case 'buying': {
@@ -61,7 +65,7 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
       case 'drawing-card':
         return state.drawnCard ? state.drawnCard.text : 'Press To Draw';
       case 'turn-end':
-        return 'Press To Continue';
+        return state.doublesCount > 0 ? `${player.name} rolled doubles!` : `${player.name}'s turn is over`;
       case 'game-over':
         return 'Thanks For Playing';
       default:
@@ -71,6 +75,19 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
 
   return (
     <div className="boardCenterArt">
+      {/* Turn indicator */}
+      <div className="turnIndicator">
+        <div className="turnAvatar" style={{ background: player.color }}>
+          {player.name[0]}
+        </div>
+        <span className="turnName">{player.name}</span>
+        {state.dice[0] + state.dice[1] > 0 && !isRolling && (
+          <span className="turnDice">
+            [{state.dice[0]}][{state.dice[1]}]
+          </span>
+        )}
+      </div>
+
       <div className="deck deckCommunity" role="button" aria-label="Community Chest deck">
         <div className="deckCard back" />
         <div className="deckCard mid" />
@@ -89,26 +106,7 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
         </div>
       </div>
 
-      {state.phase === 'buying' && !isRolling ? (
-        <div className="buyDeclineRow">
-          <button className="rollButton buyButton" onClick={() => dispatch({ type: 'BUY' })}>
-            Buy
-          </button>
-          <button className="rollButton declineButton" onClick={() => dispatch({ type: 'DECLINE' })}>
-            Pass
-          </button>
-        </div>
-      ) : (
-        <button
-          className="rollButton"
-          onClick={handleMainAction}
-          disabled={isRolling || state.phase === 'game-over'}
-        >
-          {getButtonLabel()}
-        </button>
-      )}
-      <p className="rollHint">{getHint()}</p>
-
+      {/* Drawn card overlay */}
       {state.drawnCard && !isRolling && (
         <div className="drawnCardOverlay">
           <div className={`drawnCard ${state.drawnCard.deckType === 'chance' ? 'drawnCardChance' : 'drawnCardChest'}`}>
@@ -120,7 +118,29 @@ export default function BoardCenterArt({ isRolling }: { isRolling: boolean }) {
         </div>
       )}
 
-      {state.phase === 'in-jail' && !isRolling && (
+      {/* Buy/Decline buttons */}
+      {state.phase === 'buying' && !isRolling && !isAnimating ? (
+        <div className="buyDeclineRow">
+          <button className="rollButton buyButton" onClick={() => dispatch({ type: 'BUY' })} disabled={disabled}>
+            Buy
+          </button>
+          <button className="rollButton declineButton" onClick={() => dispatch({ type: 'DECLINE' })} disabled={disabled}>
+            Pass
+          </button>
+        </div>
+      ) : (
+        <button
+          className="rollButton"
+          onClick={handleMainAction}
+          disabled={disabled}
+        >
+          {getButtonLabel()}
+        </button>
+      )}
+      <p className="rollHint">{getHint()}</p>
+
+      {/* Jail escape options */}
+      {state.phase === 'in-jail' && !isRolling && !isAnimating && (
         <div className="jailActions">
           <button className="jailBtn" onClick={() => dispatch({ type: 'JAIL_ESCAPE', method: 'bail' })}>
             Pay $50 Bail
