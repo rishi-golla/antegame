@@ -67,7 +67,7 @@ function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
 
 function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; initialScreen?: 'create' | 'join' }) {
   const [screen, setScreen] = useState<'create' | 'join' | 'lobby' | 'game'>(initialScreen);
-  const { roomState } = useSocket();
+  const { roomState, leaveRoom } = useSocket();
 
   // Auto-transition to game when room phase changes
   useEffect(() => {
@@ -76,13 +76,18 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
     }
   }, [roomState?.phase, screen]);
 
+  const handleLeaveLobby = () => {
+    leaveRoom();
+    onBack();
+  };
+
   switch (screen) {
     case 'create':
       return <CreateRoom onCreated={() => setScreen('lobby')} onBack={onBack} />;
     case 'join':
       return <JoinRoom onJoined={() => setScreen('lobby')} onBack={onBack} />;
     case 'lobby':
-      return <RoomLobby />;
+      return <RoomLobby onLeave={handleLeaveLobby} />;
     case 'game':
       return <OnlineGameScreen onPlayAgain={onBack} />;
   }

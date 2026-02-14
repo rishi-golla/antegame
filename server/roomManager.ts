@@ -66,6 +66,12 @@ export class RoomManager {
     if (!room) return { ok: false, error: 'Room not found' };
     if (room.phase !== 'lobby') return { ok: false, error: 'Game already in progress' };
     if (room.players.length >= room.maxPlayers) return { ok: false, error: 'Room is full' };
+    if (room.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+      return { ok: false, error: 'Name already taken in this room' };
+    }
+    if (room.players.some((p) => p.color === color)) {
+      return { ok: false, error: 'Color already taken in this room' };
+    }
 
     const player: ServerPlayer = {
       id: socketId,
