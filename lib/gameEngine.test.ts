@@ -12,6 +12,7 @@ import {
   drawCard,
   checkBankruptcy,
   getNetWorth,
+  declareBankruptcy,
 } from './gameEngine';
 import type { GameState } from '@/types/game';
 
@@ -354,5 +355,66 @@ describe('checkBankruptcy', () => {
   it('returns false when money is zero or positive', () => {
     const state = freshGame();
     expect(checkBankruptcy(state, 0)).toBe(false);
+  });
+});
+
+describe('declareBankruptcy', () => {
+  it('marks player as bankrupt', () => {
+    let state = freshGame();
+    const result = declareBankruptcy(state, 0);
+    expect(result.players[0].bankrupt).toBe(true);
+  });
+
+  it('releases all properties back to unowned', () => {
+    let state = freshGame();
+    state = {
+      ...state,
+      players: state.players.map((p, i) =>
+        i === 0 ? { ...p, properties: [1, 3], houses: { 1: 2 } } : p
+      ),
+    };
+    const result = declareBankruptcy(state, 0);
+    expect(result.players[0].properties).toEqual([]);
+    expect(result.players[0].houses).toEqual({});
+    expect(result.players[0].mortgaged).toEqual([]);
+  });
+
+  it('transfers properties to creditor if specified', () => {
+    let state = freshGame();
+    state = {
+      ...state,
+      players: state.players.map((p, i) =>
+        i === 0 ? { ...p, properties: [1, 3], money: -100 } : p
+      ),
+    };
+    const result = declareBankruptcy(state, 0, 1);
+    expect(result.players[0].properties).toEqual([]);
+    expect(result.players[1].properties).toContain(1);
+    expect(result.players[1].properties).toContain(3);
+  });
+
+  it('sets money to 0', () => {
+    let state = freshGame();
+    state = {
+      ...state,
+      players: state.players.map((p, i) =>
+        i === 0 ? { ...p, money: -50 } : p
+      ),
+    };
+    const result = declareBankruptcy(state, 0);
+    expect(result.players[0].money).toBe(0);
+  });
+
+  it('detects winner when only one player remains', () => {
+    let state = createGame(['A', 'B']);
+    const result = declareBankruptcy(state, 0);
+    expect(result.phase).toBe('game-over');
+    expect(result.winner).toBe(1);
+  });
+
+  it('does not end game if 2+ players remain', () => {
+    let state = freshGame(); // 3 players
+    const result = declareBankruptcy(state, 0);
+    expect(result.phase).not.toBe('game-over');
   });
 });
