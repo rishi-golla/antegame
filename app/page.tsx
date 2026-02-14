@@ -1,16 +1,43 @@
 'use client';
 
-import { useState } from 'react';
-import { GameProvider, useGame } from '@/context/GameContext';
+import { useState, useEffect } from 'react';
+import { GameProvider } from '@/context/GameContext';
+import { SocketProvider, useSocket } from '@/context/SocketContext';
+import { MultiplayerGameProvider } from '@/context/MultiplayerGameContext';
 import Board from '@/components/Board/Board';
 import SidePanel from '@/components/SidePanel/SidePanel';
 import PlayerList from '@/components/PlayerList/PlayerList';
 import GameSetup from '@/components/GameSetup/GameSetup';
 import GameOver from '@/components/GameOver/GameOver';
+import CreateRoom from '@/components/Lobby/CreateRoom';
+import JoinRoom from '@/components/Lobby/JoinRoom';
+import RoomLobby from '@/components/Lobby/RoomLobby';
 
-function GameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
-  const { state } = useGame();
+type Screen = 'menu' | 'local-setup' | 'create' | 'join' | 'lobby' | 'local-game' | 'online-game';
 
+function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
+  return (
+    <div className="setupScreen">
+      <div className="setupCard">
+        <h1 className="setupTitle">Monopoly</h1>
+        <p className="setupSubtitle">Choose how to play</p>
+        <div className="menuButtons">
+          <button className="setupStartBtn" onClick={() => onNavigate('create')}>
+            Create Room
+          </button>
+          <button className="setupStartBtn menuBtnAlt" onClick={() => onNavigate('join')}>
+            Join Room
+          </button>
+          <button className="lobbyBackBtn" onClick={() => onNavigate('local-setup')}>
+            Local Play
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocalGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
   return (
     <>
       <main className="gameScreen">
@@ -18,32 +45,88 @@ function GameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <Board />
         <SidePanel />
       </main>
-      {state.phase === 'game-over' && <GameOver onPlayAgain={onPlayAgain} />}
+      <GameOver onPlayAgain={onPlayAgain} />
     </>
   );
 }
 
-export default function Home() {
-  const [gameState, setGameState] = useState<'setup' | 'playing'>('setup');
-  const [playerNames, setPlayerNames] = useState<string[]>([]);
-
-  const handleStart = (names: string[]) => {
-    setPlayerNames(names);
-    setGameState('playing');
-  };
-
-  const handlePlayAgain = () => {
-    setGameState('setup');
-    setPlayerNames([]);
-  };
-
-  if (gameState === 'setup') {
-    return <GameSetup onStart={handleStart} />;
-  }
+function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
+  const { chatMessages, sendChat } = useSocket();
 
   return (
-    <GameProvider playerNames={playerNames}>
-      <GameScreen onPlayAgain={handlePlayAgain} />
-    </GameProvider>
+    <MultiplayerGameProvider>
+      <main className="gameScreen">
+        <PlayerList />
+        <Board />
+        <SidePanel chatMessages={chatMessages} onSendChat={sendChat} />
+      </main>
+      <GameOver onPlayAgain={onPlayAgain} />
+    </MultiplayerGameProvider>
   );
+}
+
+function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; initialScreen?: 'create' | 'join' }) {
+  const [screen, setScreen] = useState<'create' | 'join' | 'lobby' | 'game'>(initialScreen);
+  const { roomState } = useSocket();
+
+  // Auto-transition to game when room phase changes
+  useEffect(() => {
+    if (roomState?.phase === 'playing' && screen === 'lobby') {
+      setScreen('game');
+    }
+  }, [roomState?.phase, screen]);
+
+  switch (screen) {
+    case 'create':
+      return <CreateRoom onCreated={() => setScreen('lobby')} onBack={onBack} />;
+    case 'join':
+      return <JoinRoom onJoined={() => setScreen('lobby')} onBack={onBack} />;
+    case 'lobby':
+      return <RoomLobby />;
+    case 'game':
+      return <OnlineGameScreen onPlayAgain={onBack} />;
+  }
+}
+
+export default function Home() {
+  const [screen, setScreen] = useState<Screen>('menu');
+  const [localPlayerNames, setLocalPlayerNames] = useState<string[]>([]);
+
+  switch (screen) {
+    case 'menu':
+      return <MainMenu onNavigate={setScreen} />;
+
+    case 'local-setup':
+      return (
+        <GameSetup
+          onStart={(names) => {
+            setLocalPlayerNames(names);
+            setScreen('local-game');
+          }}
+        />
+      );
+
+    case 'local-game':
+      return (
+        <GameProvider playerNames={localPlayerNames}>
+          <LocalGameScreen onPlayAgain={() => setScreen('menu')} />
+        </GameProvider>
+      );
+
+    case 'create':
+    case 'join':
+    case 'lobby':
+    case 'online-game':
+      return (
+        <SocketProvider>
+          <OnlineFlow
+            onBack={() => setScreen('menu')}
+            initialScreen={screen === 'join' ? 'join' : 'create'}
+          />
+        </SocketProvider>
+      );
+
+    default:
+      return <MainMenu onNavigate={setScreen} />;
+  }
 }
