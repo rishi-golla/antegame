@@ -136,6 +136,7 @@ export type GamePhase =
   | 'applying-card'
   | 'in-jail'
   | 'turn-end'
+  | 'trading'
   | 'game-over';
 
 export interface GameLog {
@@ -178,4 +179,5 @@ export interface GameState {
   winner: number | null;
   auctionState: AuctionState | null;
   activeTradeOffer: TradeOffer | null;
+  previousPhase: GamePhase | null;
 }

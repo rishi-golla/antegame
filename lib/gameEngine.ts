@@ -123,6 +123,7 @@ export function createGame(playerNames: string[]): GameState {
     winner: null,
     auctionState: null,
     activeTradeOffer: null,
+    previousPhase: null,
   };
 }
 
