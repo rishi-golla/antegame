@@ -133,6 +133,7 @@ export type GamePhase =
   | 'auction'
   | 'paying-rent'
   | 'drawing-card'
+  | 'applying-card'
   | 'in-jail'
   | 'turn-end'
   | 'game-over';
