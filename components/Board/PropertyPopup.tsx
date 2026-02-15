@@ -3,6 +3,7 @@
 import { useGame } from '@/context/GameContext';
 import type { Tile, PropertyTile } from '@/types/game';
 import { COLOR_GROUPS } from '@/lib/gameData';
+import { getTileImage } from '@/lib/assetMap';
 
 interface PropertyPopupProps {
   tileIndex: number;
@@ -16,6 +17,7 @@ export default function PropertyPopup({ tileIndex, onClose }: PropertyPopupProps
   const owner = state.players.find((p) => p.properties.includes(tileIndex));
   const isMortgaged = owner?.mortgaged.includes(tileIndex);
   const houses = owner?.houses[tileIndex] || 0;
+  const tileImage = getTileImage(tile);
 
   return (
     <div className="popupOverlay casinoBackdrop" onClick={onClose}>
@@ -24,6 +26,10 @@ export default function PropertyPopup({ tileIndex, onClose }: PropertyPopupProps
           <div className="popupColorBar popupColorHeader" style={{ background: getGroupColor(tile.colorGroup) }}>
             <span className="popupColorLabel">{tile.colorGroup.replace('-', ' ')}</span>
           </div>
+        )}
+
+        {tileImage && (
+          <img src={tileImage} alt={tile.name} className="popupTileImage" draggable={false} />
         )}
 
         <h3 className="popupTitle">{tile.name}</h3>
