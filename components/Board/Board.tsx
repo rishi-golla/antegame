@@ -8,7 +8,6 @@ import DicePips from './DicePips';
 import BoardCenterArt from './BoardCenterArt';
 import PropertyPopup from './PropertyPopup';
 import MoneyFloat, { useMoneyFloats } from './MoneyFloat';
-import CutsceneOverlay from './CutsceneOverlay';
 import { TILES } from '@/lib/gameData';
 
 function buildBoardTiles(): BoardTile[] {
@@ -49,19 +48,6 @@ export default function Board() {
   const [activeTile, setActiveTile] = useState(0);
   const [boardSize, setBoardSize] = useState(0);
   const [popupTile, setPopupTile] = useState<number | null>(null);
-  const [cutscene, setCutscene] = useState<{
-    playerIndex: number;
-    playerColor: string;
-    playerName: string;
-    steps: number[];
-  } | null>(null);
-  const cutsceneQueueRef = useRef<Array<{
-    playerIndex: number;
-    playerColor: string;
-    playerName: string;
-    steps: number[];
-    finalPos: number;
-  }>>([]);
   const frameRef = useRef<HTMLDivElement>(null);
   const prevDiceRef = useRef<[number, number] | null>(null);
   const prevPhaseRef = useRef(state.phase);
@@ -80,39 +66,12 @@ export default function Board() {
     }
   }, [state.players.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle cutscene completion
-  const handleCutsceneComplete = useCallback(() => {
-    // Apply final position from completed cutscene
-    const queue = cutsceneQueueRef.current;
-    if (queue.length > 0) {
-      const completed = queue.shift()!;
-      setDisplayPositions((dp) => {
-        const next = [...dp];
-        next[completed.playerIndex] = completed.finalPos;
-        return next;
-      });
-      setActiveTile(completed.finalPos);
-    }
-    // Play next queued cutscene or finish
-    if (queue.length > 0) {
-      const next = queue[0];
-      setCutscene({
-        playerIndex: next.playerIndex,
-        playerColor: next.playerColor,
-        playerName: next.playerName,
-        steps: next.steps,
-      });
-    } else {
-      setCutscene(null);
-      setIsAnimating(false);
-    }
-  }, []);
-
-  // Detect position changes and trigger cutscene
+  // Animate token movement step-by-step
   useEffect(() => {
     if (displayPositions.length === 0) return;
 
     const currentPositions = state.players.map((p) => p.position);
+    let cancelled = false;
 
     // Find which players moved
     for (let playerIdx = 0; playerIdx < currentPositions.length; playerIdx++) {
@@ -127,7 +86,7 @@ export default function Board() {
       const forwardSteps = curr > prev ? curr - prev : 40 - prev + curr;
 
       if (isJailTeleport || forwardSteps > 12) {
-        // Direct jump -- no cutscene
+        // Direct jump — no animation
         setDisplayPositions((dp) => {
           const next = [...dp];
           next[playerIdx] = curr;
@@ -147,31 +106,34 @@ export default function Board() {
 
       if (steps.length === 0) continue;
 
-      const player = state.players[playerIdx];
-      const entry = {
-        playerIndex: playerIdx,
-        playerColor: player.color,
-        playerName: player.name,
-        steps,
-        finalPos: curr,
-      };
+      // Animate steps
+      setIsAnimating(true);
+      let stepIdx = 0;
 
-      // Queue cutscene
-      cutsceneQueueRef.current.push(entry);
+      const interval = setInterval(() => {
+        if (cancelled || stepIdx >= steps.length) {
+          clearInterval(interval);
+          if (!cancelled) {
+            setIsAnimating(false);
+            setActiveTile(curr);
+          }
+          return;
+        }
 
-      // If no cutscene is playing, start this one
-      if (!cutscene && cutsceneQueueRef.current.length === 1) {
-        setIsAnimating(true);
-        setCutscene({
-          playerIndex: entry.playerIndex,
-          playerColor: entry.playerColor,
-          playerName: entry.playerName,
-          steps: entry.steps,
+        const nextPos = steps[stepIdx];
+        setDisplayPositions((dp) => {
+          const next = [...dp];
+          next[playerIdx] = nextPos;
+          return next;
         });
-      }
+        setActiveTile(nextPos);
+        stepIdx++;
+      }, 150);
     }
 
     prevPositionsRef.current = currentPositions;
+
+    return () => { cancelled = true; };
   }, [positionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track money changes for floats
@@ -291,15 +253,6 @@ export default function Board() {
 
       {popupTile !== null && (
         <PropertyPopup tileIndex={popupTile} onClose={() => setPopupTile(null)} />
-      )}
-
-      {cutscene && (
-        <CutsceneOverlay
-          playerColor={cutscene.playerColor}
-          playerName={cutscene.playerName}
-          steps={cutscene.steps}
-          onComplete={handleCutsceneComplete}
-        />
       )}
     </section>
   );
