@@ -3381,3 +3381,155 @@ button:active:not(:disabled) {
       0 0 60px rgba(212, 175, 55, 0.15);
   }
 }
+
+/* ===== PIXEL ART TILE BACKGROUNDS ===== */
+
+.tileBackgroundImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.tileLabelText {
+  position: relative;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1px 4px;
+  border-radius: 3px;
+  backdrop-filter: blur(2px);
+}
+
+/* ===== CHARACTER SPRITE TOKENS ===== */
+
+.tokenSprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 50%;
+}
+
+.token.casinoChip {
+  overflow: hidden;
+}
+
+/* Larger sprite tokens */
+.token.spriteToken {
+  width: 26px;
+  height: 26px;
+  padding: 2px;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+/* ===== CHARACTER SELECT GRID ===== */
+
+.characterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.characterCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  border: 2px solid rgba(212, 175, 55, 0.2);
+  background: rgba(42, 15, 31, 0.5);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+
+.characterCard:hover:not(.characterCardDisabled) {
+  border-color: rgba(212, 175, 55, 0.5);
+  background: rgba(55, 20, 35, 0.7);
+  transform: translateY(-2px);
+}
+
+.characterCard.characterCardSelected {
+  border-color: var(--gold-bright);
+  background: rgba(212, 175, 55, 0.12);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.35);
+}
+
+.characterCard.characterCardDisabled {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+
+.characterCardSprite {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.characterCardName {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  text-align: center;
+  line-height: 1.1;
+}
+
+/* ===== BOARD CENTER CREST ===== */
+
+.casinoCrestImg {
+  display: block;
+  width: 65%;
+  height: auto;
+  image-rendering: pixelated;
+  object-fit: contain;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* ===== PLAYER LIST SPRITE ===== */
+
+.avatar.spriteAvatar {
+  padding: 3px;
+  overflow: hidden;
+}
+
+.avatarSprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 50%;
+}
+
+/* ===== POPUP TILE IMAGE ===== */
+
+.popupTileImage {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border-radius: 0;
+  margin: 0 -24px;
+  width: calc(100% + 48px);
+}
+
+/* Pixel art global rule */
+img[src*="/assets/"] {
+  image-rendering: pixelated;
+}

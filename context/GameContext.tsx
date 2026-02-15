@@ -91,13 +91,33 @@ export const GameContext = createContext<GameContextValue | null>(null);
 interface GameProviderProps {
   children: ReactNode;
   playerNames?: string[];
+  playerSprites?: string[];
+  playerColors?: string[];
+}
+
+function createGameWithSprites(args: { names: string[]; sprites: string[]; colors: string[] }) {
+  const state = createGame(args.names);
+  return {
+    ...state,
+    players: state.players.map((p, i) => ({
+      ...p,
+      sprite: args.sprites[i] || undefined,
+      color: args.colors[i] || p.color,
+    })),
+  };
 }
 
 export function GameProvider({
   children,
   playerNames = ['Ava', 'Kai', 'Maya', 'Leo'],
+  playerSprites = [],
+  playerColors = [],
 }: GameProviderProps) {
-  const [state, dispatch] = useReducer(gameReducer, playerNames, createGame);
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    { names: playerNames, sprites: playerSprites, colors: playerColors },
+    createGameWithSprites,
+  );
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

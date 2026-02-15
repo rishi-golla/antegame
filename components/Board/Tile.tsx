@@ -1,5 +1,6 @@
 import type { Player, Tile as TileType } from '@/types/game';
 import { TILES } from '@/lib/gameData';
+import { getTileImage } from '@/lib/assetMap';
 
 interface BoardTile {
   index: number;
@@ -46,6 +47,7 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
   const groupColor = tileData.type === 'property' ? GROUP_COLORS[tileData.colorGroup] : null;
   const isCornerTile = tileData.type === 'corner';
   const cornerLabel = isCornerTile ? CORNER_ICONS[tileData.cornerKind] : null;
+  const tileImage = getTileImage(tileData);
 
   // Determine color strip position based on tile orientation
   const stripClass = groupColor
@@ -63,6 +65,15 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
       title={tile.label}
       onClick={() => onTileClick?.(tile.index)}
     >
+      {tileImage && (
+        <img
+          src={tileImage}
+          alt=""
+          className="tileBackgroundImg"
+          draggable={false}
+        />
+      )}
+
       {groupColor && (
         <div
           className={stripClass}
@@ -86,13 +97,22 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
         </div>
       )}
 
-      <span>{cornerLabel ?? tile.label}</span>
+      <span className="tileLabelText">{cornerLabel ?? tile.label}</span>
 
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">
           {tokensOnTile.map((player) => (
             <div key={player.id} className="token casinoChip" style={{ background: player.color }}>
-              {player.name[0]}
+              {player.sprite ? (
+                <img
+                  src={player.sprite}
+                  alt={player.name}
+                  className="tokenSprite"
+                  draggable={false}
+                />
+              ) : (
+                player.name[0]
+              )}
             </div>
           ))}
         </div>
