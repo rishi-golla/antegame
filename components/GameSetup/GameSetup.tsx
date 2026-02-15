@@ -1,34 +1,66 @@
 'use client';
 
 import { useState } from 'react';
-
-const DEFAULT_COLORS = ['#ff6b6b', '#5cd6c0', '#ffd166', '#8fb8ff', '#c084fc', '#fb923c'];
-const DEFAULT_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6'];
+import { CHARACTERS, type CharacterDef } from '@/lib/assetMap';
 
 interface GameSetupProps {
-  onStart: (names: string[]) => void;
+  onStart: (names: string[], sprites: string[], colors: string[]) => void;
+}
+
+interface PlayerSetup {
+  name: string;
+  characterId: string | null;
 }
 
 export default function GameSetup({ onStart }: GameSetupProps) {
   const [playerCount, setPlayerCount] = useState(4);
-  const [names, setNames] = useState<string[]>(DEFAULT_NAMES.slice());
+  const [players, setPlayers] = useState<PlayerSetup[]>(
+    Array.from({ length: 6 }, (_, i) => ({ name: `Player ${i + 1}`, characterId: null }))
+  );
 
   const updateName = (index: number, value: string) => {
-    const next = [...names];
-    next[index] = value;
-    setNames(next);
+    const next = [...players];
+    next[index] = { ...next[index], name: value };
+    setPlayers(next);
   };
 
-  const handleStart = () => {
-    const finalNames = names.slice(0, playerCount).map((n, i) => n.trim() || `Player ${i + 1}`);
-    onStart(finalNames);
+  const selectCharacter = (playerIndex: number, charId: string) => {
+    const next = [...players];
+    // Toggle off if already selected
+    if (next[playerIndex].characterId === charId) {
+      next[playerIndex] = { ...next[playerIndex], characterId: null };
+    } else {
+      next[playerIndex] = { ...next[playerIndex], characterId: charId };
+    }
+    setPlayers(next);
   };
+
+  const takenCharacters = players
+    .slice(0, playerCount)
+    .map((p) => p.characterId)
+    .filter(Boolean) as string[];
+
+  const handleStart = () => {
+    const activePlayers = players.slice(0, playerCount);
+    const finalNames = activePlayers.map((p, i) => p.name.trim() || `Player ${i + 1}`);
+    const finalSprites = activePlayers.map((p) => {
+      const char = CHARACTERS.find((c) => c.id === p.characterId);
+      return char?.sprite ?? '';
+    });
+    const finalColors = activePlayers.map((p) => {
+      const char = CHARACTERS.find((c) => c.id === p.characterId);
+      return char?.color ?? ['#ff6b6b', '#5cd6c0', '#ffd166', '#8fb8ff', '#c084fc', '#fb923c'][0];
+    });
+    onStart(finalNames, finalSprites, finalColors);
+  };
+
+  const [activePlayerTab, setActivePlayerTab] = useState(0);
 
   return (
     <div className="setupScreen">
       <div className="setupCard">
-        <h1 className="setupTitle">Monopoly</h1>
-        <p className="setupSubtitle">Set up your game</p>
+        <h1 className="setupTitle marqueeTitle">Monopoly</h1>
+        <p className="setupSubtitle casinoSubtitle">Choose your characters</p>
 
         <div className="setupPlayerCount">
           <label>Players</label>
@@ -45,21 +77,67 @@ export default function GameSetup({ onStart }: GameSetupProps) {
           </div>
         </div>
 
-        <div className="setupPlayerList">
-          {Array.from({ length: playerCount }).map((_, i) => (
-            <div key={i} className="setupPlayerRow">
-              <div className="setupPlayerColor casinoChipSelector" style={{ background: DEFAULT_COLORS[i] }}>
-                {(names[i]?.[0] || `${i + 1}`).toUpperCase()}
-              </div>
-              <input
-                className="setupPlayerInput"
-                placeholder={`Player ${i + 1}`}
-                value={names[i] || ''}
-                onChange={(e) => updateName(i, e.target.value)}
-                maxLength={16}
+        {/* Player tabs */}
+        <div className="setupCountBtns" style={{ marginBottom: 12 }}>
+          {Array.from({ length: playerCount }).map((_, i) => {
+            const char = CHARACTERS.find((c) => c.id === players[i].characterId);
+            return (
+              <button
+                key={i}
+                className={`setupCountBtn ${activePlayerTab === i ? 'active' : ''}`}
+                onClick={() => setActivePlayerTab(i)}
+                style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}
+              >
+                {players[i].name.trim() || `P${i + 1}`}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active player config */}
+        <div className="setupPlayerRow" style={{ marginBottom: 12 }}>
+          <div
+            className="setupPlayerColor casinoChipSelector"
+            style={{
+              background: CHARACTERS.find((c) => c.id === players[activePlayerTab].characterId)?.color ?? '#555',
+              overflow: 'hidden',
+            }}
+          >
+            {players[activePlayerTab].characterId ? (
+              <img
+                src={CHARACTERS.find((c) => c.id === players[activePlayerTab].characterId)!.sprite}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as const }}
               />
-            </div>
-          ))}
+            ) : (
+              (players[activePlayerTab].name[0] || `${activePlayerTab + 1}`).toUpperCase()
+            )}
+          </div>
+          <input
+            className="setupPlayerInput"
+            placeholder={`Player ${activePlayerTab + 1}`}
+            value={players[activePlayerTab].name}
+            onChange={(e) => updateName(activePlayerTab, e.target.value)}
+            maxLength={16}
+          />
+        </div>
+
+        {/* Character selection grid */}
+        <div className="characterGrid">
+          {CHARACTERS.map((char) => {
+            const isSelected = players[activePlayerTab].characterId === char.id;
+            const isTaken = takenCharacters.includes(char.id) && !isSelected;
+            return (
+              <div
+                key={char.id}
+                className={`characterCard ${isSelected ? 'characterCardSelected' : ''} ${isTaken ? 'characterCardDisabled' : ''}`}
+                onClick={() => !isTaken && selectCharacter(activePlayerTab, char.id)}
+              >
+                <img src={char.sprite} alt={char.name} className="characterCardSprite" draggable={false} />
+                <span className="characterCardName">{char.name}</span>
+              </div>
+            );
+          })}
         </div>
 
         <button className="setupStartBtn" onClick={handleStart}>
