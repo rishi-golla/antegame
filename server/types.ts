@@ -54,8 +54,6 @@ export interface ClientToServerEvents {
   'game:sell-house': (data: { tileIndex: number }) => void;
   'game:mortgage': (data: { tileIndex: number }) => void;
   'game:unmortgage': (data: { tileIndex: number }) => void;
-  'game:bid': (data: { amount: number }) => void;
-  'game:pass-auction': () => void;
   'game:propose-trade': (data: { offer: import('@/types/game').TradeOffer }) => void;
   'game:accept-trade': () => void;
   'game:reject-trade': () => void;

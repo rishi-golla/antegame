@@ -12,7 +12,6 @@ import GameOver from '@/components/GameOver/GameOver';
 import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
-import AuctionOverlay from '@/components/Board/AuctionOverlay';
 import TradeModal from '@/components/Board/TradeModal';
 
 type Screen = 'menu' | 'local-setup' | 'create' | 'join' | 'lobby' | 'local-game' | 'online-game';
@@ -49,7 +48,6 @@ function LocalGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <Board />
         <SidePanel />
       </main>
-      <AuctionOverlay />
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
@@ -69,7 +67,6 @@ function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <Board />
         <SidePanel chatMessages={chatMessages} onSendChat={sendChat} />
       </main>
-      <AuctionOverlay />
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}

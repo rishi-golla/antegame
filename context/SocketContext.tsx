@@ -26,7 +26,6 @@ interface SocketContextValue {
   sendChat: (text: string) => void;
   sendGameAction: (action: string, data?: Record<string, unknown>) => void;
   sendPropertyAction: (action: string, tileIndex: number) => void;
-  sendAuctionAction: (action: string, data?: Record<string, unknown>) => void;
   sendTradeAction: (action: string, data?: Record<string, unknown>) => void;
 }
 
@@ -131,15 +130,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const sendAuctionAction = useCallback((action: string, data?: Record<string, unknown>) => {
-    const socket = getSocket();
-    if (action === 'bid' && data?.amount !== undefined) {
-      socket.emit('game:bid', { amount: data.amount as number });
-    } else if (action === 'pass') {
-      socket.emit('game:pass-auction');
-    }
-  }, []);
-
   const sendTradeAction = useCallback((action: string, data?: Record<string, unknown>) => {
     const socket = getSocket();
     if (action === 'propose' && data?.offer) {
@@ -194,7 +184,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         sendChat,
         sendGameAction,
         sendPropertyAction,
-        sendAuctionAction,
         sendTradeAction,
       }}
     >
