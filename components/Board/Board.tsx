@@ -49,7 +49,7 @@ export default function Board() {
   const [boardSize, setBoardSize] = useState(0);
   const [popupTile, setPopupTile] = useState<number | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const prevDiceRef = useRef(state.dice);
+  const prevDiceRef = useRef<[number, number] | null>(null);
   const prevPhaseRef = useRef(state.phase);
   const prevPositionsRef = useRef<number[]>([]);
   const { floats, addFloat } = useMoneyFloats();
@@ -198,6 +198,12 @@ export default function Board() {
   }, []);
 
   useEffect(() => {
+    if (prevDiceRef.current === null) {
+      // First render -- store initial values, don't animate
+      prevDiceRef.current = state.dice;
+      prevPhaseRef.current = state.phase;
+      return;
+    }
     const diceChanged = prevDiceRef.current[0] !== state.dice[0] || prevDiceRef.current[1] !== state.dice[1];
     if (diceChanged && (prevPhaseRef.current === 'rolling' || prevPhaseRef.current === 'in-jail')) {
       animateRoll(state.dice);
