@@ -228,6 +228,7 @@ export default function Board() {
               tile={tile}
               activeTile={activeTile}
               players={displayPlayers}
+              currentPlayerIndex={state.currentPlayerIndex}
               onTileClick={(idx) => setPopupTile(idx)}
             />
           ))}
