@@ -3223,3 +3223,161 @@ button:active:not(:disabled) {
   color: var(--neon-green) !important;
   text-shadow: 0 0 8px rgba(0, 230, 118, 0.5);
 }
+
+/* ===== PHASE 7: Animations and Micro-interactions ===== */
+
+/* Neon flicker animation for titles */
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  4% { opacity: 0.9; }
+  6% { opacity: 1; }
+  42% { opacity: 1; }
+  44% { opacity: 0.85; }
+  46% { opacity: 1; }
+  80% { opacity: 1; }
+  82% { opacity: 0.92; }
+  83% { opacity: 1; }
+}
+
+/* Gold sparkle effect for important actions */
+@keyframes goldSparkle {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.goldSparkle {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 215, 0, 0.4) 45%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 215, 0, 0.4) 55%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  animation: goldSparkle 2s ease-in-out;
+}
+
+/* Felt-slide screen transitions */
+.setupScreen {
+  animation: feltSlideIn 0.4s var(--ease-out) both;
+}
+
+@keyframes feltSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button hover: neon glow intensifies */
+.setupStartBtn:hover,
+.neonBtn:hover,
+.rollButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.setupStartBtn::after,
+.neonBtn::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background: transparent;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  pointer-events: none;
+}
+
+.setupStartBtn:hover::after,
+.neonBtn:hover::after {
+  opacity: 1;
+}
+
+/* Button press: chip press-down effect */
+.setupStartBtn:active:not(:disabled),
+.neonBtn:active:not(:disabled) {
+  transform: translateY(3px) scale(0.97) !important;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(139, 115, 32, 0.3) !important;
+  filter: brightness(0.95);
+}
+
+.setupCountBtn:active {
+  transform: scale(0.92);
+}
+
+/* Casino-themed loading spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(212, 175, 55, 0.15);
+  border-top-color: var(--gold);
+  border-right-color: var(--gold-dim);
+  border-radius: 50%;
+  animation: casinoSpin 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  margin: 20px auto;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.15);
+}
+
+@keyframes casinoSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Smooth color swatch hover */
+.colorSwatch {
+  transition: transform 0.15s var(--ease-bounce), box-shadow 0.2s ease;
+}
+
+.colorSwatch:hover {
+  transform: scale(1.2) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(212, 175, 55, 0.2);
+}
+
+.colorSwatch:active {
+  transform: scale(0.95);
+}
+
+/* Lobby player card entrance */
+.lobbyPlayer {
+  animation: feltSlideIn 0.3s var(--ease-out) both;
+}
+
+/* Input focus glow */
+.setupPlayerInput:focus,
+.lobbyCodeInput:focus {
+  border-color: var(--gold) !important;
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(212, 175, 55, 0.2),
+    0 0 24px rgba(212, 175, 55, 0.08) !important;
+}
+
+/* Roll button pulse when enabled */
+.rollButton:not(:disabled) {
+  animation: rollPulse 2s ease-in-out infinite;
+}
+
+@keyframes rollPulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 8px 0 rgba(80, 65, 15, 0.6),
+      0 0 24px rgba(212, 175, 55, 0.35);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 8px 0 rgba(80, 65, 15, 0.6),
+      0 0 36px rgba(212, 175, 55, 0.55),
+      0 0 60px rgba(212, 175, 55, 0.15);
+  }
+}
