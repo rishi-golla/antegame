@@ -48,7 +48,7 @@ export default function GameSetup({ onStart }: GameSetupProps) {
         <div className="setupPlayerList">
           {Array.from({ length: playerCount }).map((_, i) => (
             <div key={i} className="setupPlayerRow">
-              <div className="setupPlayerColor" style={{ background: DEFAULT_COLORS[i] }}>
+              <div className="setupPlayerColor casinoChipSelector" style={{ background: DEFAULT_COLORS[i] }}>
                 {(names[i]?.[0] || `${i + 1}`).toUpperCase()}
               </div>
               <input

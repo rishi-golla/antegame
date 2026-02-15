@@ -21,10 +21,12 @@ export default function GameOver({ onPlayAgain }: GameOverProps) {
     });
 
   return (
-    <div className="gameOverOverlay">
-      <div className="gameOverCard">
+    <div className="gameOverOverlay casinoBackdrop jackpotOverlay">
+      <div className="gameOverCard jackpotCard">
+        <div className="jackpotLights" />
         <div className="gameOverCrown">&#x1F451;</div>
-        <h1 className="gameOverTitle">{winner.name} Wins!</h1>
+        <div className="jackpotLabel">JACKPOT</div>
+        <h1 className="gameOverTitle jackpotWinner">{winner.name} Wins!</h1>
         <p className="gameOverSub">Final Standings</p>
 
         <div className="gameOverRankings">
