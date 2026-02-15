@@ -308,8 +308,8 @@ input {
     0 20px 26px rgba(0, 0, 0, 0.5),
     0 34px 50px rgba(0, 0, 0, 0.6);
   display: grid;
-  grid-template-columns: repeat(13, 1fr);
-  grid-template-rows: repeat(13, 1fr);
+  grid-template-columns: 0.75fr 0.75fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 0.75fr 0.75fr;
+  grid-template-rows: 0.75fr 0.75fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 0.75fr 0.75fr;
   gap: var(--tile-gap);
   border: 6px solid var(--gold);
   transition: transform 260ms ease, filter 260ms ease;
