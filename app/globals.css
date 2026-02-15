@@ -2747,3 +2747,109 @@ input {
   background: rgba(50, 70, 140, 0.45);
   transform: translateX(3px);
 }
+
+/* ===== PHASE 5.7: Responsive and Micro-interactions ===== */
+
+/* Board scales on smaller screens */
+@media (max-width: 900px) {
+  .gameScreen {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .leftPanel, .rightPanel {
+    width: 100%;
+    flex: none;
+    height: auto;
+    max-height: 30vh;
+  }
+  .boardWrap {
+    height: auto;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .boardGrid {
+    border-width: 3px;
+    border-radius: 8px;
+  }
+  .tile {
+    border-width: 2px;
+    border-radius: 6px;
+    padding: 2px;
+  }
+  .tile span {
+    font-size: 0.45rem !important;
+  }
+  .tile-corner span {
+    font-size: 0.55rem !important;
+  }
+  .token {
+    width: 14px;
+    height: 14px;
+    font-size: 0.4rem;
+  }
+  .setupCard, .lobbyCard {
+    padding: 16px;
+  }
+  .setupTitle {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .boardGrid {
+    border-width: 2px;
+    padding: 1px;
+  }
+}
+
+/* Money change transitions */
+.playerMoney {
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.moneyGain {
+  color: var(--success) !important;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+.moneyLoss {
+  color: var(--danger) !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+}
+
+/* Consistent button press feedback */
+button {
+  transition: transform 0.1s var(--ease-out), box-shadow 0.1s var(--ease-out), filter 0.1s;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Loading/connecting spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(130, 170, 255, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 20px auto;
+}
+
+/* Smooth transitions for common interactive elements */
+.setupCountBtn,
+.setupStartBtn,
+.lobbyBackBtn,
+.popupClose,
+.popupActionBtn,
+.jailBtn,
+.tradeBtn {
+  transition: transform 0.1s var(--ease-out), box-shadow 0.15s var(--ease-out), filter 0.15s, background 0.15s ease;
+}
