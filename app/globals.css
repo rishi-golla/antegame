@@ -1025,11 +1025,15 @@ input {
 }
 
 .buyDeclineRow .rollButton:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 8px 0 rgba(40, 48, 124, 0.6);
+  filter: none;
 }
 
 .buyDeclineRow .rollButton:active:not(:disabled) {
-  transform: translateY(2px);
+  transform: none;
 }
 
 .buyButton {
