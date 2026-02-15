@@ -44,6 +44,17 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
         <h1 className="setupTitle">Join Room</h1>
         <p className="setupSubtitle">Enter a room code to join</p>
 
+        <div className="colorSwatches" style={{ marginBottom: 12 }}>
+          {COLORS.map((c) => (
+            <button
+              key={c}
+              className={`colorSwatch ${color === c ? 'colorSwatchActive' : ''}`}
+              style={{ background: c }}
+              onClick={() => setColor(c)}
+              aria-label={`Select color ${c}`}
+            />
+          ))}
+        </div>
         <div className="setupPlayerRow" style={{ marginBottom: 16 }}>
           <div
             className="setupPlayerColor"
