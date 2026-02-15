@@ -46,23 +46,24 @@ export function passAuction(state: GameState, playerIndex: number): GameState {
   const newPassed = [...auction.passedPlayers, playerIndex];
   const remaining = auction.biddingOrder.filter((id) => !newPassed.includes(id));
 
-  // If one player left and they have a bid, they win
+  // Everyone passed with no bids -- property stays unowned
+  if (remaining.length === 0 && auction.currentBidder === null) {
+    return { ...state, phase: 'turn-end', auctionState: null };
+  }
+
+  // One or fewer players remain and someone has bid -- they win
   if (remaining.length <= 1 && auction.currentBidder !== null) {
     return resolveAuction(state, auction.currentBidder, auction.currentBid, auction.tileIndex);
   }
 
-  // If everyone passed with no bids
-  if (remaining.length === 0) {
-    return { ...state, phase: 'turn-end', auctionState: null };
-  }
-
-  const newAuction: AuctionState = {
+  const updatedAuction: AuctionState = {
     ...auction,
     passedPlayers: newPassed,
-    activeIndex: nextActiveIndex({ ...auction, passedPlayers: newPassed }, auction.activeIndex),
   };
+  // Find next non-passed bidder
+  updatedAuction.activeIndex = nextActiveIndex(updatedAuction, auction.activeIndex);
 
-  return { ...state, auctionState: newAuction };
+  return { ...state, auctionState: updatedAuction };
 }
 
 function nextActiveIndex(auction: AuctionState, currentIndex: number): number {
