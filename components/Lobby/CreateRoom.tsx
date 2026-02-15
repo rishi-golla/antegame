@@ -40,6 +40,17 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
         <h1 className="setupTitle">Create Room</h1>
         <p className="setupSubtitle">Set up your multiplayer game</p>
 
+        <div className="colorSwatches" style={{ marginBottom: 12 }}>
+          {COLORS.map((c) => (
+            <button
+              key={c}
+              className={`colorSwatch ${color === c ? 'colorSwatchActive' : ''}`}
+              style={{ background: c }}
+              onClick={() => setColor(c)}
+              aria-label={`Select color ${c}`}
+            />
+          ))}
+        </div>
         <div className="setupPlayerRow" style={{ marginBottom: 16 }}>
           <div
             className="setupPlayerColor"

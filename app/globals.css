@@ -2344,3 +2344,512 @@ input {
   cursor: pointer;
 }
 .tradeNotifReject:hover { background: #2a1a1a; }
+
+/* ===== PHASE 5.2: Board Visual Upgrade ===== */
+
+/* Better tile hover with subtle glow */
+.tile:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.05) brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -4px 7px rgba(24, 52, 96, 0.16),
+    0 0 12px rgba(130, 180, 255, 0.25);
+  z-index: 5;
+}
+
+/* Active tile pulsing glow */
+.activeTile {
+  animation: activeTilePulse 1.8s ease-in-out infinite, tileBounce 430ms cubic-bezier(0.25, 0.85, 0.42, 1.2);
+  z-index: 4;
+}
+
+@keyframes activeTilePulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 8px rgba(255, 209, 102, 0.3),
+      0 0 16px rgba(255, 209, 102, 0.15);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 14px rgba(255, 209, 102, 0.5),
+      0 0 28px rgba(255, 209, 102, 0.25);
+  }
+}
+
+/* Tile text truncation */
+.tile span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: block;
+}
+
+.tile-left span,
+.tile-right span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Corner tile distinct styling */
+.tile-corner-go {
+  background: linear-gradient(135deg, #4a7cff 0%, #2d5fe0 50%, #1a4fd0 100%) !important;
+  border-color: #6b9aff !important;
+}
+.tile-corner-go span {
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em;
+}
+.tile-corner-go::after {
+  content: '\2192';
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 1;
+}
+
+.tile-corner-jail {
+  background: linear-gradient(135deg, #3d3d5c 0%, #2a2a44 100%) !important;
+  border-color: #555577 !important;
+}
+.tile-corner-jail::after {
+  content: '';
+  position: absolute;
+  inset: 20%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 3px,
+    rgba(180, 180, 200, 0.35) 3px,
+    rgba(180, 180, 200, 0.35) 5px
+  );
+  border-radius: 4px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.tile-corner-free-parking {
+  background: linear-gradient(135deg, #2d8a4e 0%, #1a6b3a 100%) !important;
+  border-color: #3daa66 !important;
+}
+
+.tile-corner-go-to-jail {
+  background: linear-gradient(135deg, #8a2d2d 0%, #6b1a1a 100%) !important;
+  border-color: #aa3d3d !important;
+}
+.tile-corner-go-to-jail::after {
+  content: '\2190';
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.6);
+  z-index: 1;
+}
+
+/* Better board grid gaps */
+.boardGrid {
+  gap: 1px;
+}
+
+/* ===== PHASE 5.3: Center Area and Controls ===== */
+
+/* Card flip animation for drawn cards */
+.drawnCardOverlay {
+  perspective: 600px;
+}
+
+.drawnCard {
+  animation: cardFlipIn 0.5s var(--ease-out) both;
+  transform-origin: center;
+}
+
+@keyframes cardFlipIn {
+  0% {
+    opacity: 0;
+    transform: rotateY(90deg) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: rotateY(-8deg) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0deg) scale(1);
+  }
+}
+
+/* Turn indicator with player color accent */
+.turnIndicator {
+  border-left: 3px solid var(--player-accent, var(--accent));
+}
+
+.turnName {
+  color: var(--ink);
+}
+
+/* Phase hint styling */
+.rollHint {
+  background: rgba(10, 18, 45, 0.6);
+  padding: 4px 14px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
+
+/* ===== PHASE 5.4: Side Panels ===== */
+
+/* Player list card-style entries */
+.leftPanel li {
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid rgba(130, 170, 255, 0.12);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--ease-out);
+}
+
+.leftPanel li:hover {
+  background: var(--bg-elevated);
+  border-color: rgba(130, 170, 255, 0.25);
+  box-shadow: var(--shadow-md);
+  transform: translateX(3px);
+}
+
+/* Chat message bubbles */
+.bubble {
+  border-radius: 14px 14px 14px 4px;
+  padding: 8px 12px;
+  background: rgba(40, 58, 120, 0.6);
+  border: 1px solid rgba(130, 170, 255, 0.1);
+  box-shadow: none;
+}
+
+.bubble:nth-child(even):not(.systemBubble) {
+  border-radius: 14px 14px 4px 14px;
+  background: rgba(50, 68, 130, 0.5);
+}
+
+/* System messages */
+.systemBubble p {
+  font-style: italic !important;
+  color: var(--muted) !important;
+  font-size: 0.75rem !important;
+}
+
+/* Panel toggle tabs with animated underline */
+.toggleRow {
+  position: relative;
+  gap: 0;
+  border-bottom: 2px solid rgba(130, 170, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+.toggleRow button {
+  background: transparent;
+  border-radius: 0;
+  padding: 8px 14px;
+  color: var(--muted);
+  box-shadow: none;
+  position: relative;
+  transition: color 0.25s var(--ease-out);
+}
+
+.toggleRow button.active {
+  background: transparent;
+  color: #fff;
+}
+
+.toggleRow button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: tabUnderline 0.25s var(--ease-out);
+}
+
+@keyframes tabUnderline {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Better chat spacing */
+.feed {
+  gap: 6px;
+  padding: 8px;
+}
+
+/* ===== PHASE 5.5: Overlays and Modals ===== */
+
+/* Trade notification pulse on new offer */
+.tradeNotification {
+  animation: tradeNotifSlide 0.3s ease-out, tradeNotifPulse 2s ease-in-out 0.3s 3;
+}
+
+@keyframes tradeNotifPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.2); }
+}
+
+/* Property popup color header */
+.popupColorBar {
+  height: 14px;
+  border-radius: 0;
+}
+
+.popupCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.popupCard > *:not(.popupColorBar) {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.popupCard > *:last-child {
+  padding-bottom: 24px;
+}
+
+/* Game over glow effect */
+.gameOverCard {
+  animation: gameOverPop 0.4s var(--ease-bounce), gameOverGlow 3s ease-in-out 0.4s infinite;
+}
+
+@keyframes gameOverGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 40px rgba(255, 220, 100, 0.1),
+      0 0 80px rgba(255, 209, 102, 0.05),
+      var(--shadow-lg);
+  }
+  50% {
+    box-shadow:
+      0 0 60px rgba(255, 220, 100, 0.2),
+      0 0 120px rgba(255, 209, 102, 0.1),
+      var(--shadow-lg);
+  }
+}
+
+/* Smoother ranking cards with stagger */
+.gameOverRank {
+  animation: fadeUp 0.3s var(--ease-out) both;
+  transition: transform 0.2s var(--ease-out);
+}
+
+.gameOverRank:nth-child(1) { animation-delay: 0.2s; }
+.gameOverRank:nth-child(2) { animation-delay: 0.35s; }
+.gameOverRank:nth-child(3) { animation-delay: 0.5s; }
+.gameOverRank:nth-child(4) { animation-delay: 0.65s; }
+.gameOverRank:nth-child(5) { animation-delay: 0.8s; }
+.gameOverRank:nth-child(6) { animation-delay: 0.95s; }
+
+.gameOverRank:hover {
+  transform: translateX(4px);
+}
+
+/* Winner crown pulse */
+.gameOverCrown {
+  animation: crownFloat 2s ease-in-out infinite;
+}
+
+@keyframes crownFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.05); }
+}
+
+/* ===== PHASE 5.6: Setup and Lobby Screens ===== */
+
+/* Main menu title float animation */
+.setupTitle {
+  animation: titleFloat 3s ease-in-out infinite;
+}
+
+@keyframes titleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Color swatches */
+.colorSwatches {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.colorSwatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s var(--ease-out);
+  box-shadow: var(--shadow-sm);
+}
+
+.colorSwatch:hover {
+  transform: scale(1.15);
+  box-shadow: var(--shadow-md);
+}
+
+.colorSwatchActive {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), var(--shadow-md);
+  transform: scale(1.1);
+}
+
+/* Copied toast */
+.lobbyCode {
+  position: relative;
+}
+
+.copiedToast {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--success);
+  color: #0a0a0a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  animation: toastPop 0.3s var(--ease-bounce);
+  pointer-events: none;
+}
+
+@keyframes toastPop {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* Lobby player cards */
+.lobbyPlayer {
+  transition: all 0.2s var(--ease-out);
+  border-radius: var(--radius-md);
+}
+
+.lobbyPlayer:hover {
+  background: rgba(50, 70, 140, 0.45);
+  transform: translateX(3px);
+}
+
+/* ===== PHASE 5.7: Responsive and Micro-interactions ===== */
+
+/* Board scales on smaller screens */
+@media (max-width: 900px) {
+  .gameScreen {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .leftPanel, .rightPanel {
+    width: 100%;
+    flex: none;
+    height: auto;
+    max-height: 30vh;
+  }
+  .boardWrap {
+    height: auto;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .boardGrid {
+    border-width: 3px;
+    border-radius: 8px;
+  }
+  .tile {
+    border-width: 2px;
+    border-radius: 6px;
+    padding: 2px;
+  }
+  .tile span {
+    font-size: 0.45rem !important;
+  }
+  .tile-corner span {
+    font-size: 0.55rem !important;
+  }
+  .token {
+    width: 14px;
+    height: 14px;
+    font-size: 0.4rem;
+  }
+  .setupCard, .lobbyCard {
+    padding: 16px;
+  }
+  .setupTitle {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .boardGrid {
+    border-width: 2px;
+    padding: 1px;
+  }
+}
+
+/* Money change transitions */
+.playerMoney {
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.moneyGain {
+  color: var(--success) !important;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+.moneyLoss {
+  color: var(--danger) !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+}
+
+/* Consistent button press feedback */
+button {
+  transition: transform 0.1s var(--ease-out), box-shadow 0.1s var(--ease-out), filter 0.1s;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Loading/connecting spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(130, 170, 255, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 20px auto;
+}
+
+/* Smooth transitions for common interactive elements */
+.setupCountBtn,
+.setupStartBtn,
+.lobbyBackBtn,
+.popupClose,
+.popupActionBtn,
+.jailBtn,
+.tradeBtn {
+  transition: transform 0.1s var(--ease-out), box-shadow 0.15s var(--ease-out), filter 0.15s, background 0.15s ease;
+}
