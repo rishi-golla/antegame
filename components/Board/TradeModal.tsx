@@ -39,8 +39,8 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
   const hasContent = offerProps.length > 0 || requestProps.length > 0 || offerMoney > 0 || requestMoney > 0;
 
   return (
-    <div className="tradeOverlay" onClick={onClose}>
-      <div className="tradeCard" onClick={(e) => e.stopPropagation()}>
+    <div className="tradeOverlay casinoBackdrop" onClick={onClose}>
+      <div className="tradeCard pokerFelt" onClick={(e) => e.stopPropagation()}>
         <h2 className="tradeTitle">Propose Trade</h2>
         <div className="tradeColumns">
           <div className="tradeColumn">
@@ -121,8 +121,8 @@ export function TradeOfferView() {
   const to = state.players[offer.toPlayer];
 
   return (
-    <div className="tradeOverlay">
-      <div className="tradeCard tradeOfferCard">
+    <div className="tradeOverlay casinoBackdrop">
+      <div className="tradeCard pokerFelt tradeOfferCard">
         <h2 className="tradeTitle">Trade Offer</h2>
         <p className="tradeFromTo">
           <span style={{ color: from.color }}>{from.name}</span> offers to{' '}
