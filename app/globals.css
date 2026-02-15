@@ -283,7 +283,7 @@ input {
   position: absolute;
   inset: 0;
   border-radius: 14px;
-  background: rgba(4, 7, 20, 0.48);
+  background: rgba(0, 0, 0, 0.5);
   pointer-events: none;
   z-index: 10;
 }
@@ -320,8 +320,8 @@ input {
   justify-content: center;
   overflow: hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -4px 7px rgba(24, 52, 96, 0.16);
+    inset 0 1px 0 rgba(212, 175, 55, 0.1),
+    inset 0 -4px 7px rgba(0, 15, 0, 0.2);
   width: 100%;
   height: 100%;
   transition: transform 140ms ease, filter 140ms ease;
@@ -349,7 +349,10 @@ input {
   position: absolute;
   z-index: 1;
   background: var(--strip-color);
-  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.25);
+  box-shadow:
+    inset 0 -1px 2px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  border: 1px solid rgba(212, 175, 55, 0.25);
 }
 .tile-strip-bottom {
   top: 0; left: 0; right: 0; height: 28%;
@@ -376,9 +379,10 @@ input {
   letter-spacing: 0.045em;
   font-family: 'Cinzel', serif;
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   text-align: center;
   line-height: 1.1;
+  color: var(--ink);
 }
 
 .tile-corner {
@@ -455,6 +459,18 @@ input {
     0 3px 6px rgba(0, 0, 0, 0.35);
   transition: transform 0.15s var(--ease-out);
 }
+
+.token.casinoChip {
+  border: 2px dashed rgba(255, 255, 255, 0.8);
+  outline: 1px solid rgba(255, 255, 255, 0.3);
+  outline-offset: -4px;
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 6px rgba(212, 175, 55, 0.2);
+}
+
 .token:hover {
   transform: scale(1.2);
 }
@@ -649,7 +665,7 @@ input {
   width: min(300px, 62vw);
   height: 40px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(13, 24, 45, 0.46), rgba(13, 24, 45, 0.08) 70%, transparent);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.1) 70%, transparent);
   transform: translateY(60px) scale(0.72);
 }
 
@@ -2397,15 +2413,15 @@ input {
 @keyframes activeTilePulse {
   0%, 100% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 0 8px rgba(255, 209, 102, 0.3),
-      0 0 16px rgba(255, 209, 102, 0.15);
+      inset 0 1px 0 rgba(212, 175, 55, 0.15),
+      0 0 8px rgba(212, 175, 55, 0.35),
+      0 0 16px rgba(212, 175, 55, 0.15);
   }
   50% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 0 14px rgba(255, 209, 102, 0.5),
-      0 0 28px rgba(255, 209, 102, 0.25);
+      inset 0 1px 0 rgba(212, 175, 55, 0.15),
+      0 0 14px rgba(212, 175, 55, 0.55),
+      0 0 28px rgba(212, 175, 55, 0.3);
   }
 }
 
