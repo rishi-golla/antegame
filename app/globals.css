@@ -183,6 +183,9 @@ input {
   margin: 4px 0 14px;
   font-family: 'Cinzel', serif;
   font-size: 1.45rem;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  letter-spacing: 0.04em;
 }
 
 .leftPanel ul {
@@ -223,10 +226,12 @@ input {
   place-items: center;
   color: #fff;
   font-weight: 800;
+  border: 2px dashed rgba(255, 255, 255, 0.6);
   box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-    0 4px 9px rgba(20, 40, 72, 0.25);
+    inset 0 2px 3px rgba(255, 255, 255, 0.25),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 9px rgba(0, 0, 0, 0.35),
+    0 0 6px rgba(212, 175, 55, 0.15);
 }
 
 .leftPanel p {
@@ -770,10 +775,18 @@ input {
   flex: 1;
   min-height: 0;
   border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.2);
   padding: 10px;
   margin-top: 8px;
-  background: rgba(26, 15, 20, 0.6);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 20, 0, 0.08),
+      rgba(0, 20, 0, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    rgba(15, 8, 10, 0.7);
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -820,12 +833,17 @@ input {
 
 .inputRow input {
   border-radius: 10px;
-  border: 1px solid rgba(212, 175, 55, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   padding: 10px 12px;
-  background: rgba(20, 10, 15, 0.9);
+  background: rgba(10, 5, 8, 0.9);
   color: var(--ink);
-  box-shadow: inset 0 2px 6px rgba(7, 15, 40, 0.38);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
   outline: none;
+}
+
+.inputRow input:focus {
+  border-color: var(--gold);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 8px rgba(212, 175, 55, 0.2);
 }
 
 @keyframes boardJiggle {
@@ -1168,29 +1186,39 @@ input {
 .propCount {
   font-size: 0.72rem;
   color: var(--muted);
-  background: rgba(255,255,255,0.06);
+  background: rgba(212, 175, 55, 0.08);
   padding: 1px 6px;
   border-radius: 4px;
+  border: 1px solid rgba(212, 175, 55, 0.1);
 }
 
 .jailBadge {
   font-size: 0.65rem;
-  color: #0a0a0a;
+  color: #fff;
   font-weight: 800;
   text-transform: uppercase;
-  background: #ff9b6b;
-  padding: 1px 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #333,
+    #333 3px,
+    #666 3px,
+    #666 6px
+  );
+  padding: 2px 8px;
   border-radius: 4px;
+  letter-spacing: 0.05em;
 }
 
 .bankruptBadge {
   font-size: 0.65rem;
-  color: #0a0a0a;
+  color: #fff;
   font-weight: 800;
   text-transform: uppercase;
-  background: var(--danger);
-  padding: 1px 8px;
+  background: var(--neon-red);
+  padding: 2px 8px;
   border-radius: 4px;
+  text-shadow: 0 0 6px rgba(255, 23, 68, 0.5);
+  letter-spacing: 0.05em;
 }
 
 /* ===== SETUP SCREEN ===== */
@@ -1717,9 +1745,12 @@ input {
 
 .playerMoney {
   margin: 2px 0 0;
-  color: #ffd166 !important;
+  color: var(--gold-bright) !important;
   font-weight: 800;
   font-size: 0.9rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
 }
 
 .playerMeta {
@@ -2301,18 +2332,21 @@ input {
 .tradeBtn {
   margin-top: 4px;
   padding: 4px 12px;
-  border: 1px solid var(--gold);
+  border: 1px solid rgba(212, 175, 55, 0.5);
   border-radius: 6px;
   background: transparent;
   color: var(--gold);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.03em;
 }
 .tradeBtn:hover {
   background: var(--gold);
   color: #0a0a0a;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
 }
 
 /* Trade Notification Card (in-panel) */
@@ -2600,7 +2634,7 @@ input {
 .toggleRow {
   position: relative;
   gap: 0;
-  border-bottom: 2px solid rgba(212, 175, 55, 0.1);
+  border-bottom: 2px solid rgba(212, 175, 55, 0.15);
   margin-bottom: 4px;
 }
 
@@ -2616,7 +2650,7 @@ input {
 
 .toggleRow button.active {
   background: transparent;
-  color: #fff;
+  color: var(--gold);
 }
 
 .toggleRow button.active::after {
