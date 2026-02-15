@@ -1,4 +1,5 @@
-import type { Player } from '@/types/game';
+import type { Player, Tile as TileType } from '@/types/game';
+import { TILES } from '@/lib/gameData';
 
 interface BoardTile {
   index: number;
@@ -18,12 +19,38 @@ interface TileProps {
   onTileClick?: (tileIndex: number) => void;
 }
 
+const GROUP_COLORS: Record<string, string> = {
+  brown: 'var(--group-brown)',
+  'light-blue': 'var(--group-light-blue)',
+  pink: 'var(--group-pink)',
+  orange: 'var(--group-orange)',
+  red: 'var(--group-red)',
+  yellow: 'var(--group-yellow)',
+  green: 'var(--group-green)',
+  'dark-blue': 'var(--group-dark-blue)',
+};
+
+const CORNER_ICONS: Record<string, string> = {
+  go: 'GO',
+  jail: 'JAIL',
+  'free-parking': 'FREE',
+  'go-to-jail': 'GO TO JAIL',
+};
+
 export default function Tile({ tile, activeTile, players, onTileClick }: TileProps) {
-  // tile.index maps directly to game position (0-39)
   const tokensOnTile = players.filter((p) => !p.bankrupt && p.position === tile.index);
   const owner = players.find((p) => !p.bankrupt && p.properties.includes(tile.index));
   const isMortgaged = owner?.mortgaged.includes(tile.index);
   const houses = owner?.houses[tile.index] || 0;
+  const tileData = TILES[tile.index];
+  const groupColor = tileData.type === 'property' ? GROUP_COLORS[tileData.colorGroup] : null;
+  const isCornerTile = tileData.type === 'corner';
+  const cornerLabel = isCornerTile ? CORNER_ICONS[tileData.cornerKind] : null;
+
+  // Determine color strip position based on tile orientation
+  const stripClass = groupColor
+    ? `tile-strip tile-strip-${tile.orientation}`
+    : '';
 
   return (
     <div
@@ -35,9 +62,17 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
       title={tile.label}
       onClick={() => onTileClick?.(tile.index)}
     >
+      {groupColor && (
+        <div
+          className={stripClass}
+          style={{ '--strip-color': groupColor } as React.CSSProperties}
+        />
+      )}
+
       {owner && (
         <div className="tileOwnerDot" style={{ background: owner.color }} />
       )}
+
       {houses > 0 && (
         <div className="tileHouses">
           {houses === 5 ? (
@@ -49,7 +84,9 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
           )}
         </div>
       )}
-      <span>{tile.label}</span>
+
+      <span>{cornerLabel ?? tile.label}</span>
+
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">
           {tokensOnTile.map((player) => (
