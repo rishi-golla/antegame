@@ -2668,3 +2668,82 @@ input {
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-4px) scale(1.05); }
 }
+
+/* ===== PHASE 5.6: Setup and Lobby Screens ===== */
+
+/* Main menu title float animation */
+.setupTitle {
+  animation: titleFloat 3s ease-in-out infinite;
+}
+
+@keyframes titleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Color swatches */
+.colorSwatches {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.colorSwatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s var(--ease-out);
+  box-shadow: var(--shadow-sm);
+}
+
+.colorSwatch:hover {
+  transform: scale(1.15);
+  box-shadow: var(--shadow-md);
+}
+
+.colorSwatchActive {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), var(--shadow-md);
+  transform: scale(1.1);
+}
+
+/* Copied toast */
+.lobbyCode {
+  position: relative;
+}
+
+.copiedToast {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--success);
+  color: #0a0a0a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  animation: toastPop 0.3s var(--ease-bounce);
+  pointer-events: none;
+}
+
+@keyframes toastPop {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* Lobby player cards */
+.lobbyPlayer {
+  transition: all 0.2s var(--ease-out);
+  border-radius: var(--radius-md);
+}
+
+.lobbyPlayer:hover {
+  background: rgba(50, 70, 140, 0.45);
+  transform: translateX(3px);
+}

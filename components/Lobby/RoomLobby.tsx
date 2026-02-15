@@ -11,6 +11,7 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
   const { roomState, toggleReady, startGame, leaveRoom, sendChat, chatMessages } = useSocket();
   const [chatInput, setChatInput] = useState('');
   const [startError, setStartError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   if (!roomState) return null;
 
@@ -34,6 +35,8 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(roomState.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -43,6 +46,7 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
           <h1 className="setupTitle">Room Lobby</h1>
           <div className="lobbyCode" onClick={handleCopyCode} title="Click to copy">
             {roomState.code}
+            {copied && <span className="copiedToast">Copied!</span>}
           </div>
           <p className="setupSubtitle">Share this code with friends</p>
         </div>
