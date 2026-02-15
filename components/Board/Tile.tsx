@@ -31,10 +31,10 @@ const GROUP_COLORS: Record<string, string> = {
 };
 
 const CORNER_ICONS: Record<string, string> = {
-  go: 'GO',
-  jail: 'JAIL',
-  'free-parking': 'FREE',
-  'go-to-jail': 'GO TO JAIL',
+  go: 'GO \u2192',
+  jail: '\u2687 JAIL',
+  'free-parking': '\u2B22 FREE',
+  'go-to-jail': '\u2190 JAIL',
 };
 
 export default function Tile({ tile, activeTile, players, onTileClick }: TileProps) {
@@ -91,7 +91,7 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">
           {tokensOnTile.map((player) => (
-            <div key={player.id} className="token" style={{ background: player.color }}>
+            <div key={player.id} className="token casinoChip" style={{ background: player.color }}>
               {player.name[0]}
             </div>
           ))}
