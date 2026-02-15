@@ -17,6 +17,7 @@ interface TileProps {
   tile: BoardTile;
   activeTile: number;
   players: Player[];
+  currentPlayerIndex?: number;
   onTileClick?: (tileIndex: number) => void;
 }
 
@@ -38,7 +39,7 @@ const CORNER_ICONS: Record<string, string> = {
   'go-to-jail': '\u2190 JAIL',
 };
 
-export default function Tile({ tile, activeTile, players, onTileClick }: TileProps) {
+export default function Tile({ tile, activeTile, players, currentPlayerIndex, onTileClick }: TileProps) {
   const tokensOnTile = players.filter((p) => !p.bankrupt && p.position === tile.index);
   const owner = players.find((p) => !p.bankrupt && p.properties.includes(tile.index));
   const isMortgaged = owner?.mortgaged.includes(tile.index);
@@ -101,20 +102,23 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
 
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">
-          {tokensOnTile.map((player) => (
-            <div key={player.id} className="token casinoChip" style={{ background: player.color }}>
-              {player.sprite ? (
-                <img
-                  src={player.sprite}
-                  alt={player.name}
-                  className="tokenSprite"
-                  draggable={false}
-                />
-              ) : (
-                player.name[0]
-              )}
-            </div>
-          ))}
+          {tokensOnTile.map((player) => {
+            const isActive = currentPlayerIndex !== undefined && player.id === currentPlayerIndex;
+            return (
+              <div key={player.id} className={`token ${player.sprite ? 'spriteToken' : 'casinoChip'} ${isActive ? 'activePlayer' : ''}`} style={{ background: player.sprite ? undefined : player.color }}>
+                {player.sprite ? (
+                  <img
+                    src={player.sprite}
+                    alt={player.name}
+                    className="tokenSprite"
+                    draggable={false}
+                  />
+                ) : (
+                  player.name[0]
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
