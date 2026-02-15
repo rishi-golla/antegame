@@ -18,10 +18,12 @@ export default function PropertyPopup({ tileIndex, onClose }: PropertyPopupProps
   const houses = owner?.houses[tileIndex] || 0;
 
   return (
-    <div className="popupOverlay" onClick={onClose}>
-      <div className="popupCard" onClick={(e) => e.stopPropagation()}>
+    <div className="popupOverlay casinoBackdrop" onClick={onClose}>
+      <div className="popupCard deedCard" onClick={(e) => e.stopPropagation()}>
         {tile.type === 'property' && (
-          <div className="popupColorBar" style={{ background: getGroupColor(tile.colorGroup) }} />
+          <div className="popupColorBar popupColorHeader" style={{ background: getGroupColor(tile.colorGroup) }}>
+            <span className="popupColorLabel">{tile.colorGroup.replace('-', ' ')}</span>
+          </div>
         )}
 
         <h3 className="popupTitle">{tile.name}</h3>

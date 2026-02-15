@@ -1516,6 +1516,8 @@ input {
   font-family: 'Cinzel', serif;
   font-size: 1.2rem;
   margin: 16px 0 8px;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
 }
 
 .popupPrice {
@@ -1538,11 +1540,13 @@ input {
   font-weight: 700;
   padding: 4px 8px;
   border-radius: 6px;
-  background: rgba(42, 15, 31, 0.35);
+  background: rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.08);
 }
 
 .popupRentRow span:last-child {
-  color: #ffd166;
+  color: var(--gold-bright);
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
 }
 
 .popupOwner {
@@ -1584,17 +1588,20 @@ input {
 
 .popupClose {
   width: 100%;
-  border: none;
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 10px;
   padding: 10px;
   font-weight: 800;
-  color: #fff;
+  color: var(--gold);
   cursor: pointer;
-  background: linear-gradient(180deg, rgba(212, 175, 55, 0.3), rgba(139, 115, 32, 0.4));
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.1), rgba(139, 115, 32, 0.15));
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.03em;
 }
 
 .popupClose:hover {
-  background: linear-gradient(180deg, rgba(212, 175, 55, 0.5), rgba(139, 115, 32, 0.6));
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.2), rgba(139, 115, 32, 0.3));
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
 }
 
 /* ===== MONEY FLOAT ===== */
@@ -1961,7 +1968,7 @@ input {
   gap: 6px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #333;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
 }
 .popupActionBtn {
   flex: 1 1 auto;
@@ -2692,6 +2699,7 @@ input {
 .popupColorBar {
   height: 14px;
   border-radius: 0;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
 }
 
 .popupCard {
@@ -2938,4 +2946,182 @@ button:active:not(:disabled) {
 .jailBtn,
 .tradeBtn {
   transition: transform 0.1s var(--ease-out), box-shadow 0.15s var(--ease-out), filter 0.15s, background 0.15s ease;
+}
+
+/* ===== PHASE 5: Casino Overlays and Modals ===== */
+
+/* Smoky casino backdrop with light rays */
+.casinoBackdrop {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 100%, rgba(212, 175, 55, 0.06) 0%, transparent 50%),
+    rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* Ornate gold-bordered deed card */
+.deedCard {
+  border: 3px solid var(--gold) !important;
+  box-shadow:
+    0 0 0 1px rgba(139, 115, 32, 0.6),
+    0 0 0 4px rgba(212, 175, 55, 0.15),
+    0 0 40px rgba(212, 175, 55, 0.15),
+    var(--shadow-lg) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(35, 18, 25, 0.98) 0%,
+    rgba(25, 12, 18, 0.98) 100%
+  ) !important;
+}
+
+.deedCard::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Property popup color group header */
+.popupColorHeader {
+  height: 36px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.5) !important;
+}
+
+.popupColorLabel {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Trade modal poker felt */
+.pokerFelt {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 40, 0, 0.08) 2px,
+      rgba(0, 40, 0, 0.08) 4px
+    ),
+    linear-gradient(180deg, #1a2e1a 0%, #0f1f0f 50%, #0a170a 100%) !important;
+  border: 2px solid var(--gold) !important;
+  box-shadow:
+    inset 0 0 30px rgba(0, 20, 0, 0.4),
+    0 0 0 1px rgba(139, 115, 32, 0.5),
+    0 0 40px rgba(212, 175, 55, 0.12),
+    var(--shadow-lg) !important;
+}
+
+.pokerFelt .tradeTitle {
+  font-family: 'Cinzel', serif;
+  color: var(--gold-bright) !important;
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+}
+
+.pokerFelt .tradeDivider {
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.pokerFelt .tradePropose,
+.pokerFelt .tradeAccept {
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim)) !important;
+  color: #0a0a0a !important;
+  font-family: 'Cinzel', serif;
+  border: 1px solid var(--gold-bright) !important;
+}
+
+/* Game over jackpot celebration */
+.jackpotOverlay {
+  overflow: hidden;
+}
+
+.jackpotCard {
+  border: 3px solid var(--gold-bright) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.jackpotCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.08), transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.jackpotLights {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 215, 0, 0.15) 20deg,
+    transparent 40deg,
+    transparent 90deg,
+    rgba(255, 215, 0, 0.1) 110deg,
+    transparent 130deg,
+    transparent 180deg,
+    rgba(255, 215, 0, 0.12) 200deg,
+    transparent 220deg,
+    transparent 270deg,
+    rgba(255, 215, 0, 0.08) 290deg,
+    transparent 310deg
+  );
+  animation: jackpotSpin 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes jackpotSpin {
+  to { transform: rotate(360deg); }
+}
+
+.jackpotLabel {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  text-shadow:
+    0 0 10px rgba(255, 215, 0, 0.5),
+    0 0 20px rgba(255, 215, 0, 0.3);
+  animation: jackpotFlash 1.5s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes jackpotFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.jackpotWinner {
+  font-size: 2.2rem !important;
+  animation: jackpotReveal 0.8s var(--ease-bounce) both;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes jackpotReveal {
+  0% { transform: scale(0.3) rotateX(90deg); opacity: 0; }
+  60% { transform: scale(1.1) rotateX(-5deg); opacity: 1; }
+  100% { transform: scale(1) rotateX(0); opacity: 1; }
 }
