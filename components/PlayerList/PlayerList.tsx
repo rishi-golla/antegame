@@ -37,8 +37,12 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
               key={player.id}
               className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''}`}
             >
-              <div className="avatar" style={{ background: player.color }}>
-                {player.name[0]}
+              <div className={`avatar ${player.sprite ? 'spriteAvatar' : ''}`} style={{ background: player.color }}>
+                {player.sprite ? (
+                  <img src={player.sprite} alt={player.name} className="avatarSprite" draggable={false} />
+                ) : (
+                  player.name[0]
+                )}
               </div>
               <div className="playerInfo">
                 <strong>{player.name}</strong>

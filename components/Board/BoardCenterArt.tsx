@@ -93,10 +93,22 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
   return (
     <div className="boardCenterArt">
+      {/* Casino crest */}
+      <img
+        src="/assets/misc/casino-crest.webp"
+        alt="Casino Crest"
+        className="casinoCrestImg"
+        draggable={false}
+      />
+
       {/* Turn indicator */}
       <div className="turnIndicator" style={{ '--player-accent': player.color } as React.CSSProperties}>
-        <div className="turnAvatar" style={{ background: player.color }}>
-          {player.name[0]}
+        <div className="turnAvatar" style={{ background: player.color, overflow: 'hidden' }}>
+          {player.sprite ? (
+            <img src={player.sprite} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as const }} draggable={false} />
+          ) : (
+            player.name[0]
+          )}
         </div>
         <span className="turnName">{player.name}</span>
         {state.dice[0] + state.dice[1] > 0 && !isRolling && (
