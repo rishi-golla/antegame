@@ -106,6 +106,8 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('menu');
   const [localPlayerNames, setLocalPlayerNames] = useState<string[]>([]);
+  const [localPlayerSprites, setLocalPlayerSprites] = useState<string[]>([]);
+  const [localPlayerColors, setLocalPlayerColors] = useState<string[]>([]);
 
   switch (screen) {
     case 'menu':
@@ -114,8 +116,10 @@ export default function Home() {
     case 'local-setup':
       return (
         <GameSetup
-          onStart={(names) => {
+          onStart={(names, sprites, colors) => {
             setLocalPlayerNames(names);
+            setLocalPlayerSprites(sprites);
+            setLocalPlayerColors(colors);
             setScreen('local-game');
           }}
         />
@@ -123,7 +127,7 @@ export default function Home() {
 
     case 'local-game':
       return (
-        <GameProvider playerNames={localPlayerNames}>
+        <GameProvider playerNames={localPlayerNames} playerSprites={localPlayerSprites} playerColors={localPlayerColors}>
           <LocalGameScreen onPlayAgain={() => setScreen('menu')} />
         </GameProvider>
       );
