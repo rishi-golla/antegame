@@ -54,7 +54,8 @@ export default function Tile({ tile, activeTile, players, onTileClick }: TilePro
 
   return (
     <div
-      className={`tile tile-${tile.index % 4} tile-${tile.orientation} ${tile.isCorner ? 'tile-corner' : ''} ${activeTile === tile.index ? 'activeTile' : ''} ${isMortgaged ? 'tile-mortgaged' : ''}`}
+      className={`tile tile-${tile.index % 4} tile-${tile.orientation} ${tile.isCorner ? 'tile-corner' : ''} ${activeTile === tile.index ? 'activeTile' : ''} ${isMortgaged ? 'tile-mortgaged' : ''} ${isCornerTile ? `tile-corner-${tileData.cornerKind}` : ''}`}
+      data-tile-index={tile.index}
       style={{
         gridRow: `${tile.row} / span ${tile.rowSpan}`,
         gridColumn: `${tile.col} / span ${tile.colSpan}`,
