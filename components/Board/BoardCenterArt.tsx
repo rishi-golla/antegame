@@ -94,7 +94,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   return (
     <div className="boardCenterArt">
       {/* Turn indicator */}
-      <div className="turnIndicator">
+      <div className="turnIndicator" style={{ '--player-accent': player.color } as React.CSSProperties}>
         <div className="turnAvatar" style={{ background: player.color }}>
           {player.name[0]}
         </div>

@@ -2459,3 +2459,47 @@ input {
 .boardGrid {
   gap: 1px;
 }
+
+/* ===== PHASE 5.3: Center Area and Controls ===== */
+
+/* Card flip animation for drawn cards */
+.drawnCardOverlay {
+  perspective: 600px;
+}
+
+.drawnCard {
+  animation: cardFlipIn 0.5s var(--ease-out) both;
+  transform-origin: center;
+}
+
+@keyframes cardFlipIn {
+  0% {
+    opacity: 0;
+    transform: rotateY(90deg) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: rotateY(-8deg) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0deg) scale(1);
+  }
+}
+
+/* Turn indicator with player color accent */
+.turnIndicator {
+  border-left: 3px solid var(--player-accent, var(--accent));
+}
+
+.turnName {
+  color: var(--ink);
+}
+
+/* Phase hint styling */
+.rollHint {
+  background: rgba(10, 18, 45, 0.6);
+  padding: 4px 14px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
