@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useSocket } from '@/context/SocketContext';
-
-const COLORS = ['#ff6b6b', '#5cd6c0', '#ffd166', '#8fb8ff', '#c084fc', '#fb923c'];
+import { CHARACTERS } from '@/lib/assetMap';
 
 interface CreateRoomProps {
   onCreated: () => void;
@@ -13,10 +12,12 @@ interface CreateRoomProps {
 export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   const { createRoom } = useSocket();
   const [name, setName] = useState('');
-  const [color, setColor] = useState(COLORS[0]);
+  const [selectedChar, setSelectedChar] = useState(CHARACTERS[0].id);
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -25,7 +26,7 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
     }
     setLoading(true);
     setError('');
-    const result = await createRoom(name.trim(), color, maxPlayers);
+    const result = await createRoom(name.trim(), char.color, maxPlayers);
     setLoading(false);
     if (result.ok) {
       onCreated();
@@ -37,30 +38,19 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   return (
     <div className="setupScreen">
       <div className="setupCard">
-        <h1 className="setupTitle">Create Room</h1>
-        <p className="setupSubtitle">Set up your multiplayer game</p>
+        <h1 className="setupTitle marqueeTitle">Create Room</h1>
+        <p className="setupSubtitle casinoSubtitle">Pick your character</p>
 
-        <div className="colorSwatches" style={{ marginBottom: 12 }}>
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              className={`colorSwatch ${color === c ? 'colorSwatchActive' : ''}`}
-              style={{ background: c }}
-              onClick={() => setColor(c)}
-              aria-label={`Select color ${c}`}
-            />
-          ))}
-        </div>
         <div className="setupPlayerRow" style={{ marginBottom: 16 }}>
           <div
-            className="setupPlayerColor"
-            style={{ background: color, cursor: 'pointer' }}
-            onClick={() => {
-              const idx = COLORS.indexOf(color);
-              setColor(COLORS[(idx + 1) % COLORS.length]);
-            }}
+            className="setupPlayerColor casinoChipSelector"
+            style={{ background: char.color, overflow: 'hidden' }}
           >
-            {(name[0] || '?').toUpperCase()}
+            <img
+              src={char.sprite}
+              alt={char.name}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as const }}
+            />
           </div>
           <input
             className="setupPlayerInput"
@@ -69,6 +59,19 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
             onChange={(e) => setName(e.target.value)}
             maxLength={16}
           />
+        </div>
+
+        <div className="characterGrid">
+          {CHARACTERS.map((c) => (
+            <div
+              key={c.id}
+              className={`characterCard ${selectedChar === c.id ? 'characterCardSelected' : ''}`}
+              onClick={() => setSelectedChar(c.id)}
+            >
+              <img src={c.sprite} alt={c.name} className="characterCardSprite" draggable={false} />
+              <span className="characterCardName">{c.name}</span>
+            </div>
+          ))}
         </div>
 
         <div className="setupPlayerCount">
