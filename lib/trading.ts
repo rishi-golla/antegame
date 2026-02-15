@@ -1,4 +1,5 @@
 import type { GameState, TradeOffer } from '@/types/game';
+import { COLOR_GROUPS } from './gameData';
 
 export function proposeTrade(state: GameState, offer: TradeOffer): GameState {
   const from = state.players[offer.fromPlayer];
@@ -9,12 +10,19 @@ export function proposeTrade(state: GameState, offer: TradeOffer): GameState {
     if (!from.properties.includes(idx)) {
       throw new Error('Proposer does not own offered property');
     }
+    // Cannot trade properties that have houses in their color group
+    if (hasHousesInGroup(state, offer.fromPlayer, idx)) {
+      throw new Error('Must sell all houses in color group before trading');
+    }
   }
 
   // Validate requested properties
   for (const idx of offer.requestProperties) {
     if (!to.properties.includes(idx)) {
       throw new Error('Recipient does not own requested property');
+    }
+    if (hasHousesInGroup(state, offer.toPlayer, idx)) {
+      throw new Error('Recipient must sell all houses in color group before trading');
     }
   }
 
@@ -26,10 +34,9 @@ export function proposeTrade(state: GameState, offer: TradeOffer): GameState {
     throw new Error('Recipient cannot afford requested money');
   }
 
+  // Non-blocking: don't change phase, just store the offer
   return {
     ...state,
-    previousPhase: state.phase,
-    phase: 'trading',
     activeTradeOffer: offer,
   };
 }
@@ -50,6 +57,11 @@ export function acceptTrade(state: GameState): GameState {
           ...p.properties.filter((idx) => !offer.offerProperties.includes(idx)),
           ...offer.requestProperties,
         ],
+        // Transfer mortgage status: remove mortgages on properties given away, add mortgages from received properties
+        mortgaged: [
+          ...p.mortgaged.filter((idx) => !offer.offerProperties.includes(idx)),
+          ...offer.requestProperties.filter((idx) => state.players[toIdx].mortgaged.includes(idx)),
+        ],
       };
     }
     if (i === toIdx) {
@@ -59,6 +71,10 @@ export function acceptTrade(state: GameState): GameState {
         properties: [
           ...p.properties.filter((idx) => !offer.requestProperties.includes(idx)),
           ...offer.offerProperties,
+        ],
+        mortgaged: [
+          ...p.mortgaged.filter((idx) => !offer.requestProperties.includes(idx)),
+          ...offer.offerProperties.filter((idx) => state.players[fromIdx].mortgaged.includes(idx)),
         ],
       };
     }
@@ -80,17 +96,21 @@ export function acceptTrade(state: GameState): GameState {
     ...state,
     players: newPlayers,
     tiles: newTiles,
-    phase: state.previousPhase ?? 'turn-end',
     activeTradeOffer: null,
-    previousPhase: null,
   };
 }
 
 export function rejectTrade(state: GameState): GameState {
   return {
     ...state,
-    phase: state.previousPhase ?? 'turn-end',
     activeTradeOffer: null,
-    previousPhase: null,
   };
+}
+
+function hasHousesInGroup(state: GameState, playerIndex: number, tileIndex: number): boolean {
+  const tile = state.tiles[tileIndex];
+  if (tile.type !== 'property') return false;
+  const group = COLOR_GROUPS[tile.colorGroup as keyof typeof COLOR_GROUPS];
+  if (!group) return false;
+  return group.some((idx) => (state.players[playerIndex].houses[idx] || 0) > 0);
 }

@@ -29,9 +29,9 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
           const worth = getNetWorth(state, player.id);
           const canTrade = player.id !== state.currentPlayerIndex &&
             !player.bankrupt &&
+            !state.activeTradeOffer &&
             state.phase !== 'game-over' &&
-            state.phase !== 'auction' &&
-            state.phase !== 'trading';
+            state.phase !== 'auction';
 
           return (
             <li
