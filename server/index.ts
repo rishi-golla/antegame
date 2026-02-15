@@ -6,7 +6,6 @@ import { RoomManager } from './roomManager';
 import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager';
 import { declareBankruptcy } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
-import { placeBid, passAuction } from '@/lib/auction';
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import type {
   ClientToServerEvents,
@@ -304,42 +303,6 @@ nextApp.prepare().then(() => {
     socket.on('game:sell-house', (data) => propertyActionHandler('sell-house', data));
     socket.on('game:mortgage', (data) => propertyActionHandler('mortgage', data));
     socket.on('game:unmortgage', (data) => propertyActionHandler('unmortgage', data));
-
-    // Auction actions
-    socket.on('game:bid', (data) => {
-      const code = rm.findRoomBySocket(socket.id);
-      if (!code) return;
-      const room = rm.getRoom(code);
-      if (!room?.gameState) return;
-      const player = room.players.find((p) => p.id === socket.id);
-      if (!player) return;
-      try {
-        room.gameState = placeBid(room.gameState, player.playerIndex, data.amount);
-        room.lastActivity = Date.now();
-        broadcastGameState(code);
-      } catch (e: any) {
-        socket.emit('room:error', e.message ?? 'Bid failed');
-      }
-    });
-
-    socket.on('game:pass-auction', () => {
-      const code = rm.findRoomBySocket(socket.id);
-      if (!code) return;
-      const room = rm.getRoom(code);
-      if (!room?.gameState) return;
-      const player = room.players.find((p) => p.id === socket.id);
-      if (!player) return;
-      try {
-        room.gameState = passAuction(room.gameState, player.playerIndex);
-        room.lastActivity = Date.now();
-        broadcastGameState(code);
-        if (room.gameState.phase !== 'auction') {
-          broadcastRoomState(code);
-        }
-      } catch (e: any) {
-        socket.emit('room:error', e.message ?? 'Pass failed');
-      }
-    });
 
     // Trade actions
     socket.on('game:propose-trade', (data) => {

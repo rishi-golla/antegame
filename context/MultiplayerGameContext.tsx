@@ -19,14 +19,12 @@ type GameAction =
   | { type: 'SELL_HOUSE'; tileIndex: number }
   | { type: 'MORTGAGE'; tileIndex: number }
   | { type: 'UNMORTGAGE'; tileIndex: number }
-  | { type: 'BID'; amount: number }
-  | { type: 'PASS_AUCTION' }
   | { type: 'PROPOSE_TRADE'; offer: import('@/types/game').TradeOffer }
   | { type: 'ACCEPT_TRADE' }
   | { type: 'REJECT_TRADE' };
 
 export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
-  const { gameState, sendGameAction, sendPropertyAction, sendAuctionAction, sendTradeAction } = useSocket();
+  const { gameState, sendGameAction, sendPropertyAction, sendTradeAction } = useSocket();
 
   if (!gameState) {
     return null;
@@ -72,12 +70,6 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         break;
       case 'UNMORTGAGE':
         sendPropertyAction('unmortgage', action.tileIndex);
-        break;
-      case 'BID':
-        sendAuctionAction('bid', { amount: action.amount });
-        break;
-      case 'PASS_AUCTION':
-        sendAuctionAction('pass');
         break;
       case 'PROPOSE_TRADE':
         sendTradeAction('propose', { offer: action.offer });

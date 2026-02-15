@@ -30,8 +30,7 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
           const canTrade = player.id !== state.currentPlayerIndex &&
             !player.bankrupt &&
             !state.activeTradeOffer &&
-            state.phase !== 'game-over' &&
-            state.phase !== 'auction';
+            state.phase !== 'game-over';
 
           return (
             <li

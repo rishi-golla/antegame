@@ -130,7 +130,6 @@ export type GamePhase =
   | 'rolling'
   | 'landed'
   | 'buying'
-  | 'auction'
   | 'paying-rent'
   | 'drawing-card'
   | 'applying-card'
@@ -143,15 +142,6 @@ export interface GameLog {
   message: string;
   playerIndex?: number;
   timestamp: number;
-}
-
-export interface AuctionState {
-  tileIndex: number;
-  currentBid: number;
-  currentBidder: number | null;
-  biddingOrder: number[];
-  activeIndex: number;
-  passedPlayers: number[];
 }
 
 export interface TradeOffer {
@@ -177,7 +167,6 @@ export interface GameState {
   drawnCard: Card | null;
   log: GameLog[];
   winner: number | null;
-  auctionState: AuctionState | null;
   activeTradeOffer: TradeOffer | null;
   previousPhase: GamePhase | null;
 }

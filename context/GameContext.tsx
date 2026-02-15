@@ -22,7 +22,6 @@ import {
   declareBankruptcy,
 } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
-import { placeBid, passAuction } from '@/lib/auction';
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 
 type GameAction =
@@ -39,8 +38,6 @@ type GameAction =
   | { type: 'SELL_HOUSE'; tileIndex: number }
   | { type: 'MORTGAGE'; tileIndex: number }
   | { type: 'UNMORTGAGE'; tileIndex: number }
-  | { type: 'BID'; amount: number }
-  | { type: 'PASS_AUCTION' }
   | { type: 'PROPOSE_TRADE'; offer: TradeOffer }
   | { type: 'ACCEPT_TRADE' }
   | { type: 'REJECT_TRADE' };
@@ -73,10 +70,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return mortgageProperty(state, state.currentPlayerIndex, action.tileIndex);
     case 'UNMORTGAGE':
       return unmortgageProperty(state, state.currentPlayerIndex, action.tileIndex);
-    case 'BID':
-      return placeBid(state, state.currentPlayerIndex, action.amount);
-    case 'PASS_AUCTION':
-      return passAuction(state, state.currentPlayerIndex);
     case 'PROPOSE_TRADE':
       return proposeTrade(state, action.offer);
     case 'ACCEPT_TRADE':
