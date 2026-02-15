@@ -2503,3 +2503,89 @@ input {
   border-radius: 10px;
   backdrop-filter: blur(4px);
 }
+
+/* ===== PHASE 5.4: Side Panels ===== */
+
+/* Player list card-style entries */
+.leftPanel li {
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid rgba(130, 170, 255, 0.12);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--ease-out);
+}
+
+.leftPanel li:hover {
+  background: var(--bg-elevated);
+  border-color: rgba(130, 170, 255, 0.25);
+  box-shadow: var(--shadow-md);
+  transform: translateX(3px);
+}
+
+/* Chat message bubbles */
+.bubble {
+  border-radius: 14px 14px 14px 4px;
+  padding: 8px 12px;
+  background: rgba(40, 58, 120, 0.6);
+  border: 1px solid rgba(130, 170, 255, 0.1);
+  box-shadow: none;
+}
+
+.bubble:nth-child(even):not(.systemBubble) {
+  border-radius: 14px 14px 4px 14px;
+  background: rgba(50, 68, 130, 0.5);
+}
+
+/* System messages */
+.systemBubble p {
+  font-style: italic !important;
+  color: var(--muted) !important;
+  font-size: 0.75rem !important;
+}
+
+/* Panel toggle tabs with animated underline */
+.toggleRow {
+  position: relative;
+  gap: 0;
+  border-bottom: 2px solid rgba(130, 170, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+.toggleRow button {
+  background: transparent;
+  border-radius: 0;
+  padding: 8px 14px;
+  color: var(--muted);
+  box-shadow: none;
+  position: relative;
+  transition: color 0.25s var(--ease-out);
+}
+
+.toggleRow button.active {
+  background: transparent;
+  color: #fff;
+}
+
+.toggleRow button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: tabUnderline 0.25s var(--ease-out);
+}
+
+@keyframes tabUnderline {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Better chat spacing */
+.feed {
+  gap: 6px;
+  padding: 8px;
+}
