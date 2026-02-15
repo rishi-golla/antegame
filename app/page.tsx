@@ -19,14 +19,14 @@ type Screen = 'menu' | 'local-setup' | 'create' | 'join' | 'lobby' | 'local-game
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
     <div className="setupScreen">
-      <div className="setupCard">
-        <h1 className="setupTitle">Monopoly</h1>
-        <p className="setupSubtitle">Choose how to play</p>
+      <div className="setupCard casinoMenuCard">
+        <h1 className="setupTitle marqueeTitle">Monopoly</h1>
+        <p className="setupSubtitle casinoSubtitle">Choose how to play</p>
         <div className="menuButtons">
-          <button className="setupStartBtn" onClick={() => onNavigate('create')}>
+          <button className="setupStartBtn neonBtn" onClick={() => onNavigate('create')}>
             Create Room
           </button>
-          <button className="setupStartBtn menuBtnAlt" onClick={() => onNavigate('join')}>
+          <button className="setupStartBtn neonBtn menuBtnAlt" onClick={() => onNavigate('join')}>
             Join Room
           </button>
           <button className="lobbyBackBtn" onClick={() => onNavigate('local-setup')}>

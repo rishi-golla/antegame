@@ -41,14 +41,14 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
 
   return (
     <div className="setupScreen">
-      <div className="lobbyCard">
-        <div className="lobbyHeader">
-          <h1 className="setupTitle">Room Lobby</h1>
-          <div className="lobbyCode" onClick={handleCopyCode} title="Click to copy">
-            {roomState.code}
+      <div className="lobbyCard vipRoom">
+        <div className="lobbyHeader vipHeader">
+          <h1 className="setupTitle marqueeTitle">VIP Lounge</h1>
+          <div className="lobbyCode vipTableCode" onClick={handleCopyCode} title="Click to copy">
+            Table #{roomState.code}
             {copied && <span className="copiedToast">Copied!</span>}
           </div>
-          <p className="setupSubtitle">Share this code with friends</p>
+          <p className="setupSubtitle casinoSubtitle">Share this table number with friends</p>
         </div>
 
         <div className="lobbyContent">
