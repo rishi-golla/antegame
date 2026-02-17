@@ -5366,3 +5366,165 @@ button:active:not(:disabled) {
 img[src*="/assets/"] {
   image-rendering: pixelated;
 }
+
+/* ===== CONNECT SCREEN ===== */
+
+.connectScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--felt-green);
+  background-image:
+    radial-gradient(ellipse at 50% 30%, rgba(255,215,0,0.05) 0%, transparent 70%);
+}
+
+.connectCard {
+  text-align: center;
+  padding: 48px 40px;
+  background: var(--burgundy);
+  border: 3px solid var(--gold);
+  border-radius: 0;
+  box-shadow: 0 0 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.3);
+  max-width: 420px;
+  width: 90%;
+  image-rendering: pixelated;
+}
+
+.connectDice {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  animation: diceBounce 1.5s steps(6) infinite;
+}
+
+@keyframes diceBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.connectTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.2rem;
+  color: var(--gold-bright);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  margin-bottom: 8px;
+}
+
+.connectTagline {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #ccc;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.connectBtn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.75rem;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--ink);
+  border: 2px solid var(--gold);
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: transform 0.1s steps(2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.connectBtn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(255,215,0,0.4);
+}
+
+.connectBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.connectError {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--neon-red);
+  margin-top: 12px;
+}
+
+.connectChain {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: #888;
+  margin-top: 24px;
+}
+
+/* ===== WALLET BUTTON ===== */
+
+.walletBtnWrap {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+}
+
+.walletBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--burgundy);
+  border: 2px solid var(--gold);
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--gold-bright);
+}
+
+.walletBtnSprite {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+.walletBtnAddr {
+  color: #ccc;
+}
+
+.walletDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--burgundy);
+  border: 2px solid var(--gold);
+  padding: 12px;
+  min-width: 200px;
+  z-index: 1001;
+}
+
+.walletDropdownName {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: var(--gold-bright);
+  margin-bottom: 4px;
+}
+
+.walletDropdownAddr {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #999;
+  word-break: break-all;
+  margin-bottom: 12px;
+}
+
+.walletDropdownBtn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  background: transparent;
+  border: 1px solid var(--neon-red);
+  color: var(--neon-red);
+  padding: 6px 12px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.walletDropdownBtn:hover {
+  background: rgba(255,0,0,0.1);
+}
