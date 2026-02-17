@@ -81,6 +81,8 @@ export interface ServerToClientEvents {
   'player:reconnected': (data: { playerIndex: number }) => void;
   'player:deposited': (data: { playerIndex: number }) => void;
   'game:settlement': (data: { winnerWallet: string; txSignature: string; payoutLamports: number }) => void;
+  'game:settlement:signature': (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => void;
+  'game:cancellation:signature': (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => void;
   'game:refund': (data: { walletAddress: string; txSignature: string; amountLamports: number }) => void;
 }
 

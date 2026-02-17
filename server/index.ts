@@ -9,6 +9,7 @@ import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/l
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import authRouter, { sessionMiddleware } from './routes/auth';
 import statsRouter from './routes/stats';
+import contractsRouter from './routes/contracts';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -29,6 +30,7 @@ nextApp.prepare().then(() => {
   app.use(sessionMiddleware);
   app.use('/api/auth', authRouter);
   app.use('/api/stats', statsRouter);
+  app.use('/api/contracts', contractsRouter);
   const httpServer = createServer(app);
 
   const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
