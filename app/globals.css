@@ -2054,6 +2054,760 @@ input {
   90% { transform: translateX(0); }
 }
 
+/* ===== INDIVIDUAL MINIGAME STYLES ===== */
+
+/* Slot Machine */
+.slotMachine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--ink);
+  height: 100%;
+}
+
+.slotHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.slotTitle {
+  font-size: 1.1rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  margin: 0;
+}
+
+.slotLever {
+  cursor: pointer;
+  transition: transform 0.1s steps(2);
+}
+
+.slotLever:hover {
+  transform: scale(1.1);
+}
+
+.leverHandle.pulled {
+  transform: rotate(15deg);
+}
+
+.slotReels {
+  display: flex;
+  gap: 8px;
+}
+
+.slotReel {
+  width: 80px;
+  height: 80px;
+  border: 3px solid var(--gold);
+  border-radius: 8px;
+  background: var(--felt-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s steps(4);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.slotReel.active {
+  border-color: var(--neon-red);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 0 12px var(--neon-red);
+}
+
+.slotReel.stopped {
+  border-color: var(--neon-green);
+}
+
+.slotSymbol {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.slotReelBorder {
+  position: absolute;
+  inset: -3px;
+  border-radius: 8px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.slotInstructions {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  min-height: 20px;
+}
+
+.slotPaytable {
+  font-size: 0.6rem;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.paytableRow {
+  margin: 2px 0;
+}
+
+@keyframes slotSpin {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+/* Higher Lower */
+.higherLower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--ink);
+  height: 100%;
+}
+
+.higherLowerHeader {
+  text-align: center;
+}
+
+.higherLowerTitle {
+  font-size: 1.1rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  margin: 0 0 8px;
+}
+
+.higherLowerScore {
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+}
+
+.higherLowerCards {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.cardWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.playingCard {
+  width: 80px;
+  height: 100px;
+  border-radius: 8px;
+  border: 3px solid var(--gold);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.playingCard.hidden {
+  background: var(--burgundy);
+  border-color: var(--burgundy-deep);
+}
+
+.cardRank {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  font-family: serif;
+}
+
+.cardSuit {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.8rem;
+}
+
+.cardCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+}
+
+.cardBack {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  color: var(--gold);
+}
+
+.cardLabel {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.higherLowerVs {
+  font-size: 1.2rem;
+  color: var(--gold);
+  font-weight: bold;
+}
+
+.higherLowerButtons {
+  display: flex;
+  gap: 12px;
+}
+
+.higherLowerBtn {
+  padding: 12px 20px;
+  border: 3px solid var(--gold);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+  color: #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s steps(4);
+}
+
+.higherLowerBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+}
+
+.higherLowerBtn.higher {
+  background: linear-gradient(180deg, #4ade80, #22c55e);
+  border-color: #16a34a;
+}
+
+.higherLowerBtn.lower {
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+.higherLowerRules {
+  font-size: 0.6rem;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Craps */
+.craps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--ink);
+  height: 100%;
+}
+
+.crapsHeader {
+  text-align: center;
+}
+
+.crapsTitle {
+  font-size: 1.1rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  margin: 0 0 8px;
+}
+
+.crapsTarget {
+  font-size: 0.8rem;
+  color: var(--neon-green);
+  text-shadow: 0 0 6px rgba(0, 230, 118, 0.5);
+}
+
+.crapsTargetSelection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.targetLabel {
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+}
+
+.targetNumbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 280px;
+}
+
+.targetBtn {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  color: var(--ink);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s steps(3);
+}
+
+.targetBtn:hover {
+  background: var(--gold);
+  color: #000;
+}
+
+.targetBtn.selected {
+  background: var(--neon-green);
+  color: #000;
+  border-color: var(--neon-green);
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.5);
+}
+
+.crapsDiceArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.crapsInstructions {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  min-height: 20px;
+}
+
+.crapsDice {
+  display: flex;
+  gap: 12px;
+}
+
+.crapsDie {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 3px solid var(--neon-red);
+  background: linear-gradient(145deg, #fff, #f0f0f0);
+  position: relative;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.crapsDie.rolling {
+  animation: diceRoll 0.1s steps(6) infinite;
+}
+
+.diceFace {
+  position: absolute;
+  inset: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+.dicePip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #000;
+  margin: auto;
+}
+
+.dicePip.tl { grid-area: 1 / 1; }
+.dicePip.tr { grid-area: 1 / 3; }
+.dicePip.ml { grid-area: 2 / 1; }
+.dicePip.c { grid-area: 2 / 2; }
+.dicePip.mr { grid-area: 2 / 3; }
+.dicePip.bl { grid-area: 3 / 1; }
+.dicePip.br { grid-area: 3 / 3; }
+
+.crapsRollBtn {
+  padding: 12px 24px;
+  border: 3px solid var(--neon-red);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--neon-red), #dc2626);
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s steps(4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.crapsRollBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 23, 68, 0.3);
+}
+
+.crapsResult {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+}
+
+.crapsResultDiff {
+  color: var(--gold);
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+@keyframes diceRoll {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Wheel of Fortune */
+.wheelOfFortune {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--ink);
+  height: 100%;
+}
+
+.wheelTitle {
+  font-size: 1.1rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  margin: 0;
+}
+
+.wheelContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.wheelPointer {
+  font-size: 2rem;
+  color: var(--gold);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  z-index: 10;
+}
+
+.wheel {
+  width: 300px;
+  height: 300px;
+}
+
+.wheel svg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.wheel.spinning {
+  transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.wheelSpinBtn {
+  padding: 16px 32px;
+  border: 4px solid var(--gold);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+  color: #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s steps(4);
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.wheelSpinBtn:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.wheelResult {
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 15;
+}
+
+.wheelResultLabel {
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+  margin-bottom: 8px;
+}
+
+.wheelResultValue {
+  font-size: 1rem;
+  font-weight: bold;
+  text-shadow: 0 0 8px currentColor;
+}
+
+.wheelLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  font-size: 0.5rem;
+  max-width: 300px;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Minesweeper */
+.minesweeperLite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--ink);
+  height: 100%;
+}
+
+.minesweeperTitle {
+  font-size: 1rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  margin: 0;
+}
+
+.minesweeperStats {
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+.minesweeperGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 12px;
+  background: var(--felt-dark);
+  border: 3px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.minesweeperCell {
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--gold-dim);
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: all 0.2s steps(3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.minesweeperCell:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--gold);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.minesweeperCell.safe {
+  background: var(--neon-green);
+  border-color: #16a34a;
+  color: #000;
+}
+
+.minesweeperCell.mine {
+  background: var(--neon-red);
+  border-color: #b91c1c;
+  animation: mineExplode 0.5s steps(6);
+}
+
+.minesweeperCell:disabled {
+  cursor: default;
+}
+
+.cellContent {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.minesweeperInstructions {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  min-height: 20px;
+}
+
+@keyframes mineExplode {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(0.9); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Common minigame styles */
+.minigameIntro .tierRow {
+  font-size: 0.6rem;
+  margin: 2px 0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tierRow::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.tier-win::before { background: #4ade80; }
+.tier-close-win::before { background: #84cc16; }
+.tier-close-loss::before { background: #eab308; }
+.tier-loss::before { background: #f97316; }
+.tier-catastrophic::before { background: #ef4444; }
+
+.minigameStakes {
+  font-size: 0.9rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+}
+
+.minigameContext {
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+}
+
+.minigameTierInfo {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.minigameResultCard {
+  background: var(--felt-green);
+  border: 4px solid var(--gold);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.minigameResultTitle {
+  font-size: 1.2rem;
+  margin: 0 0 16px;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.minigameResultDesc {
+  font-size: 0.8rem;
+  margin: 0 0 16px;
+  color: var(--ink-secondary);
+  line-height: 1.4;
+}
+
+.minigameResultAmount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.minigameResultAmountLabel {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.minigameResultAmountValue {
+  font-size: 1.4rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.minigameResultBtn {
+  padding: 12px 24px;
+  border: 3px solid var(--gold);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+  color: #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s steps(4);
+  font-weight: bold;
+}
+
+.minigameResultBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+}
+
 /* Property Popup Actions */
 .popupActions {
   display: flex;

@@ -161,7 +161,7 @@ export default function Craps({ onResult, baseAmount, context }: CrapsProps) {
           </button>
         )}
 
-        {result && (
+        {result && targetNumber && (
           <div className="crapsResult">
             <div className="crapsResultText">
               Target: {targetNumber} | Rolled: {result}
