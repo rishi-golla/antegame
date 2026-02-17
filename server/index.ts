@@ -10,6 +10,7 @@ import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import authRouter, { sessionMiddleware } from './routes/auth';
 import statsRouter from './routes/stats';
 import contractsRouter from './routes/contracts';
+import { signCancellation, roomCodeToGameId } from './contracts';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -124,9 +125,10 @@ nextApp.prepare().then(() => {
     });
 
     // Room: Leave
-    socket.on('room:leave', () => {
+    socket.on('room:leave', async () => {
       const code = rm.findRoomBySocket(socket.id);
       if (!code) return;
+      const room = rm.getRoom(code);
       const player = rm.getPlayerInRoom(code, socket.id);
       const result = rm.leaveRoom(socket.id);
       if (result) {
@@ -134,6 +136,34 @@ nextApp.prepare().then(() => {
         if (!result.deleted && player) {
           systemMessage(code, `${player.name} left the room.`);
           broadcastRoomState(code);
+        }
+        // If room was deleted (last player left) or in lobby phase,
+        // sign a cancellation so players can refund on-chain
+        if (result.deleted || (room && room.phase === 'lobby')) {
+          try {
+            const cancellation = await signCancellation(code);
+            if (cancellation) {
+              const gameId = roomCodeToGameId(code);
+              // Emit to the leaving player so they can claim refund
+              socket.emit('game:cancellation:signature', {
+                nonce: cancellation.nonce,
+                signature: cancellation.signature,
+                gameId,
+                roomCode: code,
+              });
+              // Also emit to remaining players if any
+              if (!result.deleted) {
+                io.to(code).emit('game:cancellation:signature', {
+                  nonce: cancellation.nonce,
+                  signature: cancellation.signature,
+                  gameId,
+                  roomCode: code,
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Failed to sign cancellation for room', code, err);
+          }
         }
       }
     });
