@@ -1,22 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useAuth } from '@/context/AuthContext';
 
-export default function ConnectScreen() {
+export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void }) {
   const { connectAndSign } = useAuth();
+  const { connected, publicKey } = useWallet();
+  const { setVisible } = useWalletModal();
   const [error, setError] = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [pendingSign, setPendingSign] = useState(false);
 
-  const handleConnect = async () => {
+  // When wallet connects, auto-trigger sign
+  useEffect(() => {
+    if (connected && publicKey && pendingSign) {
+      setPendingSign(false);
+      setConnecting(true);
+      connectAndSign()
+        .catch((e: any) => setError(e.message || 'Verification failed'))
+        .finally(() => setConnecting(false));
+    }
+  }, [connected, publicKey, pendingSign, connectAndSign]);
+
+  const handleConnect = () => {
     setError('');
-    setConnecting(true);
-    try {
-      await connectAndSign();
-    } catch (e: any) {
-      setError(e.message || 'Connection failed');
-    } finally {
-      setConnecting(false);
+    if (connected && publicKey) {
+      // Already connected, just sign
+      setConnecting(true);
+      connectAndSign()
+        .catch((e: any) => setError(e.message || 'Verification failed'))
+        .finally(() => setConnecting(false));
+    } else {
+      // Open wallet adapter modal (shows Phantom, Solflare, etc.)
+      setPendingSign(true);
+      setVisible(true);
     }
   };
 
@@ -34,6 +53,11 @@ export default function ConnectScreen() {
           {connecting ? 'CONNECTING...' : 'CONNECT WALLET'}
         </button>
         {error && <p className="connectError">{error}</p>}
+        {onFreePlay && (
+          <button className="lobbyBackBtn" onClick={onFreePlay} style={{ marginTop: 16 }}>
+            Play for Free
+          </button>
+        )}
         <p className="connectChain">Powered by Solana</p>
       </div>
     </div>
