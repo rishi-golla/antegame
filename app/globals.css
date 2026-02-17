@@ -2839,306 +2839,210 @@ input {
   line-height: 1.8;
 }
 
-/* === Horse Race === */
-.horseRace {
+/* === Card War === */
+.cardWar {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 0;
+  gap: 16px;
+  padding: 16px;
   color: var(--ink);
   height: 100%;
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
 }
 
-.raceHeader { text-align: center; }
-
-.raceTitle {
-  font-size: 0.9rem;
+.cardWarTitle {
+  font-size: 1.2rem;
   color: var(--gold-bright);
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
   margin: 0;
 }
 
-.selectedHorse {
-  font-size: 0.6rem;
+.cardWarScore {
+  font-size: 0.8rem;
   color: var(--neon-green);
   text-shadow: 0 0 6px rgba(0, 230, 118, 0.5);
 }
 
-.horseSelection {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.selectionLabel {
+.cardWarRound {
   font-size: 0.6rem;
   color: var(--ink-secondary);
 }
 
-.horseList {
+.cardWarTable {
   display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.cardWarSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
-.horseBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px;
-  background: var(--bg-elevated);
-  cursor: pointer;
-  font-size: 0.5rem;
-}
-
-.horseBtn.selected {
-  background: rgba(0, 230, 118, 0.2);
-}
-
-.horseBtnImg {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.raceTrack {
-  width: 100%;
-  max-width: 340px;
-  border: 3px solid var(--gold);
-  background: var(--felt-dark);
-  padding: 8px;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
-}
-
-.trackHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 0.5rem;
-  color: var(--muted);
-}
-
-.startLine, .finishLine {
-  padding: 2px 4px;
-  border: 1px dashed var(--gold-dim);
-}
-
-.trackLanes {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.lane {
-  height: 32px;
-}
-
-.laneTrack {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-}
-
-.trackSurface {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(90deg, var(--felt-green), var(--felt-green) 10px, var(--felt-dark) 10px, var(--felt-dark) 15px);
-  border: 1px solid var(--gold-dim);
-}
-
-.horse {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  transition: left 50ms linear;
-}
-
-.horseSprite {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.horse.selected .horseSprite {
-  width: 64px;
-  height: 64px;
-  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
-}
-
-.horseGallop {
-  animation: pixelGallop 0.3s steps(4) infinite;
-}
-
-@keyframes pixelGallop {
-  0% { transform: translateY(-50%); }
-  25% { transform: translateY(-58%); }
-  50% { transform: translateY(-50%); }
-  75% { transform: translateY(-42%); }
-  100% { transform: translateY(-50%); }
-}
-
-.raceStartBtn {
-  padding: 10px 20px;
-  background: #4ade80;
-  color: #000;
+.cardWarSlotLabel {
   font-size: 0.7rem;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+}
+
+.cardWarVs {
+  font-size: 1.2rem;
+  color: var(--gold);
+  font-weight: bold;
+}
+
+.cardWarDrawBtn {
+  padding: 16px 32px;
+  background: var(--gold);
+  color: #000;
+  font-size: 1rem;
   cursor: pointer;
 }
 
-.raceResults {
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid var(--gold);
-  padding: 8px;
-  font-size: 0.5rem;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
-}
-
-.resultRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 3px 0;
-}
-
-.resultRow.yourHorse {
-  background: rgba(0, 230, 118, 0.2);
-  padding: 3px;
-}
-
-.resultPosition { color: var(--gold); font-weight: bold; min-width: 20px; }
-.resultHorseImg { width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated; }
-.yourPick { color: var(--neon-green); font-weight: bold; }
-
-.raceInstructions, .racePaytable {
+.cardWarPaytable {
   font-size: 0.5rem;
   text-align: center;
   color: var(--muted);
   line-height: 1.8;
 }
 
-/* === Dart Throw === */
-.dartThrow {
+/* === Lucky Number === */
+.luckyNumber {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 16px;
   color: var(--ink);
   height: 100%;
 }
 
-.dartHeader { text-align: center; }
-
-.dartTitle {
-  font-size: 0.9rem;
+.luckyNumberTitle {
+  font-size: 1.2rem;
   color: var(--gold-bright);
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
   margin: 0;
 }
 
-.dartResult {
-  font-size: 0.7rem;
-  color: var(--neon-green);
-  text-shadow: 0 0 6px rgba(0, 230, 118, 0.5);
+.luckyNumberGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
 }
 
-.dartContainer {
-  display: flex;
-  justify-content: center;
-  position: relative;
-}
-
-.dartboard {
-  width: 320px;
-  height: 320px;
-  position: relative;
-  overflow: hidden;
-}
-
-.dartboardImg {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
+.luckyChip {
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
-}
-
-.crosshair {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  font-size: 1.2rem;
-  color: var(--neon-red);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  text-shadow: 0 0 4px rgba(255, 23, 68, 0.8);
-  pointer-events: none;
-}
-
-.crosshair.oscillating {
-  animation: crosshairBlink 0.3s steps(2) infinite;
-}
-
-@keyframes crosshairBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.dart {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  z-index: 15;
-  animation: dartStick 0.3s steps(4);
-}
-
-.dartImg {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-}
-
-@keyframes dartStick {
-  0% { transform: scale(2) translateY(-20px); opacity: 0; }
-  50% { transform: scale(1.2) translateY(0); opacity: 1; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-.dartControls { display: flex; gap: 12px; }
-
-.dartBtn {
-  padding: 10px 16px;
-  background: var(--gold);
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
   color: #000;
-  font-size: 0.7rem;
+  font-size: 1.2rem;
+  font-family: 'Press Start 2P', monospace;
+  font-weight: bold;
+  display: grid;
+  place-items: center;
+  border: 3px dashed rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s steps(2);
+}
+
+.luckyChip:hover {
+  transform: scale(1.1);
+}
+
+.luckyChipSelected {
+  background: linear-gradient(180deg, #ffd700, #ffaa00);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(255, 215, 0, 0.6),
+    0 0 40px rgba(255, 215, 0, 0.3);
+  animation: chipGlow 1s steps(4) infinite;
+}
+
+@keyframes chipGlow {
+  0%, 100% { box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 0 20px rgba(255,215,0,0.6); }
+  50% { box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 0 32px rgba(255,215,0,0.8), 0 0 48px rgba(255,215,0,0.4); }
+}
+
+.luckyLockBtn {
+  padding: 16px 32px;
+  background: var(--neon-red);
+  color: #fff;
+  font-size: 1rem;
+  font-family: 'Press Start 2P', monospace;
   cursor: pointer;
 }
 
-.throwBtn {
-  background: var(--neon-red) !important;
-  color: #fff !important;
+.luckyCountdown {
+  font-size: 4rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  animation: countdownPulse 0.8s steps(4);
 }
 
-.dartInstructions {
-  font-size: 0.6rem;
-  text-align: center;
+@keyframes countdownPulse {
+  0% { transform: scale(2); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.luckyReveal {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.luckyRevealSide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.luckyRevealLabel {
+  font-size: 0.7rem;
   color: var(--ink-secondary);
 }
 
-.dartPaytable {
+.luckyRevealNumber {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+  color: #000;
+  font-size: 2rem;
+  font-family: 'Press Start 2P', monospace;
+  display: grid;
+  place-items: center;
+  border: 3px dashed rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  animation: revealPop 0.5s steps(6);
+}
+
+@keyframes revealPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.luckyRevealVs {
+  font-size: 1.2rem;
+  color: var(--gold);
+}
+
+.luckyDiff {
+  font-size: 1rem;
+  color: var(--neon-green);
+  text-shadow: 0 0 8px rgba(0, 230, 118, 0.5);
+}
+
+.luckyPaytable {
   font-size: 0.5rem;
   text-align: center;
   color: var(--muted);

@@ -1,109 +1,116 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 
-interface DartThrowProps {
+interface LuckyNumberProps {
   onResult: (tier: MinigameTier) => void;
   baseAmount: number;
   context: MinigameContext;
 }
 
-interface DartPosition { x: number; y: number; }
-
-const DARTBOARD_SIZE = 200;
-const CENTER_X = DARTBOARD_SIZE / 2;
-const CENTER_Y = DARTBOARD_SIZE / 2;
-
-export default function DartThrow({ onResult, baseAmount, context }: DartThrowProps) {
-  const [crosshairX, setCrosshairX] = useState(CENTER_X);
-  const [crosshairY, setCrosshairY] = useState(CENTER_Y);
-  const [oscillating, setOscillating] = useState(false);
-  const [thrown, setThrown] = useState(false);
-  const [dartPosition, setDartPosition] = useState<DartPosition | null>(null);
-  const [result, setResult] = useState<string | null>(null);
+export default function LuckyNumber({ onResult }: LuckyNumberProps) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [houseNumber, setHouseNumber] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => { if (!thrown) onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => {
+      if (!done) onResult('catastrophic');
+    }, 15000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [done, onResult]);
+
+  const lockIn = useCallback(() => {
+    if (selected === null || locked) return;
+    setLocked(true);
+    const house = Math.floor(Math.random() * 10) + 1;
+    setHouseNumber(house);
+    setCountdown(3);
+  }, [selected, locked]);
 
   useEffect(() => {
-    if (oscillating && !thrown) {
-      const oscillateInterval = setInterval(() => {
-        setCrosshairX(prev => Math.max(20, Math.min(DARTBOARD_SIZE - 20, prev + (Math.random() - 0.5) * 8)));
-        setCrosshairY(prev => Math.max(20, Math.min(DARTBOARD_SIZE - 20, prev + (Math.random() - 0.5) * 8)));
-      }, 100);
-      return () => clearInterval(oscillateInterval);
+    if (countdown === null || countdown < 0) return;
+    if (countdown === 0) {
+      setRevealed(true);
+      const house = houseNumber!;
+      const player = selected!;
+      const diff = Math.abs(player - house);
+      let tier: MinigameTier;
+      if (diff === 0) tier = 'win';
+      else if (diff === 1) tier = 'close-win';
+      else if (diff === 2) tier = 'close-loss';
+      else if (diff <= 4) tier = 'loss';
+      else tier = 'catastrophic';
+      setDone(true);
+      setTimeout(() => onResult(tier), 1500);
+      return;
     }
-  }, [oscillating, thrown]);
+    const t = setTimeout(() => setCountdown(countdown - 1), 800);
+    return () => clearTimeout(t);
+  }, [countdown, houseNumber, selected, onResult]);
 
-  const startOscillation = () => { if (!thrown) setOscillating(true); };
-
-  const throwDart = () => {
-    if (!oscillating || thrown) return;
-    setThrown(true);
-    setOscillating(false);
-    setDartPosition({ x: crosshairX, y: crosshairY });
-
-    const distance = Math.sqrt(Math.pow(crosshairX - CENTER_X, 2) + Math.pow(crosshairY - CENTER_Y, 2));
-    let hitResult: string;
-    let tier: MinigameTier;
-
-    if (distance <= 15) { hitResult = 'BULLSEYE!'; tier = 'win'; }
-    else if (distance <= 35) { hitResult = 'INNER RING'; tier = 'close-win'; }
-    else if (distance <= 60) { hitResult = 'OUTER RING'; tier = 'close-loss'; }
-    else if (distance <= 90) { hitResult = 'EDGE HIT'; tier = 'loss'; }
-    else { hitResult = 'COMPLETE MISS!'; tier = 'catastrophic'; }
-
-    setResult(hitResult);
-    setTimeout(() => onResult(tier), 1500);
-  };
+  const diff = revealed && selected !== null && houseNumber !== null
+    ? Math.abs(selected - houseNumber)
+    : null;
 
   return (
-    <div className="dartThrow pixelMinigame">
-      <div className="dartHeader">
-        <h2 className="dartTitle">DART THROW</h2>
-        {result && <div className="dartResult">{result}</div>}
-      </div>
+    <div className="luckyNumber pixelMinigame">
+      <h2 className="luckyNumberTitle">LUCKY NUMBER</h2>
 
-      <div className="dartContainer">
-        <div className="dartboard">
-          <img src="/assets/minigames/darts/dartboard.png" alt="dartboard" className="dartboardImg" />
-
-          {!thrown && (
-            <div className={`crosshair ${oscillating ? 'oscillating' : ''}`}
-              style={{ left: crosshairX - 10, top: crosshairY - 10 }}>
-              ✕
-            </div>
+      {!locked && (
+        <>
+          <div className="luckyNumberGrid">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className={`luckyChip pixelBtn ${selected === n ? 'luckyChipSelected' : ''}`}
+                onClick={() => setSelected(n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {selected !== null && (
+            <button className="luckyLockBtn pixelBtn" onClick={lockIn}>
+              LOCK IN
+            </button>
           )}
+        </>
+      )}
 
-          {thrown && dartPosition && (
-            <div className="dart" style={{ left: dartPosition.x - 16, top: dartPosition.y - 16 }}>
-              <img src="/assets/minigames/darts/dart.png" alt="dart" className="dartImg" />
-            </div>
-          )}
+      {locked && !revealed && countdown !== null && countdown > 0 && (
+        <div className="luckyCountdown">{countdown}</div>
+      )}
+
+      {revealed && (
+        <div className="luckyReveal">
+          <div className="luckyRevealSide">
+            <div className="luckyRevealLabel">YOU</div>
+            <div className="luckyRevealNumber">{selected}</div>
+          </div>
+          <div className="luckyRevealVs">vs</div>
+          <div className="luckyRevealSide">
+            <div className="luckyRevealLabel">HOUSE</div>
+            <div className="luckyRevealNumber">{houseNumber}</div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="dartControls">
-        {!oscillating && !thrown && (
-          <button className="dartBtn oscillateBtn pixelBtn" onClick={startOscillation}>START AIMING</button>
-        )}
-        {oscillating && !thrown && (
-          <button className="dartBtn throwBtn pixelBtn" onClick={throwDart}>THROW DART!</button>
-        )}
-      </div>
+      {diff !== null && (
+        <div className="luckyDiff">
+          {diff === 0 ? 'EXACT MATCH!' : `OFF BY ${diff}`}
+        </div>
+      )}
 
-      <div className="dartInstructions">
-        {!oscillating ? 'CLICK START AIMING!' : !thrown ? 'CLICK THROW WHEN READY!' : `HIT: ${result}`}
-      </div>
-
-      <div className="dartPaytable">
-        <div className="paytableRow">BULLSEYE = WIN</div>
-        <div className="paytableRow">INNER = CLOSE WIN</div>
-        <div className="paytableRow">OUTER = CLOSE LOSS</div>
-        <div className="paytableRow">EDGE = LOSS</div>
+      <div className="luckyPaytable">
+        <div className="paytableRow">EXACT = WIN</div>
+        <div className="paytableRow">OFF BY 1 = CLOSE WIN</div>
+        <div className="paytableRow">OFF BY 2 = CLOSE LOSS</div>
+        <div className="paytableRow">OFF BY 3-4 = LOSS</div>
       </div>
     </div>
   );

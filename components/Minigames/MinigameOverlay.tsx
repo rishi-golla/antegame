@@ -9,8 +9,8 @@ import HigherLower from './HigherLower';
 import Craps from './Craps';
 import WheelOfFortune from './WheelOfFortune';
 import MinesweeperLite from './MinesweeperLite';
-import HorseRace from './HorseRace';
-import DartThrow from './DartThrow';
+import CardWar from './HorseRace';
+import LuckyNumber from './DartThrow';
 import Blackjack from './Blackjack';
 import CoinFlip from './CoinFlip';
 import SafeCracker from './SafeCracker';
@@ -23,8 +23,8 @@ const MINIGAME_NAMES: Record<string, string> = {
   'craps': 'CRAPS',
   'wheel': 'WHEEL OF FORTUNE',
   'minesweeper': 'MINESWEEPER',
-  'horse-race': 'HORSE RACE',
-  'darts': 'DART THROW',
+  'card-war': 'CARD WAR',
+  'lucky-number': 'LUCKY NUMBER',
   'blackjack': 'BLACKJACK',
   'coin-flip': 'COIN FLIP',
   'safe-cracker': 'SAFE CRACKER',
@@ -71,8 +71,8 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
       case 'craps': return <Craps {...props} />;
       case 'wheel': return <WheelOfFortune {...props} />;
       case 'minesweeper': return <MinesweeperLite {...props} />;
-      case 'horse-race': return <HorseRace {...props} />;
-      case 'darts': return <DartThrow {...props} />;
+      case 'card-war': return <CardWar {...props} />;
+      case 'lucky-number': return <LuckyNumber {...props} />;
       case 'blackjack': return <Blackjack {...props} />;
       case 'coin-flip': return <CoinFlip {...props} />;
       case 'safe-cracker': return <SafeCracker {...props} />;

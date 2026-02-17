@@ -633,7 +633,7 @@ export function startMinigame(state: GameState, context: MinigameContext): GameS
   // All available minigames
   const allMinigames: MinigameId[] = [
     'slots', 'higher-lower', 'craps', 'wheel', 'minesweeper', 
-    'horse-race', 'darts', 'blackjack', 'coin-flip', 'safe-cracker'
+    'card-war', 'lucky-number', 'blackjack', 'coin-flip', 'safe-cracker'
   ];
   
   // Exclude last 3 recent minigames
