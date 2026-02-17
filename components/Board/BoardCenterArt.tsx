@@ -118,23 +118,19 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         )}
       </div>
 
-      <div className="deck deckCommunity" role="button" aria-label="Community Chest deck">
-        <div className="deckCard back" />
-        <div className="deckCard mid" />
-        <div className="deckCard face">
-          <span>Community</span>
-          <strong>Chest</strong>
-        </div>
-      </div>
+      <img
+        src="/assets/misc/community-chest-deck.webp"
+        alt="Community Chest"
+        className="deckImg deckCommunity"
+        draggable={false}
+      />
 
-      <div className="deck deckChance" role="button" aria-label="Chance deck">
-        <div className="deckCard back" />
-        <div className="deckCard mid" />
-        <div className="deckCard face">
-          <span>Chance</span>
-          <strong>Card</strong>
-        </div>
-      </div>
+      <img
+        src="/assets/misc/chance-deck.webp"
+        alt="Chance"
+        className="deckImg deckChance"
+        draggable={false}
+      />
 
       {/* Drawn card overlay */}
       {state.drawnCard && !isRolling && (

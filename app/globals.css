@@ -496,91 +496,34 @@ input {
   cursor: default;
 }
 
-.deck {
+.deckImg {
   position: absolute;
   width: clamp(98px, 12vw, 132px);
-  aspect-ratio: 4 / 5;
-  transform-style: preserve-3d;
+  image-rendering: pixelated;
   filter: drop-shadow(0 10px 14px rgba(24, 47, 83, 0.35));
   transition: transform 180ms ease, filter 180ms ease;
-  animation: deckFloat 2.9s ease-in-out infinite;
 }
 
-.deckCommunity {
+.deckImg.deckCommunity {
   top: 11%;
   left: 13%;
   transform: rotate(-26deg);
 }
 
-.deckChance {
+.deckImg.deckChance {
   right: 11%;
   bottom: 10%;
   transform: rotate(22deg);
-  animation-delay: 380ms;
 }
 
-.deck:hover {
-  transform: translateY(-3px) scale(1.03) rotate(var(--hover-rot, 0deg));
+.deckImg.deckCommunity:hover {
+  transform: translateY(-3px) scale(1.05) rotate(-24deg);
   filter: drop-shadow(0 15px 18px rgba(24, 47, 83, 0.38));
 }
 
-.deckCommunity:hover {
-  --hover-rot: -24deg;
-}
-
-.deckChance:hover {
-  --hover-rot: 20deg;
-}
-
-.deckCard {
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  border: 4px solid var(--gold-dim);
-}
-
-.deckCard.back {
-  transform: translate(-8px, -8px);
-  opacity: 0.95;
-}
-
-.deckCard.mid {
-  transform: translate(-4px, -4px);
-  opacity: 0.98;
-}
-
-.deckCommunity .deckCard {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0)),
-    linear-gradient(160deg, #1a6b3a 0%, #0b3d0b 100%);
-}
-
-.deckChance .deckCard {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0)),
-    linear-gradient(160deg, #d4af37 0%, #8b7320 100%);
-}
-
-.deckCard.face {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #fff8e7;
-}
-
-.deckCard.face span {
-  font-size: 0.74rem;
-  font-weight: 800;
-}
-
-.deckCard.face strong {
-  font-family: 'Cinzel', serif;
-  font-size: 1.08rem;
-  font-weight: 700;
-  line-height: 1;
+.deckImg.deckChance:hover {
+  transform: translateY(-3px) scale(1.05) rotate(20deg);
+  filter: drop-shadow(0 15px 18px rgba(24, 47, 83, 0.38));
 }
 
 .rollHint {
