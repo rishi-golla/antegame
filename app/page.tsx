@@ -1,58 +1,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GameProvider } from '@/context/GameContext';
+import { WalletContextProvider } from '@/context/WalletContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { SocketProvider, useSocket } from '@/context/SocketContext';
 import { MultiplayerGameProvider } from '@/context/MultiplayerGameContext';
 import Board from '@/components/Board/Board';
 import SidePanel from '@/components/SidePanel/SidePanel';
 import PlayerList from '@/components/PlayerList/PlayerList';
-import GameSetup from '@/components/GameSetup/GameSetup';
 import GameOver from '@/components/GameOver/GameOver';
 import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
 import TradeModal from '@/components/Board/TradeModal';
+import ConnectScreen from '@/components/Auth/ConnectScreen';
+import ProfileSetup from '@/components/Auth/ProfileSetup';
+import WalletButton from '@/components/Auth/WalletButton';
 
-type Screen = 'menu' | 'local-setup' | 'create' | 'join' | 'lobby' | 'local-game' | 'online-game';
+type Screen = 'menu' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
     <div className="setupScreen">
+      <WalletButton />
       <div className="setupCard casinoMenuCard">
         <h1 className="setupTitle marqueeTitle">Monopoly</h1>
         <p className="setupSubtitle casinoSubtitle">Choose how to play</p>
         <div className="menuButtons">
-          <button className="setupStartBtn neonBtn" onClick={() => onNavigate('create')}>
+          <button className="setupStartBtn neonBtn" onClick={() => onNavigate('quick-play')}>
+            Quick Play
+          </button>
+          <button className="setupStartBtn neonBtn menuBtnAlt" onClick={() => onNavigate('create')}>
             Create Room
           </button>
           <button className="setupStartBtn neonBtn menuBtnAlt" onClick={() => onNavigate('join')}>
             Join Room
           </button>
-          <button className="lobbyBackBtn" onClick={() => onNavigate('local-setup')}>
-            Local Play
+          <button className="lobbyBackBtn" onClick={() => onNavigate('profile')}>
+            Profile
+          </button>
+          <button className="lobbyBackBtn" onClick={() => onNavigate('leaderboard')}>
+            Leaderboard
           </button>
         </div>
       </div>
     </div>
-  );
-}
-
-function LocalGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
-  const [tradeTarget, setTradeTarget] = useState<number | null>(null);
-
-  return (
-    <>
-      <main className="gameScreen">
-        <PlayerList onTrade={setTradeTarget} />
-        <Board />
-        <SidePanel />
-      </main>
-      {tradeTarget !== null && (
-        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
-      )}
-      <GameOver onPlayAgain={onPlayAgain} />
-    </>
   );
 }
 
@@ -79,7 +71,6 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
   const [screen, setScreen] = useState<'create' | 'join' | 'lobby' | 'game'>(initialScreen);
   const { roomState, leaveRoom } = useSocket();
 
-  // Auto-transition to game when room phase changes
   useEffect(() => {
     if (roomState?.phase === 'playing' && screen === 'lobby') {
       setScreen('game');
@@ -103,41 +94,80 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
   }
 }
 
-export default function Home() {
+function AuthGate() {
+  const { user, loading } = useAuth();
   const [screen, setScreen] = useState<Screen>('menu');
-  const [localPlayerNames, setLocalPlayerNames] = useState<string[]>([]);
-  const [localPlayerSprites, setLocalPlayerSprites] = useState<string[]>([]);
-  const [localPlayerColors, setLocalPlayerColors] = useState<string[]>([]);
+
+  if (loading) {
+    return (
+      <div className="connectScreen">
+        <div className="connectCard">
+          <p className="connectTagline">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <ConnectScreen />;
+  }
+
+  // New user needs profile setup
+  if (!user.displayName || !user.characterId) {
+    return <ProfileSetup />;
+  }
 
   switch (screen) {
     case 'menu':
       return <MainMenu onNavigate={setScreen} />;
 
-    case 'local-setup':
+    case 'quick-play':
+      // Placeholder until batch 9.4
       return (
-        <GameSetup
-          onStart={(names, sprites, colors) => {
-            setLocalPlayerNames(names);
-            setLocalPlayerSprites(sprites);
-            setLocalPlayerColors(colors);
-            setScreen('local-game');
-          }}
-        />
+        <div className="setupScreen">
+          <WalletButton />
+          <div className="setupCard">
+            <h1 className="setupTitle marqueeTitle">Quick Play</h1>
+            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
+            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+          </div>
+        </div>
       );
 
-    case 'local-game':
+    case 'profile':
+      // Placeholder until batch 9.5
       return (
-        <GameProvider playerNames={localPlayerNames} playerSprites={localPlayerSprites} playerColors={localPlayerColors}>
-          <LocalGameScreen onPlayAgain={() => setScreen('menu')} />
-        </GameProvider>
+        <div className="setupScreen">
+          <WalletButton />
+          <div className="setupCard">
+            <h1 className="setupTitle marqueeTitle">Profile</h1>
+            <p className="setupSubtitle casinoSubtitle">{user.displayName}</p>
+            <p className="connectChain">{user.walletAddress.slice(0, 8)}...</p>
+            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+          </div>
+        </div>
+      );
+
+    case 'leaderboard':
+      // Placeholder until batch 9.5
+      return (
+        <div className="setupScreen">
+          <WalletButton />
+          <div className="setupCard">
+            <h1 className="setupTitle marqueeTitle">Leaderboard</h1>
+            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
+            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+          </div>
+        </div>
       );
 
     case 'create':
     case 'join':
     case 'lobby':
-    case 'online-game':
+    case 'game':
       return (
         <SocketProvider>
+          <WalletButton />
           <OnlineFlow
             onBack={() => setScreen('menu')}
             initialScreen={screen === 'join' ? 'join' : 'create'}
@@ -148,4 +178,14 @@ export default function Home() {
     default:
       return <MainMenu onNavigate={setScreen} />;
   }
+}
+
+export default function Home() {
+  return (
+    <WalletContextProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
+    </WalletContextProvider>
+  );
 }
