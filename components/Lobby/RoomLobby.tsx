@@ -49,6 +49,14 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
             {copied && <span className="copiedToast">Copied!</span>}
           </div>
           <p className="setupSubtitle casinoSubtitle">Share this table number with friends</p>
+          {roomState.entryFeeLamports > 0 && (
+            <div className="lobbyEntryBanner">
+              <span>Entry: {(roomState.entryFeeLamports / 1_000_000_000).toFixed(2)} SOL</span>
+              <span className="lobbyPotAmount">
+                Pot: {(roomState.potLamports / 1_000_000_000).toFixed(2)} SOL
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="lobbyContent">
@@ -65,6 +73,11 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
                     {player.isHost && <span className="lobbyHostBadge">HOST</span>}
                     {player.isYou && <span className="lobbyYouBadge">YOU</span>}
                   </span>
+                  {roomState.entryFeeLamports > 0 && (
+                    <span className={`lobbyDepositDot ${player.deposited ? 'deposited' : ''}`}>
+                      {player.deposited ? '✓ Paid' : 'Unpaid'}
+                    </span>
+                  )}
                   <span className={`lobbyReadyDot ${player.ready ? 'ready' : ''}`}>
                     {player.ready ? 'Ready' : 'Not Ready'}
                   </span>

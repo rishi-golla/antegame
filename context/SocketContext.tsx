@@ -27,6 +27,8 @@ interface SocketContextValue {
   sendGameAction: (action: string, data?: Record<string, unknown>) => void;
   sendPropertyAction: (action: string, tileIndex: number) => void;
   sendTradeAction: (action: string, data?: Record<string, unknown>) => void;
+  quickPlay: (entryFeeLamports: number) => Promise<{ ok: boolean; code?: string; error?: string }>;
+  sendDeposit: (txSignature: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -141,6 +143,34 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const quickPlay = useCallback(
+    (entryFeeLamports: number) => {
+      return new Promise<{ ok: boolean; code?: string; error?: string }>((resolve) => {
+        const socket = getSocket();
+        // Use stored user info - will be set from AuthContext
+        const walletAddress = (window as any).__monopolyWallet ?? '';
+        const name = (window as any).__monopolyName ?? 'Player';
+        const color = (window as any).__monopolyColor ?? '#ff6b6b';
+        socket.emit('room:quick-play', { walletAddress, name, color, entryFeeLamports }, (res) => {
+          resolve(res);
+        });
+      });
+    },
+    []
+  );
+
+  const sendDeposit = useCallback(
+    (txSignature: string) => {
+      return new Promise<{ ok: boolean; error?: string }>((resolve) => {
+        const socket = getSocket();
+        socket.emit('room:deposit', { txSignature }, (res) => {
+          resolve(res);
+        });
+      });
+    },
+    []
+  );
+
   const sendChat = useCallback((text: string) => {
     if (!text.trim()) return;
     const socket = getSocket();
@@ -185,6 +215,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         sendGameAction,
         sendPropertyAction,
         sendTradeAction,
+        quickPlay,
+        sendDeposit,
       }}
     >
       {children}

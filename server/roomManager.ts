@@ -36,6 +36,7 @@ export class RoomManager {
       connected: true,
       disconnectedAt: null,
       playerIndex: 0,
+      deposited: false,
     };
 
     const room: Room = {
@@ -48,6 +49,9 @@ export class RoomManager {
       chatHistory: [],
       createdAt: Date.now(),
       lastActivity: Date.now(),
+      entryFeeLamports: 0,
+      potLamports: 0,
+      isQuickPlay: false,
     };
 
     this.rooms.set(code, room);
@@ -81,6 +85,7 @@ export class RoomManager {
       connected: true,
       disconnectedAt: null,
       playerIndex: room.players.length,
+      deposited: false,
     };
 
     room.players.push(player);
@@ -215,6 +220,59 @@ export class RoomManager {
     player.disconnectedAt = null;
 
     return true;
+  }
+
+  // Find an open quick-play room with matching entry fee
+  findQuickPlayRoom(entryFeeLamports: number): Room | undefined {
+    for (const [, room] of this.rooms) {
+      if (
+        room.isQuickPlay &&
+        room.phase === 'lobby' &&
+        room.entryFeeLamports === entryFeeLamports &&
+        room.players.length < room.maxPlayers
+      ) {
+        return room;
+      }
+    }
+    return undefined;
+  }
+
+  // Create a quick-play room
+  createQuickPlayRoom(
+    socketId: string,
+    name: string,
+    color: string,
+    entryFeeLamports: number,
+    walletAddress: string
+  ): { ok: boolean; code?: string; error?: string } {
+    const result = this.createRoom(socketId, name, color, 4);
+    if (result.ok && result.code) {
+      const room = this.rooms.get(result.code)!;
+      room.isQuickPlay = true;
+      room.entryFeeLamports = entryFeeLamports;
+      const player = room.players[0];
+      player.walletAddress = walletAddress;
+    }
+    return result;
+  }
+
+  // Mark player as deposited
+  markDeposited(code: string, socketId: string): boolean {
+    const room = this.rooms.get(code);
+    if (!room) return false;
+    const player = room.players.find((p) => p.id === socketId);
+    if (!player) return false;
+    player.deposited = true;
+    room.potLamports += room.entryFeeLamports;
+    return true;
+  }
+
+  // Check if all players deposited and ready
+  allDepositedAndReady(code: string): boolean {
+    const room = this.rooms.get(code);
+    if (!room) return false;
+    if (room.entryFeeLamports === 0) return room.players.every((p) => p.ready);
+    return room.players.every((p) => p.ready && p.deposited);
   }
 
   // Clean up stale rooms

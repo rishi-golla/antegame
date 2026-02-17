@@ -12,6 +12,10 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/wallet-adapter-react-ui": "^0.9.39",
+    "@solana/wallet-adapter-wallets": "^0.19.37",
+    "@solana/web3.js": "^1.98.4",
     "better-sqlite3": "^12.6.2",
     "bs58": "^6.0.0",
     "express": "^5.2.1",
@@ -20,7 +24,8 @@
     "react-dom": "18.3.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "viem": "^2.46.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

@@ -8,6 +8,8 @@ export interface ServerPlayer {
   connected: boolean;
   disconnectedAt: number | null;
   playerIndex: number; // index in GameState.players
+  walletAddress?: string;
+  deposited: boolean;
 }
 
 export type RoomPhase = 'lobby' | 'playing' | 'finished';
@@ -22,6 +24,9 @@ export interface Room {
   chatHistory: ChatMessage[];
   createdAt: number;
   lastActivity: number;
+  entryFeeLamports: number;
+  potLamports: number;
+  isQuickPlay: boolean;
 }
 
 export interface ChatMessage {
@@ -61,6 +66,8 @@ export interface ClientToServerEvents {
   'game:minigame-result': (data: { tier: import('@/types/game').MinigameTier }) => void;
   'game:pay-rent': () => void;
   'chat:send': (data: { text: string }) => void;
+  'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
+  'room:deposit': (data: { txSignature: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
 }
 
 // Server -> Client events
@@ -72,6 +79,9 @@ export interface ServerToClientEvents {
   'chat:history': (messages: ChatMessage[]) => void;
   'player:disconnected': (data: { playerIndex: number }) => void;
   'player:reconnected': (data: { playerIndex: number }) => void;
+  'player:deposited': (data: { playerIndex: number }) => void;
+  'game:settlement': (data: { winnerWallet: string; txSignature: string; payoutLamports: number }) => void;
+  'game:refund': (data: { walletAddress: string; txSignature: string; amountLamports: number }) => void;
 }
 
 export interface RoomClientState {
@@ -84,7 +94,11 @@ export interface RoomClientState {
     connected: boolean;
     isHost: boolean;
     isYou: boolean;
+    deposited: boolean;
   }>;
   maxPlayers: number;
   hostName: string;
+  entryFeeLamports: number;
+  potLamports: number;
+  isQuickPlay: boolean;
 }

@@ -49,6 +49,9 @@ nextApp.prepare().then(() => {
         phase: room.phase,
         maxPlayers: room.maxPlayers,
         hostName: room.players.find((p) => p.id === room.hostId)?.name ?? '',
+        entryFeeLamports: room.entryFeeLamports,
+        potLamports: room.potLamports,
+        isQuickPlay: room.isQuickPlay,
         players: room.players.map((p) => ({
           name: p.name,
           color: p.color,
@@ -56,6 +59,7 @@ nextApp.prepare().then(() => {
           connected: p.connected,
           isHost: p.id === room.hostId,
           isYou: p.id === player.id,
+          deposited: p.deposited,
         })),
       };
 
@@ -412,6 +416,55 @@ nextApp.prepare().then(() => {
       } catch (e: any) {
         socket.emit('room:error', e.message ?? 'Pay rent failed');
       }
+    });
+
+    // Quick Play
+    socket.on('room:quick-play', (data, cb) => {
+      const existing = rm.findQuickPlayRoom(data.entryFeeLamports);
+      if (existing) {
+        const joinResult = rm.joinRoom(existing.code, socket.id, data.name, data.color);
+        if (joinResult.ok) {
+          const player = rm.getPlayerInRoom(existing.code, socket.id);
+          if (player) player.walletAddress = data.walletAddress;
+          socket.join(existing.code);
+          const room = rm.getRoom(existing.code);
+          if (room) socket.emit('chat:history', room.chatHistory);
+          broadcastRoomState(existing.code);
+          systemMessage(existing.code, `${data.name} joined the table.`);
+
+          // Auto-start when full (4 players) or schedule 60s timer
+          if (existing.players.length >= existing.maxPlayers) {
+            // Will start when all deposited+ready
+          }
+          cb({ ok: true, code: existing.code });
+        } else {
+          cb(joinResult);
+        }
+      } else {
+        const result = rm.createQuickPlayRoom(socket.id, data.name, data.color, data.entryFeeLamports, data.walletAddress);
+        if (result.ok && result.code) {
+          socket.join(result.code);
+          broadcastRoomState(result.code);
+          systemMessage(result.code, `${data.name} created a quick-play table.`);
+        }
+        cb(result);
+      }
+    });
+
+    // Deposit
+    socket.on('room:deposit', (data, cb) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return cb({ ok: false, error: 'Not in a room' });
+      // In production, verify the tx signature on-chain here
+      const success = rm.markDeposited(code, socket.id);
+      if (!success) return cb({ ok: false, error: 'Deposit tracking failed' });
+      const player = rm.getPlayerInRoom(code, socket.id);
+      if (player) {
+        io.to(code).emit('player:deposited', { playerIndex: player.playerIndex });
+        systemMessage(code, `${player.name} deposited entry fee.`);
+      }
+      broadcastRoomState(code);
+      cb({ ok: true });
     });
 
     // Disconnect
