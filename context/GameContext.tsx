@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type Dispatch,
 } from 'react';
-import type { GameState, GamePhase } from '@/types/game';
+import type { GameState, GamePhase, MinigameTier, MinigameContext } from '@/types/game';
 import type { TradeOffer } from '@/types/game';
 import {
   createGame,
@@ -20,6 +20,9 @@ import {
   resolveCard,
   attemptJailEscape,
   declareBankruptcy,
+  startMinigame,
+  resolveMinigame,
+  payRentNormally,
 } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
@@ -40,7 +43,10 @@ type GameAction =
   | { type: 'UNMORTGAGE'; tileIndex: number }
   | { type: 'PROPOSE_TRADE'; offer: TradeOffer }
   | { type: 'ACCEPT_TRADE' }
-  | { type: 'REJECT_TRADE' };
+  | { type: 'REJECT_TRADE' }
+  | { type: 'GAMBLE'; context: MinigameContext }
+  | { type: 'MINIGAME_RESULT'; tier: MinigameTier }
+  | { type: 'PAY_RENT' };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -76,6 +82,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return acceptTrade(state);
     case 'REJECT_TRADE':
       return rejectTrade(state);
+    case 'GAMBLE':
+      return startMinigame(state, action.context);
+    case 'MINIGAME_RESULT':
+      return resolveMinigame(state, action.tier);
+    case 'PAY_RENT':
+      return payRentNormally(state);
     default:
       return state;
   }

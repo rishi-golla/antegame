@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode, Dispatch } from 'react';
-import type { GameState } from '@/types/game';
+import type { GameState, MinigameTier, MinigameContext } from '@/types/game';
 import { GameContext } from './GameContext';
 import { useSocket } from './SocketContext';
 
@@ -21,7 +21,10 @@ type GameAction =
   | { type: 'UNMORTGAGE'; tileIndex: number }
   | { type: 'PROPOSE_TRADE'; offer: import('@/types/game').TradeOffer }
   | { type: 'ACCEPT_TRADE' }
-  | { type: 'REJECT_TRADE' };
+  | { type: 'REJECT_TRADE' }
+  | { type: 'GAMBLE'; context: MinigameContext }
+  | { type: 'MINIGAME_RESULT'; tier: MinigameTier }
+  | { type: 'PAY_RENT' };
 
 export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
   const { gameState, sendGameAction, sendPropertyAction, sendTradeAction } = useSocket();
@@ -79,6 +82,15 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         break;
       case 'REJECT_TRADE':
         sendTradeAction('reject');
+        break;
+      case 'GAMBLE':
+        sendGameAction('gamble', { context: action.context });
+        break;
+      case 'MINIGAME_RESULT':
+        sendGameAction('minigame-result', { tier: action.tier });
+        break;
+      case 'PAY_RENT':
+        sendGameAction('pay-rent');
         break;
     }
   };
