@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 
 interface CrapsProps {
@@ -25,6 +25,9 @@ export default function Craps({ onResult, baseAmount, context }: CrapsProps) {
   const [rolling, setRolling] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [result, setResult] = useState<number | null>(null);
+  const [landed, setLanded] = useState(false);
+  const die1Ref = useRef<HTMLDivElement>(null);
+  const die2Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => { onResult('catastrophic'); }, 15000);
@@ -37,25 +40,49 @@ export default function Craps({ onResult, baseAmount, context }: CrapsProps) {
     if (!targetNumber || rolling) return;
     setGameStarted(true);
     setRolling(true);
+    setLanded(false);
+
+    // Rapid face cycling with decreasing speed
+    const finalD1 = Math.ceil(Math.random() * 6);
+    const finalD2 = Math.ceil(Math.random() * 6);
+    const total = finalD1 + finalD2;
 
     let rollCount = 0;
-    const maxRolls = 20;
-    const rollInterval = setInterval(() => {
+    const totalRolls = 24;
+
+    const doRoll = () => {
+      if (rollCount >= totalRolls) {
+        // Final landing
+        setDice1(finalD1);
+        setDice2(finalD2);
+        setResult(total);
+        setRolling(false);
+        setLanded(true);
+
+        // Bounce effect on land
+        if (die1Ref.current) die1Ref.current.classList.add('diceBounce');
+        if (die2Ref.current) die2Ref.current.classList.add('diceBounce');
+
+        setTimeout(() => {
+          if (die1Ref.current) die1Ref.current.classList.remove('diceBounce');
+          if (die2Ref.current) die2Ref.current.classList.remove('diceBounce');
+        }, 400);
+
+        setTimeout(() => calculateResult(total), 1200);
+        return;
+      }
+
+      // Random face each tick
       setDice1(Math.ceil(Math.random() * 6));
       setDice2(Math.ceil(Math.random() * 6));
       rollCount++;
-      if (rollCount >= maxRolls) {
-        clearInterval(rollInterval);
-        const f1 = Math.ceil(Math.random() * 6);
-        const f2 = Math.ceil(Math.random() * 6);
-        const total = f1 + f2;
-        setDice1(f1);
-        setDice2(f2);
-        setResult(total);
-        setRolling(false);
-        setTimeout(() => calculateResult(total), 1000);
-      }
-    }, 100);
+
+      // Speed decreases as we approach the end (starts fast, slows down)
+      const delay = 50 + Math.pow(rollCount / totalRolls, 2) * 200;
+      setTimeout(doRoll, delay);
+    };
+
+    doRoll();
   };
 
   const calculateResult = (total: number) => {
@@ -70,10 +97,8 @@ export default function Craps({ onResult, baseAmount, context }: CrapsProps) {
 
   return (
     <div className="craps pixelMinigame">
-      <div className="crapsHeader">
-        <h2 className="crapsTitle">CRAPS</h2>
-        {targetNumber && <div className="crapsTarget">TARGET: {targetNumber}</div>}
-      </div>
+      <h2 className="crapsTitle">CRAPS</h2>
+      {targetNumber && <div className="crapsTarget">TARGET: {targetNumber}</div>}
 
       {!gameStarted && (
         <div className="crapsTargetSelection">
@@ -87,14 +112,18 @@ export default function Craps({ onResult, baseAmount, context }: CrapsProps) {
       )}
 
       <div className="crapsDiceArea">
-        <div className="crapsDiceCup">
-          <img src="/assets/minigames/dice/dice-cup.png" alt="cup" className="diceCupImg" />
-        </div>
-        <div className="crapsDice">
-          <div className={`crapsDieImg ${rolling ? 'diceRolling' : ''}`}>
+        <div className="crapsDiceTable">
+          <div
+            ref={die1Ref}
+            className={`crapsDie ${rolling ? 'diceRolling' : ''} ${landed ? 'diceLanded' : ''}`}
+          >
             <img src={DICE_IMAGES[dice1 - 1]} alt={`${dice1}`} className="dieImg" />
           </div>
-          <div className={`crapsDieImg ${rolling ? 'diceRolling' : ''}`}>
+          <div
+            ref={die2Ref}
+            className={`crapsDie ${rolling ? 'diceRolling' : ''} ${landed ? 'diceLanded' : ''}`}
+            style={{ animationDelay: '0.05s' }}
+          >
             <img src={DICE_IMAGES[dice2 - 1]} alt={`${dice2}`} className="dieImg" />
           </div>
         </div>
