@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { GameProvider } from '@/context/GameContext';
 import { WalletContextProvider } from '@/context/WalletContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { SocketProvider, useSocket } from '@/context/SocketContext';
@@ -9,6 +10,7 @@ import Board from '@/components/Board/Board';
 import SidePanel from '@/components/SidePanel/SidePanel';
 import PlayerList from '@/components/PlayerList/PlayerList';
 import GameOver from '@/components/GameOver/GameOver';
+import GameSetup from '@/components/GameSetup/GameSetup';
 import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
@@ -16,11 +18,8 @@ import TradeModal from '@/components/Board/TradeModal';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
 import WalletButton from '@/components/Auth/WalletButton';
-import QuickPlayScreen from '@/components/QuickPlay/QuickPlayScreen';
-import ProfileScreen from '@/components/Auth/ProfileScreen';
-import LeaderboardScreen from '@/components/Auth/LeaderboardScreen';
 
-type Screen = 'menu' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
+type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
@@ -39,6 +38,9 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
           <button className="setupStartBtn neonBtn menuBtnAlt" onClick={() => onNavigate('join')}>
             Join Room
           </button>
+          <button className="lobbyBackBtn" onClick={() => onNavigate('free-play-setup')}>
+            Free Play
+          </button>
           <button className="lobbyBackBtn" onClick={() => onNavigate('profile')}>
             Profile
           </button>
@@ -48,6 +50,23 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
+  const [tradeTarget, setTradeTarget] = useState<number | null>(null);
+  return (
+    <>
+      <main className="gameScreen">
+        <PlayerList onTrade={setTradeTarget} />
+        <Board />
+        <SidePanel />
+      </main>
+      {tradeTarget !== null && (
+        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
+      )}
+      <GameOver onPlayAgain={onPlayAgain} />
+    </>
   );
 }
 
@@ -100,6 +119,7 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
 function AuthGate() {
   const { user, loading } = useAuth();
   const [screen, setScreen] = useState<Screen>('menu');
+  const [freePlayConfig, setFreePlayConfig] = useState<{ names: string[]; sprites: string[]; colors: string[] } | null>(null);
 
   if (loading) {
     return (
@@ -112,9 +132,10 @@ function AuthGate() {
   }
 
   if (!user) {
-    return <ConnectScreen />;
+    return <ConnectScreen onFreePlay={() => setScreen('free-play-setup')} />;
   }
 
+  // New user needs profile setup
   if (!user.displayName || !user.characterId) {
     return <ProfileSetup />;
   }
@@ -123,28 +144,63 @@ function AuthGate() {
     case 'menu':
       return <MainMenu onNavigate={setScreen} />;
 
-    case 'quick-play':
+    case 'free-play-setup':
       return (
-        <SocketProvider>
+        <GameSetup
+          onStart={(names, sprites, colors) => {
+            setFreePlayConfig({ names, sprites, colors });
+            setScreen('free-play-game');
+          }}
+        />
+      );
+
+    case 'free-play-game': {
+      const cfg = freePlayConfig || { names: ['Player 1', 'Player 2'], sprites: ['', ''], colors: ['#ff6b6b', '#5cd6c0'] };
+      return (
+        <GameProvider playerNames={cfg.names} playerSprites={cfg.sprites} playerColors={cfg.colors}>
+          <FreePlayScreen onPlayAgain={() => setScreen('menu')} />
+        </GameProvider>
+      );
+    }
+
+    case 'quick-play':
+      // Placeholder until batch 9.4
+      return (
+        <div className="setupScreen">
           <WalletButton />
-          <QuickPlayScreen onFound={() => setScreen('lobby')} onBack={() => setScreen('menu')} />
-        </SocketProvider>
+          <div className="setupCard">
+            <h1 className="setupTitle marqueeTitle">Quick Play</h1>
+            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
+            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+          </div>
+        </div>
       );
 
     case 'profile':
+      // Placeholder until batch 9.5
       return (
-        <>
+        <div className="setupScreen">
           <WalletButton />
-          <ProfileScreen onBack={() => setScreen('menu')} />
-        </>
+          <div className="setupCard">
+            <h1 className="setupTitle marqueeTitle">Profile</h1>
+            <p className="setupSubtitle casinoSubtitle">{user.displayName}</p>
+            <p className="connectChain">{user.walletAddress.slice(0, 8)}...</p>
+            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+          </div>
+        </div>
       );
 
     case 'leaderboard':
+      // Placeholder until batch 9.5
       return (
-        <>
+        <div className="setupScreen">
           <WalletButton />
-          <LeaderboardScreen onBack={() => setScreen('menu')} />
-        </>
+          <div className="setupCard">
+            <h1 className="setupTitle marqueeTitle">Leaderboard</h1>
+            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
+            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+          </div>
+        </div>
       );
 
     case 'create':
