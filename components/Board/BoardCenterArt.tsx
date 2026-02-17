@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
+import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
 
 interface BoardCenterArtProps {
   isRolling: boolean;
@@ -189,28 +190,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
           </div>
         </div>
       ) : state.phase === 'minigame' && state.activeMinigame ? (
-        <div className="minigameOverlay">
-          <div className="minigameIntro">
-            <h2>{state.activeMinigame.id.replace('-', ' ').toUpperCase()}</h2>
-            <p>Stakes: ${state.activeMinigame.baseAmount}</p>
-            <p>Context: {state.activeMinigame.context}</p>
-            <div style={{ marginTop: '20px' }}>
-              <button 
-                className="rollButton" 
-                onClick={() => dispatch({ type: 'MINIGAME_RESULT', tier: 'win' })}
-              >
-                Test Win
-              </button>
-              <button 
-                className="rollButton" 
-                onClick={() => dispatch({ type: 'MINIGAME_RESULT', tier: 'loss' })}
-                style={{ marginLeft: '10px' }}
-              >
-                Test Loss
-              </button>
-            </div>
-          </div>
-        </div>
+        <MinigameOverlay />
       ) : (
         <button
           className="rollButton"
