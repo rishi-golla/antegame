@@ -8,6 +8,7 @@ import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally } fr
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import authRouter, { sessionMiddleware } from './routes/auth';
+import statsRouter from './routes/stats';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -27,6 +28,7 @@ nextApp.prepare().then(() => {
   app.use(express.json());
   app.use(sessionMiddleware);
   app.use('/api/auth', authRouter);
+  app.use('/api/stats', statsRouter);
   const httpServer = createServer(app);
 
   const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
