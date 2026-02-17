@@ -1,4 +1,4 @@
-# Batch 9: Wallet Auth + Crypto Rooms
+# Batch 9: Wallet Auth + Crypto Game
 
 ## Investigation Summary
 
@@ -12,17 +12,24 @@
 - **Room Flow:** `room:create` -> lobby -> `room:start` -> game. `RoomClientState` sent to all clients on changes
 - **Deps:** Express 5, React 18, Socket.IO 4, no auth/DB/crypto libraries
 
+### Key Decision: Crypto Only
+- NO free play, NO guest mode, NO local play
+- Wallet connect is MANDATORY to access the game
+- Every room is a crypto room with a SOL entry fee
+- Landing page is: Connect Wallet -> Profile Setup (first time) -> Create/Join Room (pick entry fee)
+- Removes: `GameSetup`, `local-setup`, `local-game` screens, `GameProvider` local mode
+
 ### Integration Points
 - **Express server (`server/index.ts`):** Mount auth API routes, add session middleware, add wallet verification to socket handshake
-- **Socket events (`server/types.ts`):** Add `walletAddress` to `ServerPlayer`, add wallet fields to `ClientToServerEvents`
-- **Room manager (`server/roomManager.ts`):** Support crypto room type with entry fee, pot tracking, wallet requirement enforcement
-- **Frontend screens (`app/page.tsx`):** Add wallet button to all screens, add profile-setup screen, split menu into free/crypto sections
-- **Lobby UI (`CreateRoom.tsx`, `JoinRoom.tsx`, `RoomLobby.tsx`):** Add crypto room creation with fee selector, deposit flow in lobby
-- **Game over (`GameOver.tsx`):** Show settlement status for crypto games
+- **Socket events (`server/types.ts`):** Add `walletAddress` to `ServerPlayer`, wallet required for all room events
+- **Room manager (`server/roomManager.ts`):** All rooms have entry fee and pot tracking. Wallet required
+- **Frontend screens (`app/page.tsx`):** Gate entire app behind wallet connect. Remove local play. Simplify to: connect -> menu -> create/join -> lobby -> game
+- **Lobby UI (`CreateRoom.tsx`, `JoinRoom.tsx`, `RoomLobby.tsx`):** Entry fee selector, deposit flow, balance display
+- **Game over (`GameOver.tsx`):** Show settlement with Solscan link
 
 ### Solana Integration Notes
 - Existing code in `~/.openclaw/workspace/sol-sniper/` has Jupiter swap and wallet patterns -- reference but do not import
-- Escrow pattern: PDA (Program Derived Address) holds funds, server keypair is settlement authority
+- Escrow pattern: server-controlled escrow wallet for MVP (upgrade to PDA program later)
 - Wallet adapter handles wallet popup, signing, and connection state
 - Signature verification: player signs a nonce message, server verifies using ed25519
 
@@ -80,7 +87,7 @@
      - Signature is valid for the expected message using wallet's public key
      - For Solana: decode base58 signature, verify ed25519 using `@solana/web3.js` PublicKey.verify or tweetnacl
      - On success: upsert user in DB, create session, set `monopoly_session` cookie (httpOnly, sameSite lax, 30 days), return `{ user, isNewUser }`
-   - `GET /api/auth/me`: reads session cookie, returns `{ user, stats }` or `{ guest: true }`
+   - `GET /api/auth/me`: reads session cookie, returns `{ user, stats }` or `{ authenticated: false }`
    - `POST /api/auth/logout`: destroys session, clears cookie
    - `PATCH /api/auth/profile`: authenticated only. Body `{ displayName?, characterId? }`. Validates: displayName 1-20 chars, characterId must be in CHARACTERS array. Updates DB
    - Rate limiting: simple in-memory map, 10 requests per minute per IP on verify-wallet and nonce endpoints
@@ -97,7 +104,7 @@
 - Invalid signature rejected
 - Session created on successful verify
 - Cookie set correctly
-- `/me` returns user when authenticated, guest when not
+- `/me` returns user when authenticated, `{ authenticated: false }` when not
 - Profile update validates inputs
 - Rate limiting blocks after threshold
 
@@ -116,8 +123,8 @@
    - No wallet adapter default UI -- we build custom
 
 3. Create `context/AuthContext.tsx`:
-   - State: `user` (DB user object or null), `isGuest` (boolean), `isLoading` (boolean), `isNewUser` (boolean)
-   - On mount: call `GET /api/auth/me`. If authenticated, set user. Otherwise guest
+   - State: `user` (DB user object or null), `isAuthenticated` (boolean), `isLoading` (boolean), `isNewUser` (boolean)
+   - On mount: call `GET /api/auth/me`. If authenticated, set user. Otherwise show connect screen
    - `connectAndSign()`:
      1. Trigger wallet connect (via wallet adapter `connect()`)
      2. Call `GET /api/auth/nonce` to get nonce + message
@@ -127,7 +134,7 @@
      6. Set user state
    - `disconnect()`: call `POST /api/auth/logout`, disconnect wallet adapter, clear state
    - `updateProfile(displayName, characterId)`: call `PATCH /api/auth/profile`, update local state
-   - Expose: `user`, `isGuest`, `isLoading`, `isNewUser`, `connectAndSign`, `disconnect`, `updateProfile`, `setNewUserDone`
+   - Expose: `user`, `isAuthenticated`, `isLoading`, `isNewUser`, `connectAndSign`, `disconnect`, `updateProfile`, `setNewUserDone`
 
 4. Create `components/Auth/WalletButton.tsx`:
    - Fixed position top-right of screen (or in a header bar)
@@ -163,62 +170,72 @@
 
 ---
 
-## Batch 9.4: Room Types (Free vs Crypto)
+## Batch 9.4: Crypto Room Flow
+
+All rooms are crypto rooms. No free play option exists.
 
 **Tasks:**
 
 1. Update `server/types.ts`:
-   - Add to `ServerPlayer`: `walletAddress: string | null`
-   - Add to `Room`: `isCrypto: boolean`, `entryFeeLamports: number`, `potLamports: number`
-   - Add to `RoomClientState`: `isCrypto: boolean`, `entryFee: number` (in SOL for display), `pot: number` (in SOL), player wallet connection status
-   - Add to `ClientToServerEvents`:
-     - Update `room:create` data: add `isCrypto`, `entryFeeLamports`, `walletAddress`
-     - Update `room:join` data: add `walletAddress`
+   - Add to `ServerPlayer`: `walletAddress: string` (required, not nullable)
+   - Add to `Room`: `entryFeeLamports: number`, `potLamports: number`
+   - Add to `RoomClientState`: `entryFee: number` (in SOL for display), `pot: number` (in SOL), per-player deposit status
+   - Update `ClientToServerEvents`:
+     - `room:create` data: add `entryFeeLamports`, `walletAddress` (required)
+     - `room:join` data: add `walletAddress` (required)
+     - New event: `room:deposit` with tx signature
 
 2. Update `server/roomManager.ts`:
-   - `createRoom` accepts crypto params. If `isCrypto`, validates wallet provided
-   - `joinRoom` validates: if room is crypto, joining player must provide wallet
-   - Track pot: `potLamports = entryFeeLamports * playerCount` (calculated, not stored incrementally)
-   - New method: `isPlayerWalletConnected(roomCode, socketId)` -- checks if player has wallet
+   - `createRoom` requires `walletAddress` and `entryFeeLamports` -- reject without
+   - `joinRoom` requires `walletAddress` -- reject without
+   - Track pot: `potLamports = entryFeeLamports * playerCount`
+   - Track deposit status per player: `deposited: boolean` on `ServerPlayer`
+   - Game start blocked until all players deposited
 
-3. Update main menu in `app/page.tsx`:
-   - Restructure menu card:
-     - "FREE PLAY" section header (green): Create Room, Join Room, Local Play
-     - "CRYPTO ROOMS" section header (gold): Create Crypto Room, Join Crypto Room
-     - Crypto section has small "Wallet required" note
-     - If wallet not connected, crypto buttons show lock icon and trigger wallet connect on click
+3. Remove local play entirely from `app/page.tsx`:
+   - Remove `local-setup`, `local-game` screens
+   - Remove `GameSetup` import and component
+   - Remove `GameProvider` local mode usage
+   - Screen flow: `connect` (wallet gate) -> `menu` -> `create` / `join` -> `lobby` -> `game`
+   - If not authenticated, entire app shows connect wallet screen (no menu access)
 
-4. Create `components/Lobby/CreateCryptoRoom.tsx`:
-   - Similar to CreateRoom but with entry fee selector
-   - Entry fee tiers: 0.01, 0.05, 0.1, 0.25, 0.5, 1 SOL -- displayed as gold chip buttons
-   - Pot preview: "4 players x 0.1 SOL = 0.4 SOL pot" (updates with max players selection)
+4. Update `components/Lobby/CreateRoom.tsx` (replaces CreateCryptoRoom -- all rooms are crypto):
+   - Add entry fee selector: 0.01, 0.05, 0.1, 0.25, 0.5, 1 SOL -- gold chip-style buttons
+   - Pot preview: "4 players x 0.1 SOL = 0.4 SOL pot" (dynamic with max players)
    - Shows connected wallet address and SOL balance
-   - If balance < entry fee, show warning and disable create
-   - Character selection same as CreateRoom
-   - Calls `createRoom` with `isCrypto: true, entryFeeLamports, walletAddress`
+   - If balance < entry fee, disable create button with "Insufficient balance" message
+   - Character auto-filled from profile (editable)
+   - Name auto-filled from profile (editable)
 
 5. Update `components/Lobby/JoinRoom.tsx`:
-   - When joining a crypto room, show entry fee and required balance
-   - If wallet not connected, prompt to connect first
-   - Pass wallet address in join event
+   - After entering room code, show room's entry fee before confirming join
+   - If balance < entry fee, show warning and block join
+   - Wallet address sent automatically with join event
 
 6. Update `components/Lobby/RoomLobby.tsx`:
-   - For crypto rooms:
-     - Show entry fee and current pot prominently (gold text)
-     - Each player row shows wallet connection status (green dot = connected, red = not)
-     - "Ready" button text changes to "Deposit & Ready" for crypto rooms
-     - For now: "Deposit & Ready" just marks ready (actual on-chain deposit in Batch 9.5)
-     - Show banner: "Crypto Room -- Entry: 0.1 SOL" at top of lobby
+   - Show entry fee and current pot prominently at top (gold banner)
+   - Each player row shows deposit status: pending (yellow), confirmed (green checkmark)
+   - "Ready" button replaced with "Deposit & Ready" -- triggers on-chain deposit
+   - Game start button (host only) disabled until all players deposited and ready
+   - If player leaves, their deposit is refunded (shown in UI)
 
 7. Update `context/SocketContext.tsx`:
-   - `createRoom` function passes wallet address from auth context
-   - `joinRoom` function passes wallet address
+   - `createRoom` and `joinRoom` always pass wallet address from auth context
+   - New function: `sendDeposit(txSignature)` emits `room:deposit`
+
+8. Create `components/Auth/ConnectScreen.tsx`:
+   - Full-screen landing page shown when not authenticated
+   - Casino themed: dark background, gold casino crest, game title
+   - Large "CONNECT WALLET" button (gold, prominent, casino styled)
+   - Supported wallets shown as small icons below (Phantom, Solflare, Backpack)
+   - Brief tagline: "Stake SOL. Roll dice. Win the pot."
 
 **Design:**
-- Crypto room indicators: gold border instead of standard border, small SOL icon
-- Entry fee chips: circular buttons with SOL amounts, selected = gold glow
+- Entry fee chips: circular gold buttons with SOL amounts, selected = bright gold glow + scale
 - Balance display: monospace font, green if sufficient, red if insufficient
-- Pot display: large gold text with coin icon
+- Pot display: large gold text with SOL icon in lobby banner
+- Connect screen: dramatic, dark, casino entrance feel -- the first thing anyone sees
+- No trace of free play anywhere in the UI
 
 ---
 
@@ -291,12 +308,11 @@
 9. Create `components/Auth/LeaderboardScreen.tsx`:
    - Ranked table: position, character sprite, display name, games won, win rate, SOL earned
    - Top 3: gold/silver/bronze styling with larger sprites
-   - Tabs: "All Time", "Crypto Only"
+   - Tabs: "All Time", "This Week"
    - Casino themed: dark bg, gold headers, pixel font for ranks
 
 10. Update `components/GameOver/GameOver.tsx`:
-    - Free games: current behavior unchanged
-    - Crypto games: additional section showing:
+    - Additional section showing:
       - "Settling on-chain..." spinner during settlement
       - "Winner received X SOL" with Solscan link to tx signature
       - Pot breakdown: total pot, platform fee (5%), winner payout
@@ -316,14 +332,13 @@ PLATFORM_FEE_BPS=500  # 5% = 500 basis points
 ```
 
 ## Edge Cases
-- Wallet disconnects mid-game (free room): game continues normally, player keeps playing as guest
-- Wallet disconnects mid-game (crypto room): game continues, if they win settlement goes to their wallet regardless
-- Player joins crypto room then disconnects before game starts: server refunds their deposit after 60s timeout
+- Wallet disconnects mid-game: game continues, if they win settlement goes to their wallet regardless
+- Player disconnects before game starts: server refunds their deposit after 60s timeout
 - Transaction fails during deposit: player stays un-ready, can retry
 - Transaction fails during settlement: server retries 3x, then flags for manual review, funds stay in escrow
 - Multiple browser tabs: session cookie shared, wallet adapter handles per-tab
-- Player tries to join crypto room with insufficient balance: rejected with error message showing required amount
-- Server restart during crypto game: game state lost (in-memory), escrow funds safe on-chain. Need manual settlement. Future improvement: persist active crypto rooms to DB
+- Insufficient balance: rejected with error message showing required amount
+- Server restart during active game: game state lost (in-memory), escrow funds safe on-chain. Need manual settlement. Future improvement: persist active rooms to DB
 - Double deposit (player sends twice): server only counts first valid deposit, excess stays in escrow (manual return)
 - Network congestion (Solana): use priority fees, configurable via env var
 
@@ -364,9 +379,8 @@ components/Lobby/
 ```
 
 ## Migration Path
-- Zero breaking changes to existing free play
-- All new features are additive
+- Replaces entire existing flow -- local play and free rooms removed
 - Database auto-creates on first server start
-- Wallet button visible on all screens but never required for free rooms
-- Crypto rooms are a separate flow -- free rooms untouched
+- Wallet connect is the gate -- nothing accessible without it
 - Start on devnet, flip to mainnet via env var when ready
+- Old components (GameSetup, local game provider) can be deleted
