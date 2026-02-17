@@ -1,10 +1,8 @@
 /**
- * Client-side contract interaction for MonopolyGame.sol
+ * Client-side contract interaction for MonopolyGame.sol on Base.
  *
  * All write functions require a wallet client (from wagmi/viem).
  * Read functions use a public client.
- *
- * TODO: Replace stub implementations once contracts are deployed on Base Sepolia.
  */
 
 import {
@@ -16,7 +14,6 @@ import {
   formatEther,
   type Address,
   type Hash,
-  type PublicClient,
   type WalletClient,
 } from 'viem';
 import { baseSepolia, base } from 'viem/chains';
@@ -69,54 +66,57 @@ export async function getGameOnChain(roomCode: string): Promise<OnChainGame | nu
   const gameId = roomCodeToGameId(roomCode);
   const addresses = getAddresses();
 
-  // TODO: Uncomment when contract is deployed
-  // const result = await client.readContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'getGame',
-  //   args: [gameId],
-  // });
-  // return {
-  //   buyIn: result[0],
-  //   maxPlayers: result[1],
-  //   pot: result[2],
-  //   startedAt: result[3],
-  //   state: result[4] as OnChainGameState,
-  //   players: result[5] as Address[],
-  //   winner: result[6] as Address,
-  // };
-
-  console.warn('[contracts] getGameOnChain stubbed -- contracts not deployed');
-  return null;
+  try {
+    const result = await client.readContract({
+      address: addresses.monopolyGame,
+      abi: MONOPOLY_GAME_ABI,
+      functionName: 'getGame',
+      args: [gameId],
+    });
+    return {
+      buyIn: result[0],
+      maxPlayers: result[1],
+      pot: result[2],
+      startedAt: result[3],
+      state: result[4] as OnChainGameState,
+      players: [...result[5]] as Address[],
+      winner: result[6] as Address,
+    };
+  } catch (err) {
+    console.error('[contracts] getGameOnChain failed:', err);
+    return null;
+  }
 }
 
 export async function isPlayerDeposited(roomCode: string, player: Address): Promise<boolean> {
-  // const client = getPublicClient();
-  // const gameId = roomCodeToGameId(roomCode);
-  // const addresses = getAddresses();
-  // return client.readContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'deposited',
-  //   args: [gameId, player],
-  // }) as Promise<boolean>;
-
-  console.warn('[contracts] isPlayerDeposited stubbed');
-  return false;
+  const client = getPublicClient();
+  const gameId = roomCodeToGameId(roomCode);
+  const addresses = getAddresses();
+  try {
+    return await client.readContract({
+      address: addresses.monopolyGame,
+      abi: MONOPOLY_GAME_ABI,
+      functionName: 'deposited',
+      args: [gameId, player],
+    }) as boolean;
+  } catch {
+    return false;
+  }
 }
 
 export async function getFeeBps(): Promise<number> {
-  // const client = getPublicClient();
-  // const addresses = getAddresses();
-  // const bps = await client.readContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'feeBps',
-  // }) as bigint;
-  // return Number(bps);
-
-  console.warn('[contracts] getFeeBps stubbed');
-  return 500; // 5% default
+  const client = getPublicClient();
+  const addresses = getAddresses();
+  try {
+    const bps = await client.readContract({
+      address: addresses.monopolyGame,
+      abi: MONOPOLY_GAME_ABI,
+      functionName: 'feeBps',
+    }) as bigint;
+    return Number(bps);
+  } catch {
+    return 500;
+  }
 }
 
 // --- Write functions ---
@@ -135,19 +135,17 @@ export async function createGameOnChain(
   const addresses = getAddresses();
   const buyInWei = parseEther(buyInEth);
 
-  // TODO: Uncomment when contract is deployed
-  // const hash = await walletClient.writeContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'createGame',
-  //   args: [gameId, BigInt(maxPlayers)],
-  //   value: buyInWei,
-  //   chain: getChain(),
-  // });
-  // return hash;
-
-  console.warn('[contracts] createGameOnChain stubbed -- would send', formatEther(buyInWei), 'ETH');
-  return '0x0000000000000000000000000000000000000000000000000000000000000000' as Hash;
+  const [account] = await walletClient.getAddresses();
+  const hash = await walletClient.writeContract({
+    account,
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'createGame',
+    args: [gameId, BigInt(maxPlayers)],
+    value: buyInWei,
+    chain: getChain(),
+  });
+  return hash;
 }
 
 /**
@@ -163,19 +161,17 @@ export async function joinGameOnChain(
   const addresses = getAddresses();
   const buyInWei = parseEther(buyInEth);
 
-  // TODO: Uncomment when contract is deployed
-  // const hash = await walletClient.writeContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'joinGame',
-  //   args: [gameId],
-  //   value: buyInWei,
-  //   chain: getChain(),
-  // });
-  // return hash;
-
-  console.warn('[contracts] joinGameOnChain stubbed');
-  return '0x0000000000000000000000000000000000000000000000000000000000000000' as Hash;
+  const [account] = await walletClient.getAddresses();
+  const hash = await walletClient.writeContract({
+    account,
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'joinGame',
+    args: [gameId],
+    value: buyInWei,
+    chain: getChain(),
+  });
+  return hash;
 }
 
 /**
@@ -186,23 +182,21 @@ export async function claimWinnings(
   walletClient: WalletClient,
   roomCode: string,
   nonce: Hash,
-  signature: Hash,
+  signature: `0x${string}`,
 ): Promise<Hash> {
   const gameId = roomCodeToGameId(roomCode);
   const addresses = getAddresses();
 
-  // TODO: Uncomment when contract is deployed
-  // const hash = await walletClient.writeContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'claimWinnings',
-  //   args: [gameId, nonce, signature],
-  //   chain: getChain(),
-  // });
-  // return hash;
-
-  console.warn('[contracts] claimWinnings stubbed');
-  return '0x0000000000000000000000000000000000000000000000000000000000000000' as Hash;
+  const [account] = await walletClient.getAddresses();
+  const hash = await walletClient.writeContract({
+    account,
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'claimWinnings',
+    args: [gameId, nonce, signature],
+    chain: getChain(),
+  });
+  return hash;
 }
 
 /**
@@ -215,18 +209,16 @@ export async function claimRefund(
   const gameId = roomCodeToGameId(roomCode);
   const addresses = getAddresses();
 
-  // TODO: Uncomment when contract is deployed
-  // const hash = await walletClient.writeContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'claimRefund',
-  //   args: [gameId],
-  //   chain: getChain(),
-  // });
-  // return hash;
-
-  console.warn('[contracts] claimRefund stubbed');
-  return '0x0000000000000000000000000000000000000000000000000000000000000000' as Hash;
+  const [account] = await walletClient.getAddresses();
+  const hash = await walletClient.writeContract({
+    account,
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'claimRefund',
+    args: [gameId],
+    chain: getChain(),
+  });
+  return hash;
 }
 
 /**
@@ -239,18 +231,16 @@ export async function emergencyCancel(
   const gameId = roomCodeToGameId(roomCode);
   const addresses = getAddresses();
 
-  // TODO: Uncomment when contract is deployed
-  // const hash = await walletClient.writeContract({
-  //   address: addresses.monopolyGame,
-  //   abi: MONOPOLY_GAME_ABI,
-  //   functionName: 'emergencyCancel',
-  //   args: [gameId],
-  //   chain: getChain(),
-  // });
-  // return hash;
-
-  console.warn('[contracts] emergencyCancel stubbed');
-  return '0x0000000000000000000000000000000000000000000000000000000000000000' as Hash;
+  const [account] = await walletClient.getAddresses();
+  const hash = await walletClient.writeContract({
+    account,
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'emergencyCancel',
+    args: [gameId],
+    chain: getChain(),
+  });
+  return hash;
 }
 
 // --- Utilities ---
