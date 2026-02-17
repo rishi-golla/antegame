@@ -7,6 +7,7 @@ import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager
 import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
+import authRouter, { sessionMiddleware } from './routes/auth';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -23,6 +24,9 @@ const rm = new RoomManager();
 
 nextApp.prepare().then(() => {
   const app = express();
+  app.use(express.json());
+  app.use(sessionMiddleware);
+  app.use('/api/auth', authRouter);
   const httpServer = createServer(app);
 
   const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
