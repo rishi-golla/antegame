@@ -64,8 +64,8 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
         </div>
       )}
 
-      {/* Skull overlay for catastrophic */}
-      {tier === 'catastrophic' && <div className="catastrophicSkull">💀</div>}
+      {/* Red vignette for catastrophic */}
+      {tier === 'catastrophic' && <div className="catastrophicVignette" />}
 
       <div className="minigameResultCard">
         <img src={getBannerSrc()} alt="" className="resultBannerImg" />

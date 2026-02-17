@@ -129,7 +129,7 @@ export default function Blackjack({ onResult, baseAmount, context }: BlackjackPr
   const dealerValue = calculateHandValue(dealerHand);
 
   return (
-    <div className="blackjack pixelMinigame" style={{ backgroundImage: 'url(/assets/minigames/cards/card-table.png)', backgroundSize: 'cover' }}>
+    <div className="blackjack pixelMinigame">
       <div className="bjOverlayBg">
         <div className="blackjackHeader">
           <h2 className="blackjackTitle">BLACKJACK</h2>
