@@ -2541,29 +2541,24 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-}
-
-.crapsDiceCup {
-  width: 48px;
-  height: 48px;
-}
-
-.diceCupImg {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.crapsDice {
-  display: flex;
   gap: 20px;
 }
 
-.crapsDieImg {
-  width: 100px;
-  height: 100px;
+.crapsDiceTable {
+  display: flex;
+  gap: 40px;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 3px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.crapsDie {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  image-rendering: pixelated;
 }
 
 .dieImg {
@@ -2571,42 +2566,67 @@ input {
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
+  filter: drop-shadow(3px 3px 0 #000);
 }
 
+/* Rolling: shake + rotate with stepped pixelated feel */
 .diceRolling {
-  animation: pixelDiceTumble 0.12s steps(6) infinite;
+  animation: diceShake 0.08s steps(2) infinite, diceSpin 0.15s steps(4) infinite;
 }
 
-@keyframes pixelDiceTumble {
-  0% { transform: rotate(0deg) scale(1); }
-  16% { transform: rotate(60deg) scale(1.1); }
-  33% { transform: rotate(120deg) scale(0.9); }
-  50% { transform: rotate(180deg) scale(1.1); }
-  66% { transform: rotate(240deg) scale(0.9); }
-  83% { transform: rotate(300deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(1); }
+@keyframes diceShake {
+  0% { translate: 0 0; }
+  25% { translate: -6px 4px; }
+  50% { translate: 4px -6px; }
+  75% { translate: 6px 2px; }
+  100% { translate: -2px -4px; }
+}
+
+@keyframes diceSpin {
+  0% { rotate: 0deg; scale: 1; }
+  25% { rotate: 90deg; scale: 1.15; }
+  50% { rotate: 180deg; scale: 0.9; }
+  75% { rotate: 270deg; scale: 1.1; }
+  100% { rotate: 360deg; scale: 1; }
+}
+
+/* Bounce on landing */
+.diceBounce {
+  animation: diceLand 0.4s steps(6) forwards !important;
+}
+
+@keyframes diceLand {
+  0% { translate: 0 -30px; scale: 1.2; }
+  20% { translate: 0 0; scale: 0.9; }
+  40% { translate: 0 -12px; scale: 1.05; }
+  60% { translate: 0 0; scale: 0.95; }
+  80% { translate: 0 -4px; scale: 1.02; }
+  100% { translate: 0 0; scale: 1; }
+}
+
+.diceLanded .dieImg {
+  filter: drop-shadow(3px 3px 0 #000) drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
 }
 
 .crapsInstructions {
-  font-size: 0.6rem;
+  font-size: 1rem;
   text-align: center;
   color: var(--ink-secondary);
 }
 
 .crapsRollBtn {
-  padding: 10px 20px;
+  padding: 16px 32px;
   background: var(--neon-red);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 1.1rem;
   cursor: pointer;
 }
 
-.crapsResult { text-align: center; font-size: 0.6rem; color: var(--ink-secondary); }
-.crapsResultDiff { color: var(--gold); font-weight: bold; margin-top: 4px; }
+.crapsResult { text-align: center; font-size: 1rem; color: var(--ink-secondary); }
+.crapsResultDiff { color: var(--gold); font-weight: bold; margin-top: 8px; font-size: 1.1rem; }
 
 .crapsPaytable {
-  font-size: 0.5rem;
+  font-size: 0.7rem;
   text-align: center;
   color: var(--muted);
   line-height: 1.8;
