@@ -4,7 +4,7 @@ import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { RoomManager } from './roomManager';
 import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager';
-import { declareBankruptcy } from '@/lib/gameEngine';
+import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import type {
@@ -344,6 +344,69 @@ nextApp.prepare().then(() => {
         broadcastGameState(code);
       } catch (e: any) {
         socket.emit('room:error', e.message ?? 'Reject trade failed');
+      }
+    });
+
+    // Minigame actions
+    socket.on('game:gamble', (data) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      if (!isCurrentPlayer(room, socket.id)) {
+        socket.emit('room:error', 'Not your turn');
+        return;
+      }
+      try {
+        room.gameState = startMinigame(room.gameState, data.context);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Gamble failed');
+      }
+    });
+
+    socket.on('game:minigame-result', (data) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      if (!isCurrentPlayer(room, socket.id)) {
+        socket.emit('room:error', 'Not your turn');
+        return;
+      }
+      try {
+        room.gameState = resolveMinigame(room.gameState, data.tier);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+        if (room.gameState.phase === 'game-over') {
+          room.phase = 'finished';
+          broadcastRoomState(code);
+        }
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Minigame result failed');
+      }
+    });
+
+    socket.on('game:pay-rent', () => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      if (!isCurrentPlayer(room, socket.id)) {
+        socket.emit('room:error', 'Not your turn');
+        return;
+      }
+      try {
+        room.gameState = payRentNormally(room.gameState);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+        if (room.gameState.phase === 'game-over') {
+          room.phase = 'finished';
+          broadcastRoomState(code);
+        }
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Pay rent failed');
       }
     });
 

@@ -5,6 +5,10 @@ import type {
   GameLog,
   ColorGroup,
   GamePhase,
+  MinigameId,
+  MinigameTier,
+  MinigameContext,
+  MinigameState,
 } from '@/types/game';
 import {
   TILES,
@@ -122,6 +126,10 @@ export function createGame(playerNames: string[]): GameState {
     winner: null,
     activeTradeOffer: null,
     previousPhase: null,
+    activeMinigame: null,
+    minigamesEnabled: true,
+    pendingRent: null,
+    recentMinigames: [],
   };
 }
 
@@ -224,7 +232,7 @@ export function resolveLanding(state: GameState): GameState {
   }
 }
 
-export function payRent(state: GameState, ownerIndex: number): GameState {
+export function calculateRent(state: GameState, ownerIndex: number): number {
   const player = currentPlayer(state);
   const tile = state.tiles[player.position];
   let rent = 0;
@@ -248,19 +256,47 @@ export function payRent(state: GameState, ownerIndex: number): GameState {
     rent = count === 1 ? diceTotal * 4 : diceTotal * 10;
   }
 
-  let s = updateCurrentPlayer(state, { money: player.money - rent });
-  s = updatePlayer(s, ownerIndex, {
-    money: s.players[ownerIndex].money + rent,
-  });
-  s = addLog(
-    s,
-    `${player.name} paid $${rent} rent to ${s.players[ownerIndex].name}.`,
-    state.currentPlayerIndex
-  );
+  return rent;
+}
+
+export function payRent(state: GameState, ownerIndex: number): GameState {
+  const rent = calculateRent(state, ownerIndex);
+  
+  if (state.minigamesEnabled && rent > 0) {
+    // Set pending rent and transition to paying-rent phase for gamble option
+    let s = { ...state, pendingRent: { amount: rent, toPlayer: ownerIndex } };
+    return { ...s, phase: 'paying-rent' };
+  }
+
+  // Minigames disabled or no rent - proceed normally
+  return payRentNormally(state, rent, ownerIndex);
+}
+
+export function payRentNormally(state: GameState, rent?: number, ownerIndex?: number): GameState {
+  const player = currentPlayer(state);
+  
+  // Use pending rent if available
+  const actualRent = rent ?? state.pendingRent?.amount ?? 0;
+  const actualOwner = ownerIndex ?? state.pendingRent?.toPlayer ?? -1;
+  
+  let s = updateCurrentPlayer(state, { money: player.money - actualRent });
+  if (actualOwner >= 0) {
+    s = updatePlayer(s, actualOwner, {
+      money: s.players[actualOwner].money + actualRent,
+    });
+    s = addLog(
+      s,
+      `${player.name} paid $${actualRent} rent to ${s.players[actualOwner].name}.`,
+      state.currentPlayerIndex
+    );
+  }
+
+  // Clear pending rent
+  s = { ...s, pendingRent: null };
 
   // Auto-bankrupt if money went negative
   if (s.players[state.currentPlayerIndex].money < 0) {
-    return declareBankruptcy(s, state.currentPlayerIndex, ownerIndex);
+    return declareBankruptcy(s, state.currentPlayerIndex, actualOwner >= 0 ? actualOwner : undefined);
   }
 
   return { ...s, phase: 'turn-end' };
@@ -588,4 +624,121 @@ export function getNetWorth(state: GameState, playerIndex: number): number {
   }
 
   return worth;
+}
+
+export function startMinigame(state: GameState, context: MinigameContext): GameState {
+  const player = currentPlayer(state);
+  const tile = state.tiles[player.position];
+  
+  // All available minigames
+  const allMinigames: MinigameId[] = [
+    'slots', 'higher-lower', 'craps', 'wheel', 'minesweeper', 
+    'horse-race', 'darts', 'blackjack', 'coin-flip', 'safe-cracker'
+  ];
+  
+  // Exclude last 3 recent minigames
+  const available = allMinigames.filter(id => !state.recentMinigames.slice(-3).includes(id));
+  const selectedId = available[Math.floor(Math.random() * available.length)];
+  
+  // Calculate base amount
+  let baseAmount = 0;
+  if (context === 'buying' && (tile.type === 'property' || tile.type === 'railroad' || tile.type === 'utility')) {
+    baseAmount = tile.price;
+  } else if (context === 'rent' && state.pendingRent) {
+    baseAmount = state.pendingRent.amount;
+  }
+  
+  const minigameState: MinigameState = {
+    id: selectedId,
+    context,
+    tileIndex: player.position,
+    baseAmount,
+    status: 'intro',
+    tier: null,
+    data: {}
+  };
+  
+  let s = { ...state, activeMinigame: minigameState, phase: 'minigame' };
+  s = addLog(s, `${player.name} chose to gamble! Starting ${selectedId}...`, state.currentPlayerIndex);
+  
+  return s;
+}
+
+export function resolveMinigame(state: GameState, tier: MinigameTier): GameState {
+  if (!state.activeMinigame) return state;
+  
+  const player = currentPlayer(state);
+  const minigame = state.activeMinigame;
+  const { context, baseAmount, tileIndex, id } = minigame;
+  
+  // Update recent minigames
+  const updatedRecent = [...state.recentMinigames, id].slice(-10);
+  
+  let s = { ...state, recentMinigames: updatedRecent };
+  
+  // Calculate multipliers based on tier
+  const multipliers: Record<MinigameTier, number> = {
+    'win': 0,           // Free or no payment
+    'close-win': 0.5,   // 50% price/rent
+    'close-loss': 1.5,  // 1.5x price/rent
+    'loss': 2,          // 2x price/rent
+    'catastrophic': 5   // 5x price/rent
+  };
+  
+  const multiplier = multipliers[tier];
+  const actualAmount = Math.floor(baseAmount * multiplier);
+  
+  if (context === 'buying') {
+    const tile = s.tiles[tileIndex];
+    if (tier === 'win') {
+      // Get property for free
+      if (tile.type === 'property' || tile.type === 'railroad' || tile.type === 'utility') {
+        s = updateCurrentPlayer(s, {
+          properties: [...player.properties, tileIndex],
+        });
+        s = addLog(s, `${player.name} won the minigame! Got ${tile.name} for FREE!`, state.currentPlayerIndex);
+      }
+    } else if (tier === 'close-win') {
+      // Get property at 50% price
+      if (tile.type === 'property' || tile.type === 'railroad' || tile.type === 'utility') {
+        s = updateCurrentPlayer(s, {
+          money: player.money - actualAmount,
+          properties: [...player.properties, tileIndex],
+        });
+        s = addLog(s, `${player.name} almost won! Got ${tile.name} for $${actualAmount} (50% off)!`, state.currentPlayerIndex);
+      }
+    } else {
+      // No property, pay penalty
+      s = updateCurrentPlayer(s, { money: player.money - actualAmount });
+      const tierMsg = tier === 'close-loss' ? 'almost lost' : tier === 'loss' ? 'lost' : 'failed catastrophically';
+      s = addLog(s, `${player.name} ${tierMsg} and paid $${actualAmount} penalty!`, state.currentPlayerIndex);
+    }
+  } else if (context === 'rent') {
+    if (state.pendingRent) {
+      const { toPlayer } = state.pendingRent;
+      if (tier === 'win') {
+        // Pay no rent
+        s = addLog(s, `${player.name} won the minigame! No rent to pay!`, state.currentPlayerIndex);
+      } else {
+        // Pay modified rent
+        s = updateCurrentPlayer(s, { money: player.money - actualAmount });
+        s = updatePlayer(s, toPlayer, {
+          money: s.players[toPlayer].money + actualAmount,
+        });
+        const tierMsg = tier === 'close-win' ? 'almost won' : tier === 'close-loss' ? 'almost lost' : tier === 'loss' ? 'lost' : 'failed catastrophically';
+        s = addLog(s, `${player.name} ${tierMsg} and paid $${actualAmount} rent to ${s.players[toPlayer].name}!`, state.currentPlayerIndex);
+      }
+    }
+    s = { ...s, pendingRent: null };
+  }
+  
+  // Clear minigame and check for bankruptcy
+  s = { ...s, activeMinigame: null };
+  
+  if (s.players[state.currentPlayerIndex].money < 0) {
+    const creditor = context === 'rent' && state.pendingRent ? state.pendingRent.toPlayer : undefined;
+    return declareBankruptcy(s, state.currentPlayerIndex, creditor);
+  }
+  
+  return { ...s, phase: 'turn-end' };
 }

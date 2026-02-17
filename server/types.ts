@@ -57,6 +57,9 @@ export interface ClientToServerEvents {
   'game:propose-trade': (data: { offer: import('@/types/game').TradeOffer }) => void;
   'game:accept-trade': () => void;
   'game:reject-trade': () => void;
+  'game:gamble': (data: { context: import('@/types/game').MinigameContext }) => void;
+  'game:minigame-result': (data: { tier: import('@/types/game').MinigameTier }) => void;
+  'game:pay-rent': () => void;
   'chat:send': (data: { text: string }) => void;
 }
 

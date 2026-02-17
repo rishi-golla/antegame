@@ -137,7 +137,8 @@ export type GamePhase =
   | 'in-jail'
   | 'turn-end'
   | 'trading'
-  | 'game-over';
+  | 'game-over'
+  | 'minigame';
 
 export interface GameLog {
   message: string;
@@ -152,6 +153,37 @@ export interface TradeOffer {
   requestMoney: number;
   offerProperties: number[];
   requestProperties: number[];
+}
+
+export type MinigameId =
+  | 'slots'
+  | 'higher-lower'
+  | 'craps'
+  | 'wheel'
+  | 'minesweeper'
+  | 'horse-race'
+  | 'darts'
+  | 'blackjack'
+  | 'coin-flip'
+  | 'safe-cracker';
+
+export type MinigameTier =
+  | 'win'
+  | 'close-win'
+  | 'close-loss'
+  | 'loss'
+  | 'catastrophic';
+
+export type MinigameContext = 'buying' | 'rent';
+
+export interface MinigameState {
+  id: MinigameId;
+  context: MinigameContext;
+  tileIndex: number;
+  baseAmount: number;
+  status: 'intro' | 'playing' | 'result';
+  tier: MinigameTier | null;
+  data: Record<string, unknown>;
 }
 
 export interface GameState {
@@ -170,4 +202,8 @@ export interface GameState {
   winner: number | null;
   activeTradeOffer: TradeOffer | null;
   previousPhase: GamePhase | null;
+  activeMinigame: MinigameState | null;
+  minigamesEnabled: boolean;
+  pendingRent: { amount: number; toPlayer: number } | null;
+  recentMinigames: MinigameId[];
 }

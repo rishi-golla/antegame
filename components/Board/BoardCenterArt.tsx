@@ -78,6 +78,14 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         const price = 'price' in tile ? tile.price : 0;
         return `${tile.name} - $${price}`;
       }
+      case 'paying-rent': {
+        const rent = state.pendingRent?.amount || 0;
+        const landlord = state.pendingRent ? state.players[state.pendingRent.toPlayer] : null;
+        return `Pay $${rent} rent to ${landlord?.name || 'Bank'}`;
+      }
+      case 'minigame': {
+        return state.activeMinigame ? `Playing ${state.activeMinigame.id}...` : 'Loading minigame...';
+      }
       case 'drawing-card':
         return state.drawnCard ? state.drawnCard.text : 'Press To Draw';
       case 'applying-card':
