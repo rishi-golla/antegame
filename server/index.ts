@@ -9,7 +9,7 @@ import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/l
 import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
 import authRouter, { sessionMiddleware } from './routes/auth';
 import statsRouter from './routes/stats';
-import contractsRouter from './routes/contracts';
+import contractsRouter, { setRoomManager } from './routes/contracts';
 import { signCancellation, roomCodeToGameId } from './contracts';
 import type {
   ClientToServerEvents,
@@ -24,6 +24,7 @@ const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 
 const rm = new RoomManager();
+  setRoomManager(rm);
 
 nextApp.prepare().then(() => {
   const app = express();
@@ -57,6 +58,8 @@ nextApp.prepare().then(() => {
         entryFeeLamports: room.entryFeeLamports,
         potLamports: room.potLamports,
         isQuickPlay: room.isQuickPlay,
+        buyInEth: room.buyInEth,
+        isOnChain: room.isOnChain,
         players: room.players.map((p) => ({
           name: p.name,
           color: p.color,
@@ -98,7 +101,11 @@ nextApp.prepare().then(() => {
   io.on('connection', (socket) => {
     // Room: Create
     socket.on('room:create', (data, cb) => {
-      const result = rm.createRoom(socket.id, data.name, data.color, data.maxPlayers);
+      const result = rm.createRoom(socket.id, data.name, data.color, data.maxPlayers, {
+        walletAddress: data.walletAddress,
+        buyInEth: data.buyInEth,
+        onChainTxHash: data.onChainTxHash,
+      });
       if (result.ok && result.code) {
         socket.join(result.code);
         broadcastRoomState(result.code);
@@ -110,7 +117,10 @@ nextApp.prepare().then(() => {
     // Room: Join
     socket.on('room:join', (data, cb) => {
       const code = data.code.toUpperCase();
-      const result = rm.joinRoom(code, socket.id, data.name, data.color);
+      const result = rm.joinRoom(code, socket.id, data.name, data.color, {
+        walletAddress: data.walletAddress,
+        onChainTxHash: data.onChainTxHash,
+      });
       if (result.ok) {
         socket.join(code);
         // Send chat history to new joiner
@@ -496,6 +506,24 @@ nextApp.prepare().then(() => {
       if (player) {
         io.to(code).emit('player:deposited', { playerIndex: player.playerIndex });
         systemMessage(code, `${player.name} deposited entry fee.`);
+      }
+      broadcastRoomState(code);
+      cb({ ok: true });
+    });
+
+    // Base on-chain deposit confirmation
+    socket.on('room:base-deposit', (data, cb) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return cb({ ok: false, error: 'Not in a room' });
+      const room = rm.getRoom(code);
+      if (!room?.isOnChain) return cb({ ok: false, error: 'Not an on-chain room' });
+      // TODO: In production, verify the tx hash on-chain
+      const success = rm.markBaseDeposited(code, socket.id);
+      if (!success) return cb({ ok: false, error: 'Deposit tracking failed' });
+      const player = rm.getPlayerInRoom(code, socket.id);
+      if (player) {
+        io.to(code).emit('player:deposited', { playerIndex: player.playerIndex });
+        systemMessage(code, `${player.name} deposited ${room.buyInEth} ETH on Base.`);
       }
       broadcastRoomState(code);
       cb({ ok: true });

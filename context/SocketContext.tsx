@@ -18,8 +18,8 @@ interface SocketContextValue {
   roomState: RoomClientState | null;
   gameState: GameState | null;
   chatMessages: ChatMessage[];
-  createRoom: (name: string, color: string, maxPlayers: number) => Promise<{ ok: boolean; code?: string; error?: string }>;
-  joinRoom: (code: string, name: string, color: string) => Promise<{ ok: boolean; error?: string }>;
+  createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
+  joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; error?: string }>;
   leaveRoom: () => void;
   toggleReady: () => void;
   startGame: () => Promise<{ ok: boolean; error?: string }>;
@@ -73,10 +73,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createRoom = useCallback(
-    (name: string, color: string, maxPlayers: number) => {
+    (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }) => {
       return new Promise<{ ok: boolean; code?: string; error?: string }>((resolve) => {
         const socket = getSocket();
-        socket.emit('room:create', { name, color, maxPlayers }, (res) => {
+        socket.emit('room:create', { name, color, maxPlayers, ...opts }, (res) => {
           resolve(res);
         });
       });
@@ -85,10 +85,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   );
 
   const joinRoom = useCallback(
-    (code: string, name: string, color: string) => {
+    (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string }) => {
       return new Promise<{ ok: boolean; error?: string }>((resolve) => {
         const socket = getSocket();
-        socket.emit('room:join', { code, name, color }, (res) => {
+        socket.emit('room:join', { code, name, color, ...opts }, (res) => {
           resolve(res);
         });
       });

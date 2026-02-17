@@ -18,7 +18,8 @@ export class RoomManager {
     socketId: string,
     name: string,
     color: string,
-    maxPlayers: number
+    maxPlayers: number,
+    opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }
   ): { ok: boolean; code?: string; error?: string } {
     // Generate unique code
     let code = generateCode();
@@ -28,6 +29,8 @@ export class RoomManager {
       attempts++;
     }
 
+    const isOnChain = !!opts?.buyInEth;
+
     const player: ServerPlayer = {
       id: socketId,
       name,
@@ -36,6 +39,7 @@ export class RoomManager {
       connected: true,
       disconnectedAt: null,
       playerIndex: 0,
+      walletAddress: opts?.walletAddress,
       deposited: false,
     };
 
@@ -52,6 +56,8 @@ export class RoomManager {
       entryFeeLamports: 0,
       potLamports: 0,
       isQuickPlay: false,
+      buyInEth: opts?.buyInEth ?? '',
+      isOnChain,
     };
 
     this.rooms.set(code, room);
@@ -64,7 +70,8 @@ export class RoomManager {
     code: string,
     socketId: string,
     name: string,
-    color: string
+    color: string,
+    opts?: { walletAddress?: string; onChainTxHash?: string }
   ): { ok: boolean; error?: string } {
     const room = this.rooms.get(code);
     if (!room) return { ok: false, error: 'Room not found' };
@@ -85,6 +92,7 @@ export class RoomManager {
       connected: true,
       disconnectedAt: null,
       playerIndex: room.players.length,
+      walletAddress: opts?.walletAddress,
       deposited: false,
     };
 
@@ -256,7 +264,7 @@ export class RoomManager {
     return result;
   }
 
-  // Mark player as deposited
+  // Mark player as deposited (Solana path)
   markDeposited(code: string, socketId: string): boolean {
     const room = this.rooms.get(code);
     if (!room) return false;
@@ -267,10 +275,21 @@ export class RoomManager {
     return true;
   }
 
+  // Mark player as deposited for Base on-chain games
+  markBaseDeposited(code: string, socketId: string): boolean {
+    const room = this.rooms.get(code);
+    if (!room || !room.isOnChain) return false;
+    const player = room.players.find((p) => p.id === socketId);
+    if (!player) return false;
+    player.deposited = true;
+    return true;
+  }
+
   // Check if all players deposited and ready
   allDepositedAndReady(code: string): boolean {
     const room = this.rooms.get(code);
     if (!room) return false;
+    if (room.isOnChain) return room.players.every((p) => p.ready && p.deposited);
     if (room.entryFeeLamports === 0) return room.players.every((p) => p.ready);
     return room.players.every((p) => p.ready && p.deposited);
   }
