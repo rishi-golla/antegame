@@ -1972,22 +1972,22 @@ input {
 
 .minigameIntro {
   text-align: center;
-  padding: 20px;
+  padding: 40px;
   font-family: 'Press Start 2P', monospace;
   color: var(--ink);
 }
 
 .minigameIntro h2 {
-  font-size: 1.2rem;
-  margin: 0 0 16px;
+  font-size: 2rem;
+  margin: 0 0 24px;
   color: var(--gold-bright);
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   letter-spacing: 0.1em;
 }
 
 .minigameIntro p {
-  font-size: 0.8rem;
-  margin: 8px 0;
+  font-size: 1rem;
+  margin: 12px 0;
   color: var(--ink-secondary);
   text-transform: uppercase;
 }
@@ -2060,6 +2060,15 @@ input {
 .pixelMinigame {
   font-family: 'Press Start 2P', monospace !important;
   image-rendering: pixelated;
+  width: 100%;
+  max-width: 700px;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px 32px;
 }
 
 .pixelMinigame img {
@@ -2068,6 +2077,8 @@ input {
 
 .pixelMinigame h2 {
   font-family: 'Press Start 2P', monospace !important;
+  font-size: 1.4rem;
+  margin-bottom: 8px;
 }
 
 .pixelBtn {
@@ -2232,13 +2243,13 @@ input {
 
 .slotReels {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   z-index: 1;
 }
 
 .slotReel {
-  width: 72px;
-  height: 72px;
+  width: 120px;
+  height: 120px;
   border: 3px solid var(--gold);
   background: var(--felt-green);
   display: flex;
@@ -2264,8 +2275,8 @@ input {
 }
 
 .slotSymbolImg {
-  width: 48px;
-  height: 48px;
+  width: 80px;
+  height: 80px;
   image-rendering: pixelated;
   object-fit: contain;
 }
@@ -2370,8 +2381,8 @@ input {
 }
 
 .playingCard {
-  width: 72px;
-  height: 96px;
+  width: 110px;
+  height: 154px;
   border-radius: 4px;
   background: #fff;
   display: flex;
@@ -2404,18 +2415,18 @@ input {
 
 .cardRank {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  font-size: 0.7rem;
+  top: 6px;
+  left: 6px;
+  font-size: 1rem;
   font-weight: bold;
   font-family: 'Press Start 2P', monospace;
 }
 
 .cardSuit {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  font-size: 0.7rem;
+  top: 6px;
+  right: 6px;
+  font-size: 1rem;
 }
 
 .cardCenter {
@@ -2423,7 +2434,7 @@ input {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.4rem;
+  font-size: 2rem;
 }
 
 .cardLabel {
@@ -2547,12 +2558,12 @@ input {
 
 .crapsDice {
   display: flex;
-  gap: 12px;
+  gap: 20px;
 }
 
 .crapsDieImg {
-  width: 56px;
-  height: 56px;
+  width: 100px;
+  height: 100px;
 }
 
 .dieImg {
@@ -2748,16 +2759,16 @@ input {
 .minesweeperGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 8px;
+  gap: 12px;
+  padding: 16px;
   background: var(--felt-dark);
   border: 3px solid var(--gold);
   box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
 }
 
 .minesweeperCell {
-  width: 56px;
-  height: 56px;
+  width: 100px;
+  height: 100px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -2930,15 +2941,15 @@ input {
 }
 
 .horseSprite {
-  width: 28px;
-  height: 28px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
   image-rendering: pixelated;
 }
 
 .horse.selected .horseSprite {
-  width: 32px;
-  height: 32px;
+  width: 64px;
+  height: 64px;
   filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
 }
 
@@ -3026,8 +3037,8 @@ input {
 }
 
 .dartboard {
-  width: 200px;
-  height: 200px;
+  width: 320px;
+  height: 320px;
   position: relative;
   overflow: hidden;
 }
@@ -3184,8 +3195,8 @@ input {
 }
 
 .blackjackCard {
-  width: 48px;
-  height: 64px;
+  width: 80px;
+  height: 112px;
   border-radius: 2px;
   background: #fff;
   display: flex;
@@ -3285,8 +3296,8 @@ input {
 }
 
 .coin {
-  width: 100px;
-  height: 100px;
+  width: 180px;
+  height: 180px;
   position: relative;
 }
 
@@ -3412,8 +3423,8 @@ input {
 }
 
 .safeImgWrap {
-  width: 80px;
-  height: 80px;
+  width: 160px;
+  height: 160px;
 }
 
 .safeImg {
