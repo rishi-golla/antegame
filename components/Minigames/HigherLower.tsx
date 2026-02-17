@@ -49,7 +49,7 @@ export default function HigherLower({ onResult, baseAmount, context }: HigherLow
   const [allGuesses, setAllGuesses] = useState<boolean[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => { onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => { onResult('catastrophic'); }, 30000);
     if (deck.length > 0) {
       setCurrentCard(deck[0]);
       setNextCard(deck[1]);

@@ -30,7 +30,7 @@ export default function Craps({ onResult, baseAmount, context }: CrapsProps) {
   const die2Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => { onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => { onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
   }, [onResult]);
 

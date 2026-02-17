@@ -30,7 +30,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
 
   useEffect(() => {
     initializeGrid();
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
   }, []);
 
