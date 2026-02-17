@@ -5448,6 +5448,34 @@ img[src*="/assets/"] {
   cursor: not-allowed;
 }
 
+.connectChainPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.connectBtnBase {
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.connectBtnBase:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(59,130,246,0.5);
+}
+
+.connectBtnSolana {
+  background: linear-gradient(180deg, #9945FF, #7B2FD4);
+  color: #fff;
+  border-color: #9945FF;
+}
+
+.connectBtnSolana:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(153,69,255,0.5);
+}
+
 .connectError {
   font-family: 'Press Start 2P', monospace;
   font-size: 0.5rem;

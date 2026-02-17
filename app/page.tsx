@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { GameProvider } from '@/context/GameContext';
 import { WalletContextProvider } from '@/context/WalletContext';
+import { EVMWalletProvider } from '@/context/EVMWalletContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { EVMAuthProvider } from '@/context/EVMAuthContext';
+import { MultiChainProvider, useMultiChain } from '@/context/MultiChainContext';
 import { SocketProvider, useSocket } from '@/context/SocketContext';
 import { MultiplayerGameProvider } from '@/context/MultiplayerGameContext';
 import Board from '@/components/Board/Board';
@@ -117,7 +120,7 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
 }
 
 function AuthGate() {
-  const { user, loading } = useAuth();
+  const { user, loading, isNewUser } = useMultiChain();
   const [screen, setScreen] = useState<Screen>('menu');
   const [freePlayConfig, setFreePlayConfig] = useState<{ names: string[]; sprites: string[]; colors: string[] } | null>(null);
 
@@ -225,9 +228,15 @@ function AuthGate() {
 export default function Home() {
   return (
     <WalletContextProvider>
-      <AuthProvider>
-        <AuthGate />
-      </AuthProvider>
+      <EVMWalletProvider>
+        <AuthProvider>
+          <EVMAuthProvider>
+            <MultiChainProvider>
+              <AuthGate />
+            </MultiChainProvider>
+          </EVMAuthProvider>
+        </AuthProvider>
+      </EVMWalletProvider>
     </WalletContextProvider>
   );
 }
