@@ -27,7 +27,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
 
   useEffect(() => {
     setCombination([Math.floor(Math.random() * 10), Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)]);
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
   }, []);
 

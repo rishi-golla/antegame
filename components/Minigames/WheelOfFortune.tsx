@@ -38,7 +38,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
   const [canSpin, setCanSpin] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => { if (canSpin) onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => { if (canSpin) onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
   }, [onResult, canSpin]);
 

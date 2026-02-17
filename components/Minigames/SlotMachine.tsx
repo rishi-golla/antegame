@@ -35,7 +35,7 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
   useEffect(() => {
     const timer = setTimeout(() => {
       onResult('catastrophic');
-    }, 15000);
+    }, 30000);
     setTimeoutId(timer);
     return () => { if (timer) clearTimeout(timer); };
   }, [onResult]);

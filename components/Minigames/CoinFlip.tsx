@@ -27,7 +27,7 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
   const [flipStartTime, setFlipStartTime] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 15000);
+    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
   }, []);
 

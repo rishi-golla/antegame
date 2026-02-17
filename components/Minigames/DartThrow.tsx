@@ -20,7 +20,7 @@ export default function LuckyNumber({ onResult }: LuckyNumberProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!done) onResult('catastrophic');
-    }, 15000);
+    }, 30000);
     return () => clearTimeout(timer);
   }, [done, onResult]);
 
