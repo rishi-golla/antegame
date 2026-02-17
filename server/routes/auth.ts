@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
+import { verifyMessage } from 'viem';
 import {
   createNonce,
   consumeNonce,
@@ -36,6 +37,10 @@ setInterval(() => {
   }
 }, 60000);
 
+function nonceMessage(nonce: string): string {
+  return `Sign this message to connect to Monopoly Casino.\n\nNonce: ${nonce}`;
+}
+
 // GET /api/auth/nonce
 router.get('/nonce', (req: Request, res: Response) => {
   const ip = req.ip ?? 'unknown';
@@ -44,21 +49,22 @@ router.get('/nonce', (req: Request, res: Response) => {
     return;
   }
   const nonce = createNonce();
-  res.json({ nonce });
+  res.json({ nonce, message: nonceMessage(nonce) });
 });
 
 // POST /api/auth/verify-wallet
-router.post('/verify-wallet', (req: Request, res: Response) => {
+router.post('/verify-wallet', async (req: Request, res: Response) => {
   const ip = req.ip ?? 'unknown';
   if (!rateLimit(`verify:${ip}`, 10, 60000)) {
     res.status(429).json({ error: 'Too many requests' });
     return;
   }
 
-  const { walletAddress, signature, nonce } = req.body as {
+  const { walletAddress, signature, nonce, chain } = req.body as {
     walletAddress?: string;
     signature?: string;
     nonce?: string;
+    chain?: string;
   };
 
   if (!walletAddress || !signature || !nonce) {
@@ -72,26 +78,45 @@ router.post('/verify-wallet', (req: Request, res: Response) => {
     return;
   }
 
-  // Verify ed25519 signature
-  try {
-    const message = new TextEncoder().encode(
-      `Sign this message to connect to Monopoly Casino.\n\nNonce: ${nonce}`
-    );
-    const publicKey = bs58.decode(walletAddress);
-    const sig = bs58.decode(signature);
-    const valid = nacl.sign.detached.verify(message, sig, publicKey);
+  const message = nonceMessage(nonce);
+  const resolvedChain = chain === 'base' ? 'base' : 'solana';
 
-    if (!valid) {
+  if (resolvedChain === 'base') {
+    // EVM: EIP-191 personal_sign verification
+    try {
+      const valid = await verifyMessage({
+        address: walletAddress as `0x${string}`,
+        message,
+        signature: signature as `0x${string}`,
+      });
+      if (!valid) {
+        res.status(401).json({ error: 'Invalid signature' });
+        return;
+      }
+    } catch {
       res.status(401).json({ error: 'Invalid signature' });
       return;
     }
-  } catch {
-    res.status(401).json({ error: 'Invalid signature' });
-    return;
+  } else {
+    // Solana: Ed25519 verification
+    try {
+      const msgBytes = new TextEncoder().encode(message);
+      const publicKey = bs58.decode(walletAddress);
+      const sig = bs58.decode(signature);
+      const valid = nacl.sign.detached.verify(msgBytes, sig, publicKey);
+      if (!valid) {
+        res.status(401).json({ error: 'Invalid signature' });
+        return;
+      }
+    } catch {
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
   }
 
   // Upsert user and create session
-  const user = upsertUser(walletAddress, 'solana');
+  const user = upsertUser(walletAddress, resolvedChain);
+  const isNewUser = !user.display_name;
   const token = createSession(walletAddress);
 
   res.cookie('session', token, {
@@ -109,6 +134,7 @@ router.post('/verify-wallet', (req: Request, res: Response) => {
       characterId: user.character_id,
       chain: user.chain,
     },
+    isNewUser,
   });
 });
 
