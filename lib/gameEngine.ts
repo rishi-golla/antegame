@@ -658,7 +658,7 @@ export function startMinigame(state: GameState, context: MinigameContext): GameS
     data: {}
   };
   
-  let s = { ...state, activeMinigame: minigameState, phase: 'minigame' };
+  let s: GameState = { ...state, activeMinigame: minigameState, phase: 'minigame' };
   s = addLog(s, `${player.name} chose to gamble! Starting ${selectedId}...`, state.currentPlayerIndex);
   
   return s;
