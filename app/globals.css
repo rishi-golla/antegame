@@ -5608,3 +5608,191 @@ img[src*="/assets/"] {
 .lobbyDepositDot.deposited {
   color: #34d399;
 }
+
+/* ===== PROFILE SCREEN ===== */
+
+.profileCard {
+  max-width: 520px;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profileSprite {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.profileName {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  color: var(--gold-bright);
+}
+
+.profileAddr {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #888;
+  word-break: break-all;
+  margin-top: 4px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.statBox {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--gold);
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.statValue {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.65rem;
+  color: var(--gold-bright);
+}
+
+.statLabel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+.profileHistory {
+  margin-top: 16px;
+}
+
+.profileHistoryTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.profileHistoryRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: #ccc;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,215,0,0.15);
+}
+
+.profileHistoryWinner {
+  color: var(--gold-bright);
+}
+
+.profileEditSection {
+  margin-top: 12px;
+}
+
+/* ===== LEADERBOARD SCREEN ===== */
+
+.leaderboardCard {
+  max-width: 560px;
+}
+
+.leaderboardTable {
+  margin: 16px 0;
+}
+
+.leaderboardHeader, .leaderboardRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+}
+
+.leaderboardHeader {
+  color: var(--gold);
+  border-bottom: 2px solid var(--gold);
+  font-size: 0.35rem;
+}
+
+.leaderboardRow {
+  color: #ccc;
+  border-bottom: 1px solid rgba(255,215,0,0.1);
+}
+
+.leaderboardTop3 {
+  background: rgba(255,215,0,0.05);
+}
+
+.lbRank {
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.lbPlayer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.lbSprite {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.lbWins, .lbEarned {
+  width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.lbEarned {
+  color: var(--gold-bright);
+}
+
+/* ===== SETTLEMENT DISPLAY ===== */
+
+.settlementBanner {
+  margin-top: 16px;
+  padding: 12px;
+  border: 2px solid var(--gold);
+  background: rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.settlementTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: var(--gold-bright);
+  margin-bottom: 8px;
+}
+
+.settlementAmount {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+  color: var(--gold-bright);
+  margin-bottom: 4px;
+}
+
+.settlementLink {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #8ca8d6;
+  text-decoration: underline;
+}
+
+.settlementLink:hover {
+  color: #aac4ef;
+}

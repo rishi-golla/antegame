@@ -17,6 +17,8 @@ import ConnectScreen from '@/components/Auth/ConnectScreen';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
 import WalletButton from '@/components/Auth/WalletButton';
 import QuickPlayScreen from '@/components/QuickPlay/QuickPlayScreen';
+import ProfileScreen from '@/components/Auth/ProfileScreen';
+import LeaderboardScreen from '@/components/Auth/LeaderboardScreen';
 
 type Screen = 'menu' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
@@ -113,7 +115,6 @@ function AuthGate() {
     return <ConnectScreen />;
   }
 
-  // New user needs profile setup
   if (!user.displayName || !user.characterId) {
     return <ProfileSetup />;
   }
@@ -131,30 +132,19 @@ function AuthGate() {
       );
 
     case 'profile':
-      // Placeholder until batch 9.5
       return (
-        <div className="setupScreen">
+        <>
           <WalletButton />
-          <div className="setupCard">
-            <h1 className="setupTitle marqueeTitle">Profile</h1>
-            <p className="setupSubtitle casinoSubtitle">{user.displayName}</p>
-            <p className="connectChain">{user.walletAddress.slice(0, 8)}...</p>
-            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
-          </div>
-        </div>
+          <ProfileScreen onBack={() => setScreen('menu')} />
+        </>
       );
 
     case 'leaderboard':
-      // Placeholder until batch 9.5
       return (
-        <div className="setupScreen">
+        <>
           <WalletButton />
-          <div className="setupCard">
-            <h1 className="setupTitle marqueeTitle">Leaderboard</h1>
-            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
-            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
-          </div>
-        </div>
+          <LeaderboardScreen onBack={() => setScreen('menu')} />
+        </>
       );
 
     case 'create':
