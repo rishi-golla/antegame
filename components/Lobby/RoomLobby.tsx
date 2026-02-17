@@ -61,9 +61,9 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
               </span>
             </div>
           )}
-          {isBase && (
+          {roomState.isOnChain && roomState.buyInEth && (
             <div className="lobbyEntryBanner">
-              <span>Deposited on-chain via Base</span>
+              <span>Buy-in: {roomState.buyInEth} ETH (Base)</span>
             </div>
           )}
         </div>

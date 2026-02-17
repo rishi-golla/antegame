@@ -27,6 +27,10 @@ export interface Room {
   entryFeeLamports: number;
   potLamports: number;
   isQuickPlay: boolean;
+  /** Base chain buy-in in ETH string (e.g. "0.001"). Empty means no on-chain game. */
+  buyInEth: string;
+  /** Whether this room has an on-chain Base game */
+  isOnChain: boolean;
 }
 
 export interface ChatMessage {
@@ -40,8 +44,8 @@ export interface ChatMessage {
 
 // Client -> Server events
 export interface ClientToServerEvents {
-  'room:create': (data: { name: string; color: string; maxPlayers: number }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
-  'room:join': (data: { code: string; name: string; color: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
+  'room:create': (data: { name: string; color: string; maxPlayers: number; walletAddress?: string; buyInEth?: string; onChainTxHash?: string }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
+  'room:join': (data: { code: string; name: string; color: string; walletAddress?: string; onChainTxHash?: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
   'room:leave': () => void;
   'room:ready': () => void;
   'room:start': (cb: (res: { ok: boolean; error?: string }) => void) => void;
@@ -68,6 +72,7 @@ export interface ClientToServerEvents {
   'chat:send': (data: { text: string }) => void;
   'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
   'room:deposit': (data: { txSignature: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
+  'room:base-deposit': (data: { txHash: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
 }
 
 // Server -> Client events
@@ -103,4 +108,6 @@ export interface RoomClientState {
   entryFeeLamports: number;
   potLamports: number;
   isQuickPlay: boolean;
+  buyInEth: string;
+  isOnChain: boolean;
 }

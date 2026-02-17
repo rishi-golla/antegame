@@ -21,6 +21,14 @@
 
 import { Router } from 'express';
 import { signSettlement, signCancellation, getSignerAddress, roomCodeToGameId } from '../contracts';
+import type { RoomManager } from '../roomManager';
+
+let _rm: RoomManager | null = null;
+
+/** Call once at startup to give routes access to the room manager */
+export function setRoomManager(rm: RoomManager) {
+  _rm = rm;
+}
 
 const router = Router();
 
@@ -32,8 +40,25 @@ router.post('/settlement-signature', async (req, res) => {
     return;
   }
 
-  // TODO: Verify the caller's session matches winnerAddress
-  // TODO: Verify the room actually finished and this address won
+  // Validate: room exists, game is finished, and requester is the winner
+  if (_rm) {
+    const room = _rm.getRoom(roomCode);
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+    if (room.phase !== 'finished') {
+      res.status(400).json({ error: 'Game is not finished' });
+      return;
+    }
+    if (room.gameState?.winner !== null && room.gameState?.winner !== undefined) {
+      const winnerPlayer = room.players[room.gameState.winner];
+      if (winnerPlayer?.walletAddress?.toLowerCase() !== winnerAddress.toLowerCase()) {
+        res.status(403).json({ error: 'You are not the winner' });
+        return;
+      }
+    }
+  }
 
   const result = await signSettlement(roomCode, winnerAddress);
   if (!result) {

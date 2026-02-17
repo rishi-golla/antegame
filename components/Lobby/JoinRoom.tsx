@@ -47,12 +47,13 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
     setStatus('');
 
     try {
-      // Step 1: If Base, check game on-chain and join
+      const roomCode = code.trim().toUpperCase();
+
       if (isBase && walletClient) {
-        // First check the game exists and get buy-in
+        // Step 1: Check game on-chain and get buy-in
         setStatus('Checking game...');
-        const game = await getGameOnChain(code.trim().toUpperCase());
-        if (game) {
+        const game = await getGameOnChain(roomCode);
+        if (game && game.buyIn > BigInt(0)) {
           const buyInEth = formatEther(game.buyIn);
           setBuyInDisplay(buyInEth);
 
@@ -62,18 +63,34 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
             return;
           }
 
+          // Step 2: Join on-chain
           setStatus('Waiting for wallet approval...');
-          await joinGameOnChain(walletClient, code.trim().toUpperCase(), buyInEth);
+          await joinGameOnChain(walletClient, roomCode, buyInEth);
           setStatus('Transaction confirmed. Joining room...');
         }
-      }
 
-      // Step 2: Join room on server
-      const result = await joinRoom(code.trim().toUpperCase(), playerName, char.color);
-      if (result.ok) {
-        onJoined();
+        // Step 3: Join room on server with wallet info
+        const result = await joinRoom(roomCode, playerName, char.color, {
+          walletAddress: user?.walletAddress,
+        });
+        if (result.ok) {
+          // Step 4: Notify server of on-chain deposit
+          const { getSocket } = await import('@/lib/socket');
+          await new Promise<void>((resolve) => {
+            getSocket().emit('room:base-deposit' as any, { txHash: '' }, () => resolve());
+          });
+          onJoined();
+        } else {
+          setError(result.error ?? 'Failed to join room');
+        }
       } else {
-        setError(result.error ?? 'Failed to join room');
+        // Non-Base flow
+        const result = await joinRoom(roomCode, playerName, char.color);
+        if (result.ok) {
+          onJoined();
+        } else {
+          setError(result.error ?? 'Failed to join room');
+        }
       }
     } catch (err: any) {
       if (err.message?.includes('User rejected') || err.message?.includes('denied')) {

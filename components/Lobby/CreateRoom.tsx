@@ -47,27 +47,48 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
     setStatus('');
 
     try {
-      // Step 1: If Base chain, create game on-chain first
-      let txHash: string | undefined;
       if (isBase && walletClient) {
-        setStatus('Waiting for wallet approval...');
-        txHash = await createGameOnChain(walletClient, '', maxPlayers, buyIn);
-        setStatus('Transaction confirmed. Creating room...');
-      }
-
-      // Step 2: Create room on server (socket)
-      const result = await createRoom(playerName, char.color, maxPlayers);
-
-      if (result.ok) {
-        // If Base, mark as deposited immediately since contract call succeeded
-        if (isBase && txHash) {
-          // The room code comes back from the server -- we'll need to map it to the gameId
-          // For now, send the tx hash as deposit proof
-          // TODO: Wire room code into gameId mapping
+        // Step 1: Create room on server first to get the room code
+        setStatus('Creating room...');
+        const result = await createRoom(playerName, char.color, maxPlayers, {
+          walletAddress: user?.walletAddress,
+          buyInEth: buyIn,
+        });
+        if (!result.ok || !result.code) {
+          setError(result.error ?? 'Failed to create room');
+          setLoading(false);
+          return;
         }
+
+        // Step 2: Create game on-chain using the room code as gameId seed
+        setStatus('Waiting for wallet approval...');
+        let txHash: string;
+        try {
+          txHash = await createGameOnChain(walletClient, result.code, maxPlayers, buyIn);
+        } catch (err: any) {
+          // On-chain tx failed — leave the server room so it gets cleaned up
+          const { getSocket } = await import('@/lib/socket');
+          getSocket().emit('room:leave');
+          throw err;
+        }
+
+        // Step 3: Notify server that on-chain deposit succeeded
+        setStatus('Confirming deposit...');
+        const { getSocket } = await import('@/lib/socket');
+        await new Promise<void>((resolve) => {
+          getSocket().emit('room:base-deposit' as any, { txHash: txHash }, () => resolve());
+        });
+
+        setStatus('Transaction confirmed!');
         onCreated();
       } else {
-        setError(result.error ?? 'Failed to create room');
+        // Non-Base flow (Solana or no wallet)
+        const result = await createRoom(playerName, char.color, maxPlayers);
+        if (result.ok) {
+          onCreated();
+        } else {
+          setError(result.error ?? 'Failed to create room');
+        }
       }
     } catch (err: any) {
       if (err.message?.includes('User rejected') || err.message?.includes('denied')) {
