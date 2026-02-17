@@ -21,6 +21,9 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
+# database
+data/
+
 # misc
 .DS_Store
 *.pem
