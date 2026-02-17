@@ -9,6 +9,11 @@ import HigherLower from './HigherLower';
 import Craps from './Craps';
 import WheelOfFortune from './WheelOfFortune';
 import MinesweeperLite from './MinesweeperLite';
+import HorseRace from './HorseRace';
+import DartThrow from './DartThrow';
+import Blackjack from './Blackjack';
+import CoinFlip from './CoinFlip';
+import SafeCracker from './SafeCracker';
 
 interface MinigameOverlayProps {
   // Props are passed from state via useGame
@@ -62,6 +67,16 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
         return <WheelOfFortune {...props} />;
       case 'minesweeper':
         return <MinesweeperLite {...props} />;
+      case 'horse-race':
+        return <HorseRace {...props} />;
+      case 'darts':
+        return <DartThrow {...props} />;
+      case 'blackjack':
+        return <Blackjack {...props} />;
+      case 'coin-flip':
+        return <CoinFlip {...props} />;
+      case 'safe-cracker':
+        return <SafeCracker {...props} />;
       default:
         return (
           <div className="minigameIntro">
