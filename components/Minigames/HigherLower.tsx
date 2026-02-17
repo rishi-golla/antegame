@@ -33,176 +33,110 @@ const createDeck = (): Card[] => {
   const deck: Card[] = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
-      deck.push({
-        rank,
-        suit,
-        value: getRankValue(rank)
-      });
+      deck.push({ rank, suit, value: getRankValue(rank) });
     }
   }
-  return deck.sort(() => Math.random() - 0.5); // Shuffle
+  return deck.sort(() => Math.random() - 0.5);
 };
 
 export default function HigherLower({ onResult, baseAmount, context }: HigherLowerProps) {
-  const [deck, setDeck] = useState<Card[]>(() => createDeck());
+  const [deck] = useState<Card[]>(() => createDeck());
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [nextCard, setNextCard] = useState<Card | null>(null);
   const [round, setRound] = useState(0);
   const [correctGuesses, setCorrectGuesses] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [allGuesses, setAllGuesses] = useState<boolean[]>([]);
 
   useEffect(() => {
-    // 15-second timeout
-    const timer = setTimeout(() => {
-      onResult('catastrophic');
-    }, 15000);
-
-    // Start first round
+    const timer = setTimeout(() => { onResult('catastrophic'); }, 15000);
     if (deck.length > 0) {
       setCurrentCard(deck[0]);
       setNextCard(deck[1]);
     }
-
     return () => clearTimeout(timer);
   }, [onResult]);
 
   const makeGuess = (isHigher: boolean) => {
     if (!currentCard || !nextCard || showResult) return;
-
-    setGameStarted(true);
-    
-    const isCorrect = isHigher ? 
-      (nextCard.value > currentCard.value) : 
-      (nextCard.value < currentCard.value);
-    
-    // Handle equal values as incorrect
+    const isCorrect = isHigher ? (nextCard.value > currentCard.value) : (nextCard.value < currentCard.value);
     const actuallyCorrect = nextCard.value !== currentCard.value && isCorrect;
-    
     const newGuesses = [...allGuesses, actuallyCorrect];
     setAllGuesses(newGuesses);
-    
-    if (actuallyCorrect) {
-      setCorrectGuesses(correctGuesses + 1);
-    }
+    if (actuallyCorrect) setCorrectGuesses(prev => prev + 1);
 
     if (round === 2) {
-      // Game over after 3 rounds
       setShowResult(true);
       setTimeout(() => {
-        calculateFinalResult(actuallyCorrect ? correctGuesses + 1 : correctGuesses, newGuesses);
+        const finalCorrect = actuallyCorrect ? correctGuesses + 1 : correctGuesses;
+        if (finalCorrect === 3) onResult('win');
+        else if (finalCorrect === 2) onResult('close-win');
+        else if (finalCorrect === 1) onResult('close-loss');
+        else if (finalCorrect === 0) onResult('catastrophic');
+        else onResult('loss');
       }, 1000);
     } else {
-      // Next round
       setTimeout(() => {
         setCurrentCard(nextCard);
-        if (deck[round + 2]) {
-          setNextCard(deck[round + 2]);
-        }
+        if (deck[round + 2]) setNextCard(deck[round + 2]);
         setRound(round + 1);
       }, 1500);
     }
   };
 
-  const calculateFinalResult = (finalCorrect: number, guesses: boolean[]) => {
-    // Check if all guesses were maximally wrong
-    const allWrong = finalCorrect === 0;
-    const maximallyWrong = allWrong && guesses.every(() => true); // For simplicity, just check if all wrong
-    
-    if (finalCorrect === 3) {
-      onResult('win');
-    } else if (finalCorrect === 2) {
-      onResult('close-win');
-    } else if (finalCorrect === 1) {
-      onResult('close-loss');
-    } else if (allWrong && maximallyWrong) {
-      onResult('catastrophic');
-    } else {
-      onResult('loss');
-    }
-  };
+  const getCardColor = (suit: Suit): string => (suit === '♥' || suit === '♦') ? 'var(--neon-red)' : '#1f2937';
 
-  const getCardColor = (suit: Suit): string => {
-    return suit === '♥' || suit === '♦' ? '#ff4444' : '#000000';
-  };
-
-  if (!currentCard) {
-    return <div className="higherLower">Loading...</div>;
-  }
+  if (!currentCard) return <div className="higherLower pixelMinigame">Loading...</div>;
 
   return (
-    <div className="higherLower">
-      <div className="higherLowerHeader">
-        <h2 className="higherLowerTitle">HIGHER OR LOWER</h2>
-        <div className="higherLowerScore">
-          Round {round + 1}/3 | Correct: {correctGuesses}
+    <div className="higherLower pixelMinigame" style={{ backgroundImage: 'url(/assets/minigames/cards/card-table.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="hlOverlayBg">
+        <div className="higherLowerHeader">
+          <h2 className="higherLowerTitle">HIGHER OR LOWER</h2>
+          <div className="higherLowerScore">ROUND {round + 1}/3 | CORRECT: {correctGuesses}</div>
         </div>
-      </div>
 
-      <div className="higherLowerCards">
-        <div className="cardWrapper">
-          <div className="playingCard current">
-            <div className="cardRank" style={{ color: getCardColor(currentCard.suit) }}>
-              {currentCard.rank}
+        <div className="higherLowerCards">
+          <div className="cardWrapper">
+            <div className="playingCard current pixelCard">
+              <div className="cardRank" style={{ color: getCardColor(currentCard.suit) }}>{currentCard.rank}</div>
+              <div className="cardSuit" style={{ color: getCardColor(currentCard.suit) }}>{currentCard.suit}</div>
+              <div className="cardCenter" style={{ color: getCardColor(currentCard.suit) }}>{currentCard.suit}</div>
             </div>
-            <div className="cardSuit" style={{ color: getCardColor(currentCard.suit) }}>
-              {currentCard.suit}
-            </div>
-            <div className="cardCenter" style={{ color: getCardColor(currentCard.suit) }}>
-              {currentCard.suit}
-            </div>
+            <div className="cardLabel">CURRENT</div>
           </div>
-          <div className="cardLabel">Current</div>
+
+          <div className="higherLowerVs">VS</div>
+
+          <div className="cardWrapper">
+            {showResult && nextCard ? (
+              <div className="playingCard next revealed pixelCard cardRevealAnim">
+                <div className="cardRank" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.rank}</div>
+                <div className="cardSuit" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.suit}</div>
+                <div className="cardCenter" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.suit}</div>
+              </div>
+            ) : (
+              <div className="playingCard next hidden pixelCard">
+                <img src="/assets/minigames/cards/card-back.png" alt="?" className="cardBackImg" />
+              </div>
+            )}
+            <div className="cardLabel">NEXT</div>
+          </div>
         </div>
 
-        <div className="higherLowerVs">VS</div>
+        {!showResult && (
+          <div className="higherLowerButtons">
+            <button className="higherLowerBtn higher pixelBtn" onClick={() => makeGuess(true)}>▲ HIGHER</button>
+            <button className="higherLowerBtn lower pixelBtn" onClick={() => makeGuess(false)}>▼ LOWER</button>
+          </div>
+        )}
 
-        <div className="cardWrapper">
-          {showResult ? (
-            <div className="playingCard next revealed">
-              <div className="cardRank" style={{ color: getCardColor(nextCard!.suit) }}>
-                {nextCard!.rank}
-              </div>
-              <div className="cardSuit" style={{ color: getCardColor(nextCard!.suit) }}>
-                {nextCard!.suit}
-              </div>
-              <div className="cardCenter" style={{ color: getCardColor(nextCard!.suit) }}>
-                {nextCard!.suit}
-              </div>
-            </div>
-          ) : (
-            <div className="playingCard next hidden">
-              <div className="cardBack">🎲</div>
-            </div>
-          )}
-          <div className="cardLabel">Next</div>
+        <div className="higherLowerRules">
+          <div className="ruleRow">3 CORRECT = WIN</div>
+          <div className="ruleRow">2 CORRECT = CLOSE WIN</div>
+          <div className="ruleRow">1 CORRECT = CLOSE LOSS</div>
+          <div className="ruleRow">0 CORRECT = CATASTROPHIC</div>
         </div>
-      </div>
-
-      {!showResult && (
-        <div className="higherLowerButtons">
-          <button 
-            className="higherLowerBtn higher"
-            onClick={() => makeGuess(true)}
-          >
-            HIGHER
-          </button>
-          <button 
-            className="higherLowerBtn lower"
-            onClick={() => makeGuess(false)}
-          >
-            LOWER
-          </button>
-        </div>
-      )}
-
-      <div className="higherLowerRules">
-        <div className="ruleRow">3 correct = WIN</div>
-        <div className="ruleRow">2 correct = CLOSE WIN</div>
-        <div className="ruleRow">1 correct = CLOSE LOSS</div>
-        <div className="ruleRow">0 correct = LOSS</div>
-        <div className="ruleRow">All maximally wrong = CATASTROPHIC</div>
       </div>
     </div>
   );
