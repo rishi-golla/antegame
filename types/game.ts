@@ -161,8 +161,8 @@ export type MinigameId =
   | 'craps'
   | 'wheel'
   | 'minesweeper'
-  | 'horse-race'
-  | 'darts'
+  | 'card-war'
+  | 'lucky-number'
   | 'blackjack'
   | 'coin-flip'
   | 'safe-cracker';

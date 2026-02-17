@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html><head><title>Asset Gallery</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0a0a; color: #fff; font-family: 'Press Start 2P', monospace; padding: 24px; min-height: 100vh; }
+h1 { color: #ffd700; text-align: center; font-size: 1.5rem; margin-bottom: 32px; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+h2 { color: #e94560; font-size: 0.9rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e94560; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.card { background: #1a0f0f; border: 2px solid #3a1f1f; border-radius: 8px; padding: 12px; text-align: center; transition: border-color 0.2s; }
+.card:hover { border-color: #ffd700; }
+.card img { width: 150px; height: 150px; object-fit: contain; image-rendering: pixelated; background: repeating-conic-gradient(#222 0% 25%, #1a1a1a 0% 50%) 50% / 16px 16px; border-radius: 4px; }
+.card p { color: #ffd700; margin: 8px 0 0; font-size: 0.5rem; word-break: break-all; }
+.card .path { color: #666; font-size: 0.4rem; margin-top: 4px; }
+.count { color: #888; font-size: 0.6rem; }
+</style></head><body>
+<h1>🎰 ASSET GALLERY</h1>
+
+<h2>🎭 Character Sprites <span class="count">(8)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/sprites/high-roller.webp"><p>High Roller</p><p class="path">sprites/high-roller.webp</p></div>
+<div class="card"><img src="/assets/sprites/singer.webp"><p>Singer</p><p class="path">sprites/singer.webp</p></div>
+<div class="card"><img src="/assets/sprites/dealer.webp"><p>Dealer</p><p class="path">sprites/dealer.webp</p></div>
+<div class="card"><img src="/assets/sprites/mobster.webp"><p>Mobster</p><p class="path">sprites/mobster.webp</p></div>
+<div class="card"><img src="/assets/sprites/tourist.webp"><p>Tourist</p><p class="path">sprites/tourist.webp</p></div>
+<div class="card"><img src="/assets/sprites/card-shark.webp"><p>Card Shark</p><p class="path">sprites/card-shark.webp</p></div>
+<div class="card"><img src="/assets/sprites/vip.webp"><p>VIP</p><p class="path">sprites/vip.webp</p></div>
+<div class="card"><img src="/assets/sprites/bartender.webp"><p>Bartender</p><p class="path">sprites/bartender.webp</p></div>
+</div>
+
+<h2>🏠 Board Tiles <span class="count">(14)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/tiles/corner-go.webp"><p>GO</p><p class="path">tiles/corner-go.webp</p></div>
+<div class="card"><img src="/assets/tiles/corner-jail.webp"><p>Jail</p><p class="path">tiles/corner-jail.webp</p></div>
+<div class="card"><img src="/assets/tiles/corner-free-parking.webp"><p>Free Parking</p><p class="path">tiles/corner-free-parking.webp</p></div>
+<div class="card"><img src="/assets/tiles/corner-go-to-jail.webp"><p>Go To Jail</p><p class="path">tiles/corner-go-to-jail.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-brown.webp"><p>Brown Property</p><p class="path">tiles/prop-brown.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-light-blue.webp"><p>Light Blue</p><p class="path">tiles/prop-light-blue.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-pink.webp"><p>Pink</p><p class="path">tiles/prop-pink.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-orange.webp"><p>Orange</p><p class="path">tiles/prop-orange.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-red.webp"><p>Red</p><p class="path">tiles/prop-red.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-yellow.webp"><p>Yellow</p><p class="path">tiles/prop-yellow.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-green.webp"><p>Green</p><p class="path">tiles/prop-green.webp</p></div>
+<div class="card"><img src="/assets/tiles/prop-dark-blue.webp"><p>Dark Blue</p><p class="path">tiles/prop-dark-blue.webp</p></div>
+<div class="card"><img src="/assets/tiles/railroad.webp"><p>Railroad</p><p class="path">tiles/railroad.webp</p></div>
+<div class="card"><img src="/assets/tiles/tax.webp"><p>Tax</p><p class="path">tiles/tax.webp</p></div>
+<div class="card"><img src="/assets/tiles/utility-electric.webp"><p>Electric</p><p class="path">tiles/utility-electric.webp</p></div>
+<div class="card"><img src="/assets/tiles/utility-water.webp"><p>Water</p><p class="path">tiles/utility-water.webp</p></div>
+<div class="card"><img src="/assets/tiles/chance.webp"><p>Chance</p><p class="path">tiles/chance.webp</p></div>
+<div class="card"><img src="/assets/tiles/community-chest.webp"><p>Community Chest</p><p class="path">tiles/community-chest.webp</p></div>
+</div>
+
+<h2>🃏 Misc <span class="count">(3)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/misc/casino-crest.webp"><p>Casino Crest</p><p class="path">misc/casino-crest.webp</p></div>
+<div class="card"><img src="/assets/misc/chance-deck.webp"><p>Chance Deck</p><p class="path">misc/chance-deck.webp</p></div>
+<div class="card"><img src="/assets/misc/community-chest-deck.webp"><p>Community Chest Deck</p><p class="path">misc/community-chest-deck.webp</p></div>
+</div>
+
+<h2>🎰 Slots <span class="count">(5)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/slots/slot-machine.png"><p>Slot Machine</p><p class="path">minigames/slots/slot-machine.png</p></div>
+<div class="card"><img src="/assets/minigames/slots/cherry.png"><p>Cherry</p><p class="path">minigames/slots/cherry.png</p></div>
+<div class="card"><img src="/assets/minigames/slots/seven.png"><p>Seven</p><p class="path">minigames/slots/seven.png</p></div>
+<div class="card"><img src="/assets/minigames/slots/bar.png"><p>Bar</p><p class="path">minigames/slots/bar.png</p></div>
+<div class="card"><img src="/assets/minigames/slots/diamond.png"><p>Diamond</p><p class="path">minigames/slots/diamond.png</p></div>
+</div>
+
+<h2>🃏 Cards <span class="count">(3)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/cards/card-back.png"><p>Card Back</p><p class="path">minigames/cards/card-back.png</p></div>
+<div class="card"><img src="/assets/minigames/cards/card-table.png"><p>Card Table</p><p class="path">minigames/cards/card-table.png</p></div>
+<div class="card"><img src="/assets/minigames/cards/deck.png"><p>Deck</p><p class="path">minigames/cards/deck.png</p></div>
+</div>
+
+<h2>🎲 Dice <span class="count">(7)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/dice/dice-1.png"><p>Dice 1</p><p class="path">minigames/dice/dice-1.png</p></div>
+<div class="card"><img src="/assets/minigames/dice/dice-2.png"><p>Dice 2</p><p class="path">minigames/dice/dice-2.png</p></div>
+<div class="card"><img src="/assets/minigames/dice/dice-3.png"><p>Dice 3</p><p class="path">minigames/dice/dice-3.png</p></div>
+<div class="card"><img src="/assets/minigames/dice/dice-4.png"><p>Dice 4</p><p class="path">minigames/dice/dice-4.png</p></div>
+<div class="card"><img src="/assets/minigames/dice/dice-5.png"><p>Dice 5</p><p class="path">minigames/dice/dice-5.png</p></div>
+<div class="card"><img src="/assets/minigames/dice/dice-6.png"><p>Dice 6</p><p class="path">minigames/dice/dice-6.png</p></div>
+<div class="card"><img src="/assets/minigames/dice/dice-cup.png"><p>Dice Cup</p><p class="path">minigames/dice/dice-cup.png</p></div>
+</div>
+
+<h2>🎡 Wheel <span class="count">(3)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/wheel/wheel.png"><p>Wheel</p><p class="path">minigames/wheel/wheel.png</p></div>
+<div class="card"><img src="/assets/minigames/wheel/wheel-pointer.png"><p>Pointer</p><p class="path">minigames/wheel/wheel-pointer.png</p></div>
+<div class="card"><img src="/assets/minigames/wheel/wheel-stand.png"><p>Stand</p><p class="path">minigames/wheel/wheel-stand.png</p></div>
+</div>
+
+<h2>💣 Minesweeper <span class="count">(4)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/minesweeper/tile-hidden.png"><p>Hidden Tile</p><p class="path">minigames/minesweeper/tile-hidden.png</p></div>
+<div class="card"><img src="/assets/minigames/minesweeper/tile-revealed.png"><p>Revealed Tile</p><p class="path">minigames/minesweeper/tile-revealed.png</p></div>
+<div class="card"><img src="/assets/minigames/minesweeper/gem.png"><p>Gem (Safe)</p><p class="path">minigames/minesweeper/gem.png</p></div>
+<div class="card"><img src="/assets/minigames/minesweeper/mine.png"><p>Mine</p><p class="path">minigames/minesweeper/mine.png</p></div>
+</div>
+
+<h2>🏇 Horse Racing <span class="count">(4)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/horses/horse-1.png"><p>Horse 1 (Red)</p><p class="path">minigames/horses/horse-1.png</p></div>
+<div class="card"><img src="/assets/minigames/horses/horse-2.png"><p>Horse 2 (Blue)</p><p class="path">minigames/horses/horse-2.png</p></div>
+<div class="card"><img src="/assets/minigames/horses/horse-3.png"><p>Horse 3 (Green)</p><p class="path">minigames/horses/horse-3.png</p></div>
+<div class="card"><img src="/assets/minigames/horses/track.png"><p>Track</p><p class="path">minigames/horses/track.png</p></div>
+</div>
+
+<h2>🎯 Darts <span class="count">(2)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/darts/dartboard.png"><p>Dartboard</p><p class="path">minigames/darts/dartboard.png</p></div>
+<div class="card"><img src="/assets/minigames/darts/dart.png"><p>Dart</p><p class="path">minigames/darts/dart.png</p></div>
+</div>
+
+<h2>🪙 Coin Flip <span class="count">(2)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/coin/coin-heads.png"><p>Heads</p><p class="path">minigames/coin/coin-heads.png</p></div>
+<div class="card"><img src="/assets/minigames/coin/coin-tails.png"><p>Tails</p><p class="path">minigames/coin/coin-tails.png</p></div>
+</div>
+
+<h2>🔐 Safe Cracker <span class="count">(3)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/safe/safe-closed.png"><p>Safe Closed</p><p class="path">minigames/safe/safe-closed.png</p></div>
+<div class="card"><img src="/assets/minigames/safe/safe-open.png"><p>Safe Open</p><p class="path">minigames/safe/safe-open.png</p></div>
+<div class="card"><img src="/assets/minigames/safe/dial.png"><p>Dial</p><p class="path">minigames/safe/dial.png</p></div>
+</div>
+
+<h2>🏆 Results <span class="count">(3)</span></h2>
+<div class="grid">
+<div class="card"><img src="/assets/minigames/results/win-banner.png"><p>Win Banner</p><p class="path">minigames/results/win-banner.png</p></div>
+<div class="card"><img src="/assets/minigames/results/lose-banner.png"><p>Lose Banner</p><p class="path">minigames/results/lose-banner.png</p></div>
+<div class="card"><img src="/assets/minigames/results/jackpot.png"><p>Jackpot</p><p class="path">minigames/results/jackpot.png</p></div>
+</div>
+
+<p style="text-align:center; color:#444; margin-top:40px; font-size:0.5rem;">Total: 67 assets</p>
+</body></html>
