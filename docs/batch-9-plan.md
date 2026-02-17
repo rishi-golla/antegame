@@ -252,12 +252,12 @@ All rooms are crypto rooms. No free play option exists.
      - Use a server-controlled escrow wallet instead of a full program
      - Players send SOL to escrow wallet address
      - Server verifies deposits by checking transactions
-     - On game over, server sends pot to winner from escrow wallet
-     - Platform fee (5%) retained in escrow wallet
+     - On game over, server sends 2x entry fee to winner from escrow wallet
+     - House keeps the rest (pot minus 2x entry fee)
    - Functions:
      - `getEscrowAddress()`: returns escrow wallet public key
      - `verifyDeposit(fromWallet, expectedAmount)`: check recent transactions to escrow for matching deposit
-     - `settlePot(winnerWallet, potAmount)`: send (pot - 5% fee) to winner, return tx signature
+     - `settlePot(winnerWallet, entryFeeLamports)`: send 2x entry fee to winner, house keeps rest. Return tx signature
      - `refundAll(deposits: {wallet, amount}[])`: refund each player, return tx signatures
      - `getBalance(wallet)`: get SOL balance
    - Note: this is a centralized escrow for MVP. Upgrade to PDA-based program in future batch
@@ -287,7 +287,7 @@ All rooms are crypto rooms. No free play option exists.
 6. Wire settlement into game over:
    - In `server/index.ts`: when game reaches `game-over` phase in a crypto room:
      1. Determine winner (last non-bankrupt player)
-     2. Call `settlePot(winnerWallet, potLamports)`
+     2. Call `settlePot(winnerWallet, entryFeeLamports)` -- sends 2x entry fee to winner
      3. Emit `game:settlement` event with tx signature and amounts
      4. Call `recordGameResult`
    - If settlement tx fails: retry 3 times, then emit `game:settlement-failed` and flag for manual review
@@ -315,7 +315,7 @@ All rooms are crypto rooms. No free play option exists.
     - Additional section showing:
       - "Settling on-chain..." spinner during settlement
       - "Winner received X SOL" with Solscan link to tx signature
-      - Pot breakdown: total pot, platform fee (5%), winner payout
+      - Pot breakdown: total pot, winner payout (2x entry), house profit
       - Each player's result: +X SOL or -X SOL
 
 11. Add to main menu: "Leaderboard" button (gold, prominent)
@@ -328,7 +328,7 @@ NEXT_PUBLIC_SOLANA_RPC=https://api.mainnet-beta.solana.com
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 SOLANA_KEYPAIR=<base58 encoded server keypair>
 SOLANA_NETWORK=mainnet-beta  # or devnet for testing
-PLATFORM_FEE_BPS=500  # 5% = 500 basis points
+WINNER_MULTIPLIER=2  # winner gets 2x their entry fee, house keeps the rest
 ```
 
 ## Edge Cases
