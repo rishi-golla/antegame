@@ -84,37 +84,49 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
     else onResult('catastrophic');
   };
 
-  const getCellImage = (cell: Cell) => {
-    switch (cell.state) {
-      case 'hidden': return '/assets/minigames/minesweeper/tile-hidden.png';
-      case 'revealed': return '/assets/minigames/minesweeper/gem.png';
-      case 'mine': return '/assets/minigames/minesweeper/mine.png';
-      default: return '/assets/minigames/minesweeper/tile-hidden.png';
+  const renderCell = (cell: Cell) => {
+    if (cell.state === 'hidden') {
+      return (
+        <div className="msTileHidden">
+          <span className="msTileQuestion">?</span>
+        </div>
+      );
     }
+    if (cell.state === 'revealed') {
+      return (
+        <div className="msTileRevealed">
+          <span className="msTileGem">💎</span>
+        </div>
+      );
+    }
+    // mine
+    return (
+      <div className="msTileMine">
+        <span className="msTileBomb">💣</span>
+      </div>
+    );
   };
 
   return (
     <div className="minesweeperLite pixelMinigame">
-      <div className="minesweeperHeader">
-        <h2 className="minesweeperTitle">MINESWEEPER LITE</h2>
-        <div className="minesweeperStats">SAFE: {safeCount}/{GRID_SIZE - MINE_COUNT}</div>
-      </div>
+      <h2 className="minesweeperTitle">MINESWEEPER LITE</h2>
+      <div className="minesweeperStats">SAFE: {safeCount}/{GRID_SIZE - MINE_COUNT}</div>
 
-      <div className="minesweeperGrid">
+      <div className="msGrid">
         {grid.map((cell) => (
           <button
             key={cell.id}
-            className={`minesweeperCell ${cell.state} ${cell.state === 'mine' ? 'mineExplodeAnim' : ''}`}
+            className={`msCell ${cell.state} ${cell.state === 'mine' ? 'msCellExplode' : ''}`}
             onClick={() => clickCell(cell.id)}
             disabled={gameEnded || cell.state !== 'hidden'}
           >
-            <img src={getCellImage(cell)} alt="" className="minesweeperCellImg" />
+            {renderCell(cell)}
           </button>
         ))}
       </div>
 
       <div className="minesweeperInstructions">
-        {!gameStarted ? 'TAP TILES! AVOID 3 MINES!' : gameEnded ? (safeCount === GRID_SIZE - MINE_COUNT ? 'ALL SAFE!' : 'GAME OVER!') : `${GRID_SIZE - MINE_COUNT - safeCount} SAFE REMAINING`}
+        {!gameStarted ? 'TAP TILES! AVOID 3 MINES!' : gameEnded ? (safeCount === GRID_SIZE - MINE_COUNT ? 'ALL SAFE!' : 'BOOM!') : `${GRID_SIZE - MINE_COUNT - safeCount} SAFE REMAINING`}
       </div>
 
       <div className="minesweeperPaytable">
