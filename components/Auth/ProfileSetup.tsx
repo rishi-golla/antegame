@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 
 export default function ProfileSetup() {
-  const { updateProfile } = useAuth();
+  const { updateProfile } = useMultiChain();
   const [displayName, setDisplayName] = useState('');
   const [selectedChar, setSelectedChar] = useState(CHARACTERS[0].id);
   const [saving, setSaving] = useState(false);

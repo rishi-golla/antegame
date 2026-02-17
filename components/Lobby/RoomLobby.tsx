@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSocket } from '@/context/SocketContext';
+import { useMultiChain } from '@/context/MultiChainContext';
 
 interface RoomLobbyProps {
   onLeave?: () => void;
@@ -13,9 +14,12 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
   const [startError, setStartError] = useState('');
   const [copied, setCopied] = useState(false);
 
+  const { activeChain } = useMultiChain();
+
   if (!roomState) return null;
 
   const me = roomState.players.find((p) => p.isYou);
+  const isBase = activeChain === 'base';
   const isHost = me?.isHost ?? false;
   const allReady = roomState.players.every((p) => p.ready);
 
@@ -49,12 +53,17 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
             {copied && <span className="copiedToast">Copied!</span>}
           </div>
           <p className="setupSubtitle casinoSubtitle">Share this table number with friends</p>
-          {roomState.entryFeeLamports > 0 && (
+          {roomState.entryFeeLamports > 0 && !isBase && (
             <div className="lobbyEntryBanner">
               <span>Entry: {(roomState.entryFeeLamports / 1_000_000_000).toFixed(2)} SOL</span>
               <span className="lobbyPotAmount">
                 Pot: {(roomState.potLamports / 1_000_000_000).toFixed(2)} SOL
               </span>
+            </div>
+          )}
+          {isBase && (
+            <div className="lobbyEntryBanner">
+              <span>Deposited on-chain via Base</span>
             </div>
           )}
         </div>

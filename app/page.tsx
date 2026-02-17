@@ -73,7 +73,7 @@ function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
   );
 }
 
-function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
+function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; roomCode?: string }) {
   const { chatMessages, sendChat } = useSocket();
   const [tradeTarget, setTradeTarget] = useState<number | null>(null);
 
@@ -87,7 +87,7 @@ function OnlineGameScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
-      <GameOver onPlayAgain={onPlayAgain} />
+      <GameOver onPlayAgain={onPlayAgain} roomCode={roomCode} />
     </MultiplayerGameProvider>
   );
 }
@@ -115,7 +115,7 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
     case 'lobby':
       return <RoomLobby onLeave={handleLeaveLobby} />;
     case 'game':
-      return <OnlineGameScreen onPlayAgain={onBack} />;
+      return <OnlineGameScreen onPlayAgain={onBack} roomCode={roomState?.code} />;
   }
 }
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 
 export default function WalletButton() {
-  const { user, disconnect } = useAuth();
+  const { user, disconnect } = useMultiChain();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
