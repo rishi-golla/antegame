@@ -18,7 +18,7 @@ const { io } = require("socket.io-client");
 const { keccak256, encodePacked } = require("viem");
 
 async function main() {
-  const roomCode = process.argv[2];
+  const roomCode = process.env.ROOM_CODE || process.argv[2];
   if (!roomCode) {
     console.error("Usage: npx hardhat run scripts/bot-join.js --network <network> -- <ROOM_CODE>");
     console.error("  Or:  ROOM_CODE=ABC123 npx hardhat run scripts/bot-join.js --network base-mainnet");
