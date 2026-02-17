@@ -2776,54 +2776,130 @@ input {
   text-align: center;
 }
 
-.minesweeperGrid {
+/* Minesweeper Grid - Pure CSS tiles */
+.msGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  padding: 16px;
-  background: var(--felt-dark);
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
   border: 3px solid var(--gold);
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
+  border-radius: 8px;
 }
 
-.minesweeperCell {
-  width: 100px;
-  height: 100px;
+.msCell {
+  width: 120px;
+  height: 120px;
   border: none;
-  background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: transform 0.1s steps(2);
+  background: transparent;
 }
 
-.minesweeperCell:hover:not(:disabled) {
-  transform: translateY(-2px);
+.msCell:hover:not(:disabled) .msTileHidden {
+  border-color: #fff;
+  background: #4a3520;
 }
 
-.minesweeperCellImg {
+.msCell:disabled {
+  cursor: default;
+}
+
+/* Hidden tile - dark raised block with ? */
+.msTileHidden {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  background: #3a2515;
+  border: 4px solid #6b4c2a;
+  border-top-color: #8b6c3a;
+  border-left-color: #8b6c3a;
+  border-bottom-color: #2a1a0a;
+  border-right-color: #2a1a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   image-rendering: pixelated;
 }
 
-.minesweeperCell.mine {
-  animation: minePixelExplode 0.4s steps(4);
+.msTileQuestion {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 2rem;
+  color: #d4af37;
+  text-shadow: 2px 2px 0 #000;
 }
 
-.mineExplodeAnim {
-  animation: minePixelExplode 0.4s steps(4) !important;
+/* Revealed safe tile - green with gem */
+.msTileRevealed {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a4a1a, #0d2d0d);
+  border: 4px solid #2d6b2d;
+  border-top-color: #3a8a3a;
+  border-left-color: #3a8a3a;
+  border-bottom-color: #0a1a0a;
+  border-right-color: #0a1a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tileReveal 0.3s steps(4);
 }
 
-@keyframes minePixelExplode {
-  0% { transform: scale(1); }
-  25% { transform: scale(1.3); }
-  50% { transform: scale(0.8); }
-  75% { transform: scale(1.15); }
+.msTileGem {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.5));
+}
+
+/* Mine tile - red with bomb */
+.msTileMine {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #6b1a1a, #3d0a0a);
+  border: 4px solid #8b2a2a;
+  border-top-color: #aa3a3a;
+  border-left-color: #aa3a3a;
+  border-bottom-color: #2a0505;
+  border-right-color: #2a0505;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: mineExplode 0.5s steps(6);
+}
+
+.msTileBomb {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 8px rgba(255, 50, 50, 0.6));
+}
+
+.msCellExplode {
+  animation: cellShake 0.5s steps(6);
+}
+
+@keyframes tileReveal {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(1); }
+}
+
+@keyframes mineExplode {
+  0% { transform: scale(1); background: #6b1a1a; }
+  20% { transform: scale(1.3); background: #ff3333; }
+  40% { transform: scale(0.8); background: #aa1a1a; }
+  60% { transform: scale(1.15); background: #ff2222; }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cellShake {
+  0%, 100% { translate: 0 0; }
+  15% { translate: -4px 2px; }
+  30% { translate: 4px -2px; }
+  45% { translate: -3px 3px; }
+  60% { translate: 3px -1px; }
+  75% { translate: -2px 1px; }
+  90% { translate: 1px 0; }
 }
 
 .minesweeperInstructions {
