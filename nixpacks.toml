@@ -1,0 +1,8 @@
+[phases.setup]
+aptPkgs = ["python3", "make", "g++"]
+
+[phases.build]
+cmds = ["npm ci --legacy-peer-deps", "npx next build", "mkdir -p data"]
+
+[start]
+cmd = "NODE_ENV=production npx tsx server/index.ts"
