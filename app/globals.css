@@ -5528,3 +5528,83 @@ img[src*="/assets/"] {
 .walletDropdownBtn:hover {
   background: rgba(255,0,0,0.1);
 }
+
+/* ===== QUICK PLAY / FEE CHIPS ===== */
+
+.feeChips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+.feeChip {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  padding: 10px 14px;
+  background: var(--ink);
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.1s steps(2);
+}
+
+.feeChip:hover {
+  background: rgba(255,215,0,0.1);
+}
+
+.feeChipSelected {
+  background: var(--gold);
+  color: var(--ink);
+  box-shadow: 0 0 12px rgba(255,215,0,0.4);
+}
+
+.feePotPreview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #ccc;
+  margin: 12px 0 20px;
+  padding: 10px 16px;
+  border: 1px solid var(--gold);
+  background: rgba(0,0,0,0.2);
+}
+
+.feePotAmount {
+  color: var(--gold-bright);
+  font-size: 0.6rem;
+}
+
+/* ===== LOBBY ENTRY BANNER ===== */
+
+.lobbyEntryBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: #ccc;
+  margin-top: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--gold);
+  background: rgba(0,0,0,0.3);
+}
+
+.lobbyPotAmount {
+  color: var(--gold-bright);
+}
+
+.lobbyDepositDot {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--neon-red);
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.lobbyDepositDot.deposited {
+  color: #34d399;
+}

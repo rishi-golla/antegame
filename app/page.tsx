@@ -16,6 +16,7 @@ import TradeModal from '@/components/Board/TradeModal';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
 import WalletButton from '@/components/Auth/WalletButton';
+import QuickPlayScreen from '@/components/QuickPlay/QuickPlayScreen';
 
 type Screen = 'menu' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
@@ -122,16 +123,11 @@ function AuthGate() {
       return <MainMenu onNavigate={setScreen} />;
 
     case 'quick-play':
-      // Placeholder until batch 9.4
       return (
-        <div className="setupScreen">
+        <SocketProvider>
           <WalletButton />
-          <div className="setupCard">
-            <h1 className="setupTitle marqueeTitle">Quick Play</h1>
-            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
-            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
-          </div>
-        </div>
+          <QuickPlayScreen onFound={() => setScreen('lobby')} onBack={() => setScreen('menu')} />
+        </SocketProvider>
       );
 
     case 'profile':
