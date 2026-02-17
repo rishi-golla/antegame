@@ -2,7 +2,13 @@
 
 import { useState } from 'react';
 import { useSocket } from '@/context/SocketContext';
+import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
+import { useWalletClient, useBalance } from 'wagmi';
+import { createGameOnChain, formatEther, parseEther } from '@/lib/contracts/monopolyGame';
+import { getChainId } from '@/lib/contracts/addresses';
+
+const BUY_IN_OPTIONS = ['0.001', '0.005', '0.01', '0.025', '0.05'];
 
 interface CreateRoomProps {
   onCreated: () => void;
@@ -11,27 +17,67 @@ interface CreateRoomProps {
 
 export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   const { createRoom } = useSocket();
-  const [name, setName] = useState('');
-  const [selectedChar, setSelectedChar] = useState(CHARACTERS[0].id);
+  const { user, activeChain } = useMultiChain();
+  const { data: walletClient } = useWalletClient();
+  const { data: balance } = useBalance({
+    address: user?.walletAddress as `0x${string}` | undefined,
+    chainId: getChainId(),
+  });
+
+  const [name, setName] = useState(user?.displayName ?? '');
+  const [selectedChar, setSelectedChar] = useState(
+    user?.characterId ?? CHARACTERS[0].id
+  );
   const [maxPlayers, setMaxPlayers] = useState(4);
+  const [buyIn, setBuyIn] = useState('0.001');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
 
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
+  const isBase = activeChain === 'base';
+
+  const balanceEth = balance ? parseFloat(balance.formatted) : 0;
+  const canAfford = balanceEth >= parseFloat(buyIn);
 
   const handleCreate = async () => {
-    if (!name.trim()) {
-      setError('Enter your name');
-      return;
-    }
+    const playerName = name.trim() || user?.displayName || 'Player';
     setLoading(true);
     setError('');
-    const result = await createRoom(name.trim(), char.color, maxPlayers);
-    setLoading(false);
-    if (result.ok) {
-      onCreated();
-    } else {
-      setError(result.error ?? 'Failed to create room');
+    setStatus('');
+
+    try {
+      // Step 1: If Base chain, create game on-chain first
+      let txHash: string | undefined;
+      if (isBase && walletClient) {
+        setStatus('Waiting for wallet approval...');
+        txHash = await createGameOnChain(walletClient, '', maxPlayers, buyIn);
+        setStatus('Transaction confirmed. Creating room...');
+      }
+
+      // Step 2: Create room on server (socket)
+      const result = await createRoom(playerName, char.color, maxPlayers);
+
+      if (result.ok) {
+        // If Base, mark as deposited immediately since contract call succeeded
+        if (isBase && txHash) {
+          // The room code comes back from the server -- we'll need to map it to the gameId
+          // For now, send the tx hash as deposit proof
+          // TODO: Wire room code into gameId mapping
+        }
+        onCreated();
+      } else {
+        setError(result.error ?? 'Failed to create room');
+      }
+    } catch (err: any) {
+      if (err.message?.includes('User rejected') || err.message?.includes('denied')) {
+        setError('Transaction cancelled');
+      } else {
+        setError(err.shortMessage ?? err.message ?? 'Transaction failed');
+      }
+    } finally {
+      setLoading(false);
+      setStatus('');
     }
   };
 
@@ -49,7 +95,7 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
             <img
               src={char.sprite}
               alt={char.name}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as const }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as any }}
             />
           </div>
           <input
@@ -89,10 +135,37 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
           </div>
         </div>
 
-        {error && <p className="lobbyError">{error}</p>}
+        {isBase && (
+          <div className="setupPlayerCount">
+            <label>Buy-In (ETH)</label>
+            <div className="setupCountBtns">
+              {BUY_IN_OPTIONS.map((amt) => (
+                <button
+                  key={amt}
+                  className={`setupCountBtn ${buyIn === amt ? 'active' : ''}`}
+                  onClick={() => setBuyIn(amt)}
+                  disabled={balanceEth < parseFloat(amt)}
+                >
+                  {amt}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 4 }}>
+              Balance: {balanceEth.toFixed(4)} ETH
+              {!canAfford && <span style={{ color: '#ff4444' }}> (insufficient)</span>}
+            </p>
+          </div>
+        )}
 
-        <button className="setupStartBtn" onClick={handleCreate} disabled={loading}>
-          {loading ? 'Creating...' : 'Create Room'}
+        {error && <p className="lobbyError">{error}</p>}
+        {status && <p className="lobbyError" style={{ color: '#d4a843' }}>{status}</p>}
+
+        <button
+          className="setupStartBtn"
+          onClick={handleCreate}
+          disabled={loading || (isBase && !canAfford)}
+        >
+          {loading ? status || 'Creating...' : isBase ? `Create Room (${buyIn} ETH)` : 'Create Room'}
         </button>
         <button className="lobbyBackBtn" onClick={onBack}>Back</button>
       </div>
