@@ -152,15 +152,64 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         </div>
       )}
 
-      {/* Buy/Decline buttons */}
+      {/* Buy/Gamble/Decline buttons */}
       {state.phase === 'buying' && !isRolling ? (
         <div className="buyDeclineRow">
           <button className="rollButton buyButton" onClick={() => dispatch({ type: 'BUY' })} disabled={isAnimating}>
             Buy
           </button>
+          {state.minigamesEnabled && (
+            <button 
+              className="rollButton gambleBtn" 
+              onClick={() => dispatch({ type: 'GAMBLE', context: 'buying' })} 
+              disabled={isAnimating || (player.money < (state.tiles[player.position] as any).price * 1.5)}
+            >
+              Gamble
+            </button>
+          )}
           <button className="rollButton declineButton" onClick={() => dispatch({ type: 'DECLINE' })} disabled={isAnimating}>
             Pass
           </button>
+        </div>
+      ) : state.phase === 'paying-rent' && !isRolling ? (
+        <div className="payRentPhase">
+          <div className="buyDeclineRow">
+            <button className="rollButton buyButton" onClick={() => dispatch({ type: 'PAY_RENT' })} disabled={isAnimating}>
+              Pay ${state.pendingRent?.amount || 0}
+            </button>
+            {state.minigamesEnabled && state.pendingRent && (
+              <button 
+                className="rollButton gambleBtn" 
+                onClick={() => dispatch({ type: 'GAMBLE', context: 'rent' })} 
+                disabled={isAnimating || (player.money < state.pendingRent.amount * 1.5)}
+              >
+                Gamble
+              </button>
+            )}
+          </div>
+        </div>
+      ) : state.phase === 'minigame' && state.activeMinigame ? (
+        <div className="minigameOverlay">
+          <div className="minigameIntro">
+            <h2>{state.activeMinigame.id.replace('-', ' ').toUpperCase()}</h2>
+            <p>Stakes: ${state.activeMinigame.baseAmount}</p>
+            <p>Context: {state.activeMinigame.context}</p>
+            <div style={{ marginTop: '20px' }}>
+              <button 
+                className="rollButton" 
+                onClick={() => dispatch({ type: 'MINIGAME_RESULT', tier: 'win' })}
+              >
+                Test Win
+              </button>
+              <button 
+                className="rollButton" 
+                onClick={() => dispatch({ type: 'MINIGAME_RESULT', tier: 'loss' })}
+                style={{ marginLeft: '10px' }}
+              >
+                Test Loss
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         <button
