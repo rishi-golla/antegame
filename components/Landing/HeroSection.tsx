@@ -18,14 +18,7 @@ export default function HeroSection() {
       <div className="heroOverlay" />
 
       <div className="heroContent">
-        <motion.img
-          src="/assets/misc/ante-logo.webp"
-          alt="Ante"
-          className="heroLogo"
-          initial={{ opacity: 0, y: -30, scale: 0.8 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
-        />
+        {/* Logo removed for testing */}
         <motion.h1
           className="heroTitle"
           initial={{ opacity: 0, y: 20, letterSpacing: '0.5em' }}

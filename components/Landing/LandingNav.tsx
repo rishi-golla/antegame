@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface LandingNavProps {
   onConnect: () => void;
   connecting: boolean;
 }
+
+const navLinks = [
+  { label: 'About', href: '/about' },
+  { label: 'Features', href: '/features' },
+  { label: 'Minigames', href: '/minigames' },
+];
 
 export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
   const [scrolled, setScrolled] = useState(false);
@@ -18,11 +24,6 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
-  };
-
   return (
     <motion.nav
       className={`landingNav ${scrolled ? 'landingNavScrolled' : ''}`}
@@ -31,26 +32,29 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
       transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
     >
       <div className="landingNavInner">
-        <motion.img
-          src="/assets/misc/ante-logo.webp"
-          alt="Ante"
-          className="landingNavLogo"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        <motion.a
+          href="/"
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
-        />
+        >
+          <img
+            src="/assets/misc/ante-logo.webp"
+            alt="Ante"
+            className="landingNavLogo"
+          />
+        </motion.a>
 
         <div className={`landingNavLinks ${menuOpen ? 'landingNavLinksOpen' : ''}`}>
-          {['about', 'features', 'minigames'].map((id) => (
-            <motion.button
-              key={id}
+          {navLinks.map((link) => (
+            <motion.a
+              key={link.href}
+              href={link.href}
               className="landingNavLink"
-              onClick={() => scrollTo(id)}
               whileHover={{ color: '#d4af37', y: -1 }}
               transition={{ duration: 0.2 }}
             >
-              {id.charAt(0).toUpperCase() + id.slice(1)}
-            </motion.button>
+              {link.label}
+            </motion.a>
           ))}
         </div>
 

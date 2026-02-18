@@ -24,13 +24,13 @@ export default function LandingFooter() {
         <motion.div className="landingFooterLinks" variants={fadeIn}>
           <div className="landingFooterCol">
             <h4>Game</h4>
-            <a href="#features">The Board</a>
-            <a href="#minigames">Minigames</a>
-            <a href="#onchain">On-Chain</a>
+            <a href="/features">The Board</a>
+            <a href="/minigames">Minigames</a>
+            <a href="/features">On-Chain</a>
           </div>
           <div className="landingFooterCol">
             <h4>Info</h4>
-            <a href="#about">About</a>
+            <a href="/about">About</a>
             <a href="/leaderboard">Leaderboard</a>
           </div>
         </motion.div>
