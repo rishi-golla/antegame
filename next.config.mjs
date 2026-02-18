@@ -1,6 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  async rewrites() {
+    return [
+      // All SPA routes resolve to the single page
+      { source: '/free-play', destination: '/' },
+      { source: '/free-play/game', destination: '/' },
+      { source: '/quick-play', destination: '/' },
+      { source: '/create', destination: '/' },
+      { source: '/join', destination: '/' },
+      { source: '/lobby', destination: '/' },
+      { source: '/game', destination: '/' },
+      { source: '/profile', destination: '/' },
+      { source: '/leaderboard', destination: '/' },
+    ];
+  },
 };
 
 export default nextConfig;
