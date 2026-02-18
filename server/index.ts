@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { RoomManager } from './roomManager';
-import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager';
+import { applyGameAction, applyJailEscape, isCurrentPlayer, autoAdvanceTurnEnd } from './gameManager';
 import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally, endTurn } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
 import { proposeTrade, acceptTrade, rejectTrade, cancelTrade, counterTrade } from '@/lib/trading';
@@ -515,7 +515,7 @@ nextApp.prepare().then(() => {
       if (!player) return;
 
       try {
-        room.gameState = declareBankruptcy(room.gameState, player.playerIndex);
+        room.gameState = autoAdvanceTurnEnd(declareBankruptcy(room.gameState, player.playerIndex));
         room.lastActivity = Date.now();
         if (room.gameState.phase === 'game-over') {
           room.phase = 'finished';
@@ -551,7 +551,7 @@ nextApp.prepare().then(() => {
           'mortgage': () => mortgageProperty(room.gameState!, player.playerIndex, data.tileIndex),
           'unmortgage': () => unmortgageProperty(room.gameState!, player.playerIndex, data.tileIndex),
         };
-        room.gameState = fns[action]();
+        room.gameState = autoAdvanceTurnEnd(fns[action]());
         room.lastActivity = Date.now();
         broadcastGameState(code);
       } catch (e: any) {
@@ -597,7 +597,7 @@ nextApp.prepare().then(() => {
         const offer = room.gameState.activeTradeOffer!;
         const fromName = room.gameState.players[offer.fromPlayer].name;
         const toName = room.gameState.players[offer.toPlayer].name;
-        room.gameState = acceptTrade(room.gameState);
+        room.gameState = autoAdvanceTurnEnd(acceptTrade(room.gameState));
         room.lastActivity = Date.now();
         broadcastGameState(code);
         // Announce the completed trade to all players
@@ -726,7 +726,7 @@ nextApp.prepare().then(() => {
         return;
       }
       try {
-        room.gameState = resolveMinigame(room.gameState, data.tier);
+        room.gameState = autoAdvanceTurnEnd(resolveMinigame(room.gameState, data.tier));
         room.lastActivity = Date.now();
         broadcastGameState(code);
         if (room.gameState.phase === 'game-over') {
@@ -748,7 +748,7 @@ nextApp.prepare().then(() => {
         return;
       }
       try {
-        room.gameState = payRentNormally(room.gameState);
+        room.gameState = autoAdvanceTurnEnd(payRentNormally(room.gameState));
         room.lastActivity = Date.now();
         broadcastGameState(code);
         if (room.gameState.phase === 'game-over') {
