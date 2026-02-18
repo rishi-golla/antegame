@@ -10,7 +10,7 @@ import {
   destroySession,
   getSessionFromCookie,
 } from '../auth';
-import { upsertUser, getUser, getUserStats, db } from '../db';
+import { upsertUser, getUser, getUserStats, setReferral, getReferrer, getReferralCount, getReferrals, getReferralEarnings, getUnpaidReferralPayouts, markReferralsPaid, db } from '../db';
 import type { DbUser } from '../db';
 
 const router = Router();
@@ -60,11 +60,12 @@ router.post('/verify-wallet', async (req: Request, res: Response) => {
     return;
   }
 
-  const { walletAddress, signature, nonce, chain } = req.body as {
+  const { walletAddress, signature, nonce, chain, ref } = req.body as {
     walletAddress?: string;
     signature?: string;
     nonce?: string;
     chain?: string;
+    ref?: string;
   };
 
   if (!walletAddress || !signature || !nonce) {
@@ -118,6 +119,11 @@ router.post('/verify-wallet', async (req: Request, res: Response) => {
   const user = upsertUser(walletAddress, resolvedChain);
   const isNewUser = !user.display_name;
   const token = createSession(walletAddress);
+
+  // Track referral on first signup
+  if (isNewUser && ref) {
+    setReferral(walletAddress, ref);
+  }
 
   res.cookie('session', token, {
     httpOnly: true,
@@ -215,6 +221,75 @@ router.patch('/profile', (req: Request, res: Response) => {
       chain: updated!.chain,
     },
   });
+});
+
+// GET /api/auth/referrals — get my referral stats
+router.get('/referrals', (req: Request, res: Response) => {
+  const token = getSessionFromCookie(req.headers.cookie);
+  if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  const user = validateSession(token);
+  if (!user) { res.status(401).json({ error: 'Session expired' }); return; }
+
+  const count = getReferralCount(user.wallet_address);
+  const referrals = getReferrals(user.wallet_address);
+  const earnings = getReferralEarnings(user.wallet_address);
+  const myReferrer = getReferrer(user.wallet_address);
+
+  // Enrich referral list with display names
+  const enriched = referrals.map(r => {
+    const u = getUser(r.referee_wallet);
+    return { wallet: r.referee_wallet, name: u?.display_name ?? null, joinedAt: r.created_at };
+  });
+
+  res.json({
+    referralCode: user.wallet_address,
+    referredBy: myReferrer,
+    count,
+    referrals: enriched,
+    earnings: {
+      totalWei: earnings.total_wei,
+      unpaidWei: earnings.unpaid_wei,
+      paidWei: earnings.paid_wei,
+    },
+  });
+});
+
+// GET /api/auth/referrals/payouts — admin: get all unpaid referral payouts
+router.get('/referrals/payouts', (req: Request, res: Response) => {
+  const token = getSessionFromCookie(req.headers.cookie);
+  if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  const user = validateSession(token);
+  if (!user) { res.status(401).json({ error: 'Session expired' }); return; }
+
+  // Only allow your wallet (admin check)
+  const ADMIN_WALLETS = [process.env.ADMIN_WALLET?.toLowerCase()].filter(Boolean);
+  if (!ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  const payouts = getUnpaidReferralPayouts();
+  res.json({ payouts });
+});
+
+// POST /api/auth/referrals/mark-paid — admin: mark a referrer as paid
+router.post('/referrals/mark-paid', (req: Request, res: Response) => {
+  const token = getSessionFromCookie(req.headers.cookie);
+  if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  const user = validateSession(token);
+  if (!user) { res.status(401).json({ error: 'Session expired' }); return; }
+
+  const ADMIN_WALLETS = [process.env.ADMIN_WALLET?.toLowerCase()].filter(Boolean);
+  if (!ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  const { referrerWallet } = req.body as { referrerWallet?: string };
+  if (!referrerWallet) { res.status(400).json({ error: 'Missing referrerWallet' }); return; }
+
+  const count = markReferralsPaid(referrerWallet);
+  res.json({ marked: count });
 });
 
 // Session middleware helper

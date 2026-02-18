@@ -54,9 +54,29 @@ db.exec(`
     house_profit_lamports INTEGER NOT NULL DEFAULT 0
   );
 
+  CREATE TABLE IF NOT EXISTS referrals (
+    referee_wallet TEXT PRIMARY KEY REFERENCES users(wallet_address),
+    referrer_wallet TEXT NOT NULL REFERENCES users(wallet_address),
+    created_at INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+
+  CREATE TABLE IF NOT EXISTS referral_earnings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    referrer_wallet TEXT NOT NULL,
+    referee_wallet TEXT NOT NULL,
+    game_id INTEGER NOT NULL REFERENCES game_history(id),
+    amount_wei TEXT NOT NULL DEFAULT '0',
+    chain TEXT NOT NULL DEFAULT 'base',
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    paid_out INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE INDEX IF NOT EXISTS idx_sessions_wallet ON sessions(wallet_address);
   CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
   CREATE INDEX IF NOT EXISTS idx_game_history_finished ON game_history(finished_at);
+  CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_wallet);
+  CREATE INDEX IF NOT EXISTS idx_referral_earnings_referrer ON referral_earnings(referrer_wallet);
+  CREATE INDEX IF NOT EXISTS idx_referral_earnings_unpaid ON referral_earnings(paid_out) WHERE paid_out = 0;
 `);
 
 // Session cleanup
@@ -126,6 +146,64 @@ export function getUserStats(walletAddress: string): DbStats | undefined {
 export function updateLastSeen(walletAddress: string): void {
   const now = Math.floor(Date.now() / 1000);
   db.prepare('UPDATE users SET last_seen = ? WHERE wallet_address = ?').run(now, walletAddress);
+}
+
+// --- Referrals ---
+
+export function setReferral(refereeWallet: string, referrerWallet: string): boolean {
+  // Can't refer yourself
+  if (refereeWallet.toLowerCase() === referrerWallet.toLowerCase()) return false;
+  // Only set once (first referrer wins)
+  const existing = db.prepare('SELECT 1 FROM referrals WHERE referee_wallet = ?').get(refereeWallet);
+  if (existing) return false;
+  // Referrer must exist
+  const referrer = getUser(referrerWallet);
+  if (!referrer) return false;
+  db.prepare('INSERT INTO referrals (referee_wallet, referrer_wallet) VALUES (?, ?)').run(refereeWallet, referrerWallet);
+  return true;
+}
+
+export function getReferrer(refereeWallet: string): string | null {
+  const row = db.prepare('SELECT referrer_wallet FROM referrals WHERE referee_wallet = ?').get(refereeWallet) as { referrer_wallet: string } | undefined;
+  return row?.referrer_wallet ?? null;
+}
+
+export function getReferralCount(referrerWallet: string): number {
+  const row = db.prepare('SELECT COUNT(*) as cnt FROM referrals WHERE referrer_wallet = ?').get(referrerWallet) as { cnt: number };
+  return row.cnt;
+}
+
+export function getReferrals(referrerWallet: string): Array<{ referee_wallet: string; created_at: number }> {
+  return db.prepare('SELECT referee_wallet, created_at FROM referrals WHERE referrer_wallet = ? ORDER BY created_at DESC').all(referrerWallet) as any[];
+}
+
+export function recordReferralEarning(referrerWallet: string, refereeWallet: string, gameId: number, amountWei: string, chain: string = 'base'): void {
+  db.prepare('INSERT INTO referral_earnings (referrer_wallet, referee_wallet, game_id, amount_wei, chain) VALUES (?, ?, ?, ?, ?)').run(referrerWallet, refereeWallet, gameId, amountWei, chain);
+}
+
+export function getReferralEarnings(referrerWallet: string): { total_wei: string; unpaid_wei: string; paid_wei: string } {
+  const row = db.prepare(`
+    SELECT
+      COALESCE(SUM(CAST(amount_wei AS INTEGER)), 0) as total,
+      COALESCE(SUM(CASE WHEN paid_out = 0 THEN CAST(amount_wei AS INTEGER) ELSE 0 END), 0) as unpaid,
+      COALESCE(SUM(CASE WHEN paid_out = 1 THEN CAST(amount_wei AS INTEGER) ELSE 0 END), 0) as paid
+    FROM referral_earnings WHERE referrer_wallet = ?
+  `).get(referrerWallet) as { total: number; unpaid: number; paid: number };
+  return { total_wei: String(row.total), unpaid_wei: String(row.unpaid), paid_wei: String(row.paid) };
+}
+
+export function getUnpaidReferralPayouts(): Array<{ referrer_wallet: string; total_unpaid_wei: string }> {
+  return db.prepare(`
+    SELECT referrer_wallet, CAST(SUM(CAST(amount_wei AS INTEGER)) AS TEXT) as total_unpaid_wei
+    FROM referral_earnings WHERE paid_out = 0
+    GROUP BY referrer_wallet
+    ORDER BY SUM(CAST(amount_wei AS INTEGER)) DESC
+  `).all() as any[];
+}
+
+export function markReferralsPaid(referrerWallet: string): number {
+  const result = db.prepare('UPDATE referral_earnings SET paid_out = 1 WHERE referrer_wallet = ? AND paid_out = 0').run(referrerWallet);
+  return result.changes;
 }
 
 export { db };

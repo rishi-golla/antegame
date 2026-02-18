@@ -57,7 +57,9 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
 
   const [linkCopied, setLinkCopied] = useState(false);
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/join?room=${roomState.code}`;
+    const myWallet = me?.walletAddress ?? '';
+    const refParam = myWallet ? `&ref=${myWallet}` : '';
+    const url = `${window.location.origin}/join?room=${roomState.code}${refParam}`;
     navigator.clipboard.writeText(url);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
