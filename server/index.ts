@@ -302,9 +302,10 @@ nextApp.prepare().then(() => {
         if (result.deleted) {
           cancelQuickPlayCountdown(code);
         }
-        // If room was deleted (last player left) or in lobby phase,
-        // sign a cancellation so players can refund on-chain
-        if (result.deleted || (room && room.phase === 'lobby')) {
+        // Only sign cancellation if the leaving player actually deposited on-chain
+        const playerDeposited = player?.deposited === true;
+        const anyDeposited = room?.players.some((p: any) => p.deposited) ?? false;
+        if (playerDeposited && (result.deleted || (room && room.phase === 'lobby'))) {
           try {
             const cancellation = await signCancellation(code);
             if (cancellation) {
@@ -316,8 +317,8 @@ nextApp.prepare().then(() => {
                 gameId,
                 roomCode: code,
               });
-              // Also emit to remaining players if any
-              if (!result.deleted) {
+              // Also emit to remaining deposited players if any
+              if (!result.deleted && anyDeposited) {
                 io.to(code).emit('game:cancellation:signature', {
                   nonce: cancellation.nonce,
                   signature: cancellation.signature,
