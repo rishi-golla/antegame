@@ -347,8 +347,11 @@ export function TradeOfferView({ myPlayerIndex }: { myPlayerIndex: number | null
   const to = state.players[offer.toPlayer];
   const fromChar = CHARACTERS.find(c => c.color === from.color) ?? CHARACTERS[0];
   const toChar = CHARACTERS.find(c => c.color === to.color) ?? CHARACTERS[1];
-  const isRecipient = myPlayerIndex === null || offer.toPlayer === myPlayerIndex;
-  const isProposer = myPlayerIndex !== null && offer.fromPlayer === myPlayerIndex;
+  // In free play (null or -1 index), you control all players so you're always the recipient
+  // In multiplayer, only the actual recipient can accept/reject
+  const isFreePlay = myPlayerIndex === null || myPlayerIndex < 0;
+  const isRecipient = isFreePlay || offer.toPlayer === myPlayerIndex;
+  const isProposer = !isFreePlay && offer.fromPlayer === myPlayerIndex;
   const counterNum = offer.counterCount ?? 0;
 
   return (
