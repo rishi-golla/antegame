@@ -165,6 +165,75 @@ nextApp.prepare().then(() => {
     broadcastChat(code, msg);
   }
 
+  // Quick Play countdown management
+  const quickPlayCountdowns = new Map<string, { timer: NodeJS.Timeout; remaining: number }>();
+
+  const startQuickPlayCountdown = (code: string, seconds: number) => {
+    const existing = quickPlayCountdowns.get(code);
+    if (existing) clearInterval(existing.timer);
+
+    let remaining = seconds;
+    const timer = setInterval(() => {
+      const room = rm.getRoom(code);
+      if (!room || room.phase !== 'lobby') {
+        clearInterval(timer);
+        quickPlayCountdowns.delete(code);
+        return;
+      }
+
+      io.to(code).emit('quickplay:countdown' as any, { remaining, total: seconds });
+      remaining--;
+
+      if (remaining < 0) {
+        clearInterval(timer);
+        quickPlayCountdowns.delete(code);
+        if (room.players.length >= 2) {
+          const startResult = rm.startGame(code, room.hostId);
+          if (startResult.ok && room.gameState) {
+            broadcastGameState(code);
+            broadcastRoomState(code);
+            systemMessage(code, 'Game starting!');
+            startTurnTimer(code);
+          }
+        }
+      }
+    }, 1000);
+
+    quickPlayCountdowns.set(code, { timer, remaining });
+  };
+
+  const cancelQuickPlayCountdown = (code: string) => {
+    const existing = quickPlayCountdowns.get(code);
+    if (existing) {
+      clearInterval(existing.timer);
+      quickPlayCountdowns.delete(code);
+      io.to(code).emit('quickplay:countdown-cancel' as any);
+    }
+  };
+
+  const checkQuickPlayCountdown = (code: string) => {
+    const room = rm.getRoom(code);
+    if (!room || !room.isQuickPlay) return;
+
+    const playerCount = room.players.length;
+    const hasCountdown = quickPlayCountdowns.has(code);
+
+    if (playerCount >= 6) {
+      const existing = quickPlayCountdowns.get(code);
+      if (!existing || existing.remaining > 5) {
+        startQuickPlayCountdown(code, 5);
+      }
+    } else if (playerCount >= 4) {
+      if (!hasCountdown) {
+        startQuickPlayCountdown(code, 30);
+      }
+    } else {
+      if (hasCountdown) {
+        cancelQuickPlayCountdown(code);
+      }
+    }
+  };
+
   io.on('connection', (socket) => {
     // Room: Create
     socket.on('room:create', (data, cb) => {
@@ -225,6 +294,10 @@ nextApp.prepare().then(() => {
         if (!result.deleted && player) {
           systemMessage(code, `${player.name} left the room.`);
           broadcastRoomState(code);
+          checkQuickPlayCountdown(code);
+        }
+        if (result.deleted) {
+          cancelQuickPlayCountdown(code);
         }
         // If room was deleted (last player left) or in lobby phase,
         // sign a cancellation so players can refund on-chain
@@ -604,6 +677,40 @@ nextApp.prepare().then(() => {
     });
 
     // Quick Play
+    (socket as any).on('room:quick-play-base', (data: { name: string; color: string; buyInEth: string; walletAddress: string }, cb: (res: any) => void) => {
+      const existing = rm.findQuickPlayRoomByEth(data.buyInEth);
+      if (existing) {
+        // Check color conflict
+        if (existing.players.some((p: any) => p.color === data.color)) {
+          cb({ ok: false, error: 'Color already taken in this lobby. Pick a different character.' });
+          return;
+        }
+        const joinResult = rm.joinRoom(existing.code, socket.id, data.name, data.color, {
+          walletAddress: data.walletAddress,
+        });
+        if (joinResult.ok) {
+          socket.join(existing.code);
+          const room = rm.getRoom(existing.code);
+          if (room) socket.emit('chat:history', room.chatHistory);
+          broadcastRoomState(existing.code);
+          systemMessage(existing.code, `${data.name} joined the table.`);
+          checkQuickPlayCountdown(existing.code);
+          cb({ ok: true, code: existing.code });
+        } else {
+          cb(joinResult);
+        }
+      } else {
+        const result = rm.createQuickPlayRoomBase(socket.id, data.name, data.color, data.buyInEth, data.walletAddress);
+        if (result.ok && result.code) {
+          socket.join(result.code);
+          broadcastRoomState(result.code);
+          systemMessage(result.code, `${data.name} created a table. Waiting for players...`);
+        }
+        cb(result);
+      }
+    });
+
+    // Quick Play — Solana (legacy)
     socket.on('room:quick-play', (data, cb) => {
       const existing = rm.findQuickPlayRoom(data.entryFeeLamports);
       if (existing) {
