@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useAuth } from '@/context/AuthContext';
 import { useEVMAuth } from '@/context/EVMAuthContext';
 import { useMultiChain, type Chain } from '@/context/MultiChainContext';
@@ -17,8 +17,6 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   const { setVisible: setSolanaModalVisible } = useWalletModal();
   const { openConnectModal } = useConnectModal();
   const { isConnected: evmConnected, address: evmAddress } = useAccount();
-  const { disconnectAsync } = useDisconnect();
-
   const [error, setError] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
@@ -63,16 +61,17 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
 
   const handleBase = async () => {
     setError('');
-    // Always disconnect first so the wallet picker modal shows every time
-    // This lets users choose between Phantom, MetaMask, etc.
-    if (evmConnected) {
-      await disconnectAsync();
+    // If wallet is already connected (e.g. after hard refresh), just sign directly
+    if (evmConnected && evmAddress) {
+      setConnecting(true);
+      setActiveChain('base');
+      evmSign()
+        .catch((e: any) => setError(e.message || 'Verification failed'))
+        .finally(() => setConnecting(false));
+      return;
     }
     setPendingChain('base');
-    // Give wagmi a tick to clear connection state before opening the modal
-    requestAnimationFrame(() => {
-      openConnectModal?.();
-    });
+    openConnectModal?.();
   };
 
   return (
