@@ -1,12 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { RoomManager } from './roomManager';
 import { applyGameAction, applyJailEscape, isCurrentPlayer } from './gameManager';
-import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally } from '@/lib/gameEngine';
+import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally, endTurn } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
-import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
+import { proposeTrade, acceptTrade, rejectTrade, cancelTrade, counterTrade } from '@/lib/trading';
 import authRouter, { sessionMiddleware } from './routes/auth';
 import statsRouter from './routes/stats';
 import contractsRouter, { setRoomManager } from './routes/contracts';
@@ -41,6 +42,66 @@ nextApp.prepare().then(() => {
 
   // Cleanup stale rooms every 5 minutes
   setInterval(() => rm.cleanup(), 5 * 60 * 1000);
+
+  // === TURN TIMER SYSTEM ===
+  const TURN_TIME_MS = 45_000;
+  const turnTimers = new Map<string, { timeout: NodeJS.Timeout; interval: NodeJS.Timeout; remaining: number }>();
+
+  function clearTurnTimer(code: string) {
+    const timer = turnTimers.get(code);
+    if (timer) {
+      clearTimeout(timer.timeout);
+      clearInterval(timer.interval);
+      turnTimers.delete(code);
+    }
+  }
+
+  function startTurnTimer(code: string) {
+    clearTurnTimer(code);
+    const room = rm.getRoom(code);
+    if (!room?.gameState || room.gameState.phase === 'game-over') return;
+
+    let remaining = TURN_TIME_MS;
+
+    // Tick every second
+    const interval = setInterval(() => {
+      remaining -= 1000;
+      io.to(code).emit('turn:timer', { remaining: Math.max(0, remaining), total: TURN_TIME_MS });
+      if (remaining <= 0) clearInterval(interval);
+    }, 1000);
+
+    // Auto-bankrupt at 0
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      turnTimers.delete(code);
+      const r = rm.getRoom(code);
+      if (!r?.gameState || r.gameState.phase === 'game-over') return;
+      const currentIdx = r.gameState.currentPlayerIndex;
+      const player = r.gameState.players[currentIdx];
+      if (player.bankrupt) return;
+      console.log(`[turn-timer] ${player.name} timed out — auto-bankrupt`);
+      r.gameState = declareBankruptcy(r.gameState, currentIdx);
+      // If game isn't over, advance turn
+      if (r.gameState.phase !== 'game-over') {
+        r.gameState = endTurn(r.gameState);
+      }
+      if (r.gameState.phase === 'game-over') {
+        r.phase = 'finished';
+        broadcastRoomState(code);
+      }
+      broadcastGameState(code);
+      // Start timer for next player
+      if (r.gameState.phase !== 'game-over') {
+        startTurnTimer(code);
+      }
+    }, TURN_TIME_MS);
+
+    turnTimers.set(code, { timeout, interval, remaining });
+
+    // Send initial tick
+    io.to(code).emit('turn:timer', { remaining: TURN_TIME_MS, total: TURN_TIME_MS });
+  }
+  // === END TURN TIMER ===
 
   function broadcastRoomState(code: string) {
     const room = rm.getRoom(code);
@@ -79,6 +140,12 @@ nextApp.prepare().then(() => {
     const room = rm.getRoom(code);
     if (!room?.gameState) return;
     io.to(code).emit('game:state', room.gameState);
+    // Reset turn timer on every state broadcast (new turn or player acted)
+    if (room.gameState.phase === 'game-over') {
+      clearTurnTimer(code);
+    } else {
+      startTurnTimer(code);
+    }
   }
 
   function broadcastChat(code: string, message: ChatMessage) {
@@ -134,6 +201,17 @@ nextApp.prepare().then(() => {
       cb(result);
     });
 
+    // Room: Pre-validate join (check color/capacity before on-chain deposit)
+    socket.on('room:validate-join', (data: { code: string; color: string }, cb: (res: { ok: boolean; error?: string }) => void) => {
+      const code = data.code.toUpperCase();
+      const room = rm.getRoom(code);
+      if (!room) { cb({ ok: false, error: 'Room not found' }); return; }
+      if (room.phase !== 'lobby') { cb({ ok: false, error: 'Game already started' }); return; }
+      if (room.players.length >= room.maxPlayers) { cb({ ok: false, error: 'Room is full' }); return; }
+      if (room.players.some((p: any) => p.color === data.color)) { cb({ ok: false, error: 'Color already taken in this room' }); return; }
+      cb({ ok: true });
+    });
+
     // Room: Leave
     socket.on('room:leave', async () => {
       const code = rm.findRoomBySocket(socket.id);
@@ -143,6 +221,7 @@ nextApp.prepare().then(() => {
       const result = rm.leaveRoom(socket.id);
       if (result) {
         socket.leave(code);
+        if (result.deleted) clearTurnTimer(code);
         if (!result.deleted && player) {
           systemMessage(code, `${player.name} left the room.`);
           broadcastRoomState(code);
@@ -208,6 +287,7 @@ nextApp.prepare().then(() => {
       'game:draw-card',
       'game:apply-card',
       'game:resolve-card',
+      'game:resolve-debt',
     ] as const;
 
     for (const event of gameActions) {
@@ -371,31 +451,92 @@ nextApp.prepare().then(() => {
       }
     });
 
-    socket.on('game:accept-trade', () => {
+    socket.on('game:accept-trade', (data: any, cb?: (res: any) => void) => {
+      console.log('[server] game:accept-trade received from', socket.id);
       const code = rm.findRoomBySocket(socket.id);
-      if (!code) return;
+      if (!code) { console.log('[trade] no room found'); cb?.({ ok: false, error: 'No room' }); return; }
       const room = rm.getRoom(code);
-      if (!room?.gameState) return;
+      if (!room?.gameState?.activeTradeOffer) { console.log('[trade] no active offer'); cb?.({ ok: false, error: 'No active offer' }); return; }
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) { console.log('[trade] player not found'); cb?.({ ok: false, error: 'Player not found' }); return; }
+      if (player.playerIndex !== room.gameState.activeTradeOffer.toPlayer) {
+        console.log('[trade:accept] blocked', { you: player.playerIndex, toPlayer: room.gameState.activeTradeOffer.toPlayer });
+        cb?.({ ok: false, error: 'Only the trade recipient can accept' });
+        socket.emit('room:error', 'Only the trade recipient can accept');
+        return;
+      }
       try {
         room.gameState = acceptTrade(room.gameState);
         room.lastActivity = Date.now();
         broadcastGameState(code);
+        console.log('[trade:accept] success');
+        cb?.({ ok: true });
       } catch (e: any) {
+        console.log('[trade:accept] error:', e.message);
+        cb?.({ ok: false, error: e.message });
         socket.emit('room:error', e.message ?? 'Accept trade failed');
       }
     });
 
-    socket.on('game:reject-trade', () => {
+    socket.on('game:reject-trade', (data: any, cb?: (res: any) => void) => {
+      console.log('[server] game:reject-trade received from', socket.id);
       const code = rm.findRoomBySocket(socket.id);
-      if (!code) return;
+      if (!code) { cb?.({ ok: false, error: 'No room' }); return; }
       const room = rm.getRoom(code);
-      if (!room?.gameState) return;
+      if (!room?.gameState?.activeTradeOffer) { cb?.({ ok: false, error: 'No active offer' }); return; }
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) { cb?.({ ok: false, error: 'Player not found' }); return; }
+      if (player.playerIndex !== room.gameState.activeTradeOffer.toPlayer) {
+        cb?.({ ok: false, error: 'Only the trade recipient can reject' });
+        socket.emit('room:error', 'Only the trade recipient can reject');
+        return;
+      }
       try {
         room.gameState = rejectTrade(room.gameState);
         room.lastActivity = Date.now();
         broadcastGameState(code);
+        cb?.({ ok: true });
       } catch (e: any) {
+        cb?.({ ok: false, error: e.message });
         socket.emit('room:error', e.message ?? 'Reject trade failed');
+      }
+    });
+
+    socket.on('game:cancel-trade', () => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState?.activeTradeOffer) return;
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) return;
+      // Only the proposer can cancel
+      if (player.playerIndex !== room.gameState.activeTradeOffer.fromPlayer) {
+        socket.emit('room:error', 'Only the trade proposer can cancel');
+        return;
+      }
+      room.gameState = cancelTrade(room.gameState);
+      room.lastActivity = Date.now();
+      broadcastGameState(code);
+    });
+
+    socket.on('game:counter-trade', (data: { offer: any }) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState?.activeTradeOffer) return;
+      const player = room.players.find((p) => p.id === socket.id);
+      if (!player) return;
+      // Only the recipient can counter
+      if (player.playerIndex !== room.gameState.activeTradeOffer.toPlayer) {
+        socket.emit('room:error', 'Only the trade recipient can counter');
+        return;
+      }
+      try {
+        room.gameState = counterTrade(room.gameState, data.offer);
+        room.lastActivity = Date.now();
+        broadcastGameState(code);
+      } catch (e: any) {
+        socket.emit('room:error', e.message ?? 'Counter-offer failed');
       }
     });
 

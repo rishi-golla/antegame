@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAudio } from '@/context/AudioContext';
 
 interface ChatViewProps {
   messages: Array<{
@@ -16,12 +17,18 @@ interface ChatViewProps {
 export default function ChatView({ messages, onSend }: ChatViewProps) {
   const [input, setInput] = useState('');
   const feedRef = useRef<HTMLDivElement>(null);
+  const { play } = useAudio();
+  const prevMsgCount = useRef(messages.length);
 
   useEffect(() => {
     if (feedRef.current) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
     }
-  }, [messages.length]);
+    if (messages.length > prevMsgCount.current) {
+      play('sfx/chat-message');
+    }
+    prevMsgCount.current = messages.length;
+  }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = () => {
     if (!input.trim()) return;

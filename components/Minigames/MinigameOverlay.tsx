@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useAudio } from '@/context/AudioContext';
 import type { MinigameTier } from '@/types/game';
 import MinigameResult from './MinigameResult';
 import SlotMachine from './SlotMachine';
@@ -32,6 +33,7 @@ const MINIGAME_NAMES: Record<string, string> = {
 
 export default function MinigameOverlay({}: MinigameOverlayProps) {
   const { state, dispatch } = useGame();
+  const { play, playMusic } = useAudio();
   const [showIntro, setShowIntro] = useState(true);
   const [showResult, setShowResult] = useState(false);
   const [resultTier, setResultTier] = useState<MinigameTier | null>(null);
@@ -41,6 +43,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
 
   useEffect(() => {
     if (minigame?.status === 'intro') {
+      playMusic('music/bgm-minigame');
       // Start curtain opening
       setTimeout(() => setCurtainOpen(true), 100);
       const timer = setTimeout(() => {
@@ -55,11 +58,20 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const handleResult = (tier: MinigameTier) => {
     setResultTier(tier);
     setShowResult(true);
+    // Play tier-specific sound
+    if (tier === 'win') play('minigames/tier-win');
+    else if (tier === 'close-win') play('minigames/tier-close-win');
+    else if (tier === 'close-loss') play('minigames/tier-close-loss');
+    else if (tier === 'loss') play('minigames/tier-loss');
+    else if (tier === 'catastrophic') play('minigames/tier-catastrophic');
   };
 
   const handleDismissResult = () => {
     if (resultTier) {
+      playMusic('music/bgm-game');
       dispatch({ type: 'MINIGAME_RESULT', tier: resultTier });
+      setShowResult(false);
+      setResultTier(null);
     }
   };
 

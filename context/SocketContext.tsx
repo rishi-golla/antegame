@@ -18,6 +18,7 @@ interface SocketContextValue {
   roomState: RoomClientState | null;
   gameState: GameState | null;
   chatMessages: ChatMessage[];
+  turnTimer: { remaining: number; total: number } | null;
   createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
   joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; error?: string }>;
   leaveRoom: () => void;
@@ -29,6 +30,8 @@ interface SocketContextValue {
   sendTradeAction: (action: string, data?: Record<string, unknown>) => void;
   quickPlay: (entryFeeLamports: number) => Promise<{ ok: boolean; code?: string; error?: string }>;
   sendDeposit: (txSignature: string) => Promise<{ ok: boolean; error?: string }>;
+  pendingRefund: { nonce: string; signature: string; gameId: string; roomCode: string } | null;
+  clearPendingRefund: () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -38,6 +41,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [roomState, setRoomState] = useState<RoomClientState | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [turnTimer, setTurnTimer] = useState<{ remaining: number; total: number } | null>(null);
+  const [pendingRefund, setPendingRefund] = useState<{ nonce: string; signature: string; gameId: string; roomCode: string } | null>(null);
+  const clearPendingRefund = useCallback(() => setPendingRefund(null), []);
 
   useEffect(() => {
     const socket = getSocket();
@@ -61,6 +67,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setChatMessages(msgs);
     });
 
+    socket.on('turn:timer' as any, (data: { remaining: number; total: number }) => {
+      setTurnTimer(data);
+    });
+
+    socket.on('game:cancellation:signature' as any, (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => {
+      setPendingRefund(data);
+    });
+
     return () => {
       socket.off('connect');
       socket.off('disconnect');
@@ -68,6 +82,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off('game:state');
       socket.off('chat:message');
       socket.off('chat:history');
+      socket.off('turn:timer');
+      socket.off('game:cancellation:signature');
       disconnectSocket();
     };
   }, []);
@@ -134,12 +150,21 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   const sendTradeAction = useCallback((action: string, data?: Record<string, unknown>) => {
     const socket = getSocket();
+    console.log('[sendTradeAction]', action, 'connected:', socket.connected, 'id:', socket.id);
     if (action === 'propose' && data?.offer) {
       socket.emit('game:propose-trade', { offer: data.offer as any });
     } else if (action === 'accept') {
-      socket.emit('game:accept-trade');
+      socket.emit('game:accept-trade', {}, (res: any) => {
+        console.log('[sendTradeAction] accept callback:', res);
+      });
     } else if (action === 'reject') {
-      socket.emit('game:reject-trade');
+      socket.emit('game:reject-trade', {}, (res: any) => {
+        console.log('[sendTradeAction] reject callback:', res);
+      });
+    } else if (action === 'cancel') {
+      socket.emit('game:cancel-trade' as any);
+    } else if (action === 'counter' && data?.offer) {
+      socket.emit('game:counter-trade' as any, { offer: data.offer as any });
     }
   }, []);
 
@@ -183,6 +208,18 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.emit('game:jail-escape', { method: data.method as 'bail' | 'card' | 'roll' });
       return;
     }
+    if (action === 'gamble' && data?.context) {
+      socket.emit('game:gamble', { context: data.context });
+      return;
+    }
+    if (action === 'minigame-result' && data?.tier) {
+      socket.emit('game:minigame-result', { tier: data.tier });
+      return;
+    }
+    if (action === 'pay-rent') {
+      socket.emit('game:pay-rent');
+      return;
+    }
     const eventMap: Record<string, keyof import('@/server/types').ClientToServerEvents> = {
       'roll': 'game:roll',
       'buy': 'game:buy',
@@ -192,6 +229,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       'apply-card': 'game:apply-card',
       'resolve-card': 'game:resolve-card',
       'bankruptcy': 'game:bankruptcy',
+      'resolve-debt': 'game:resolve-debt',
     };
     const event = eventMap[action];
     if (event) {
@@ -206,6 +244,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         roomState,
         gameState,
         chatMessages,
+        turnTimer,
         createRoom,
         joinRoom,
         leaveRoom,
@@ -217,6 +256,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         sendTradeAction,
         quickPlay,
         sendDeposit,
+        pendingRefund,
+        clearPendingRefund,
       }}
     >
       {children}

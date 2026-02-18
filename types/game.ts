@@ -135,6 +135,7 @@ export type GamePhase =
   | 'drawing-card'
   | 'applying-card'
   | 'in-jail'
+  | 'in-debt'
   | 'turn-end'
   | 'trading'
   | 'game-over'
@@ -153,6 +154,7 @@ export interface TradeOffer {
   requestMoney: number;
   offerProperties: number[];
   requestProperties: number[];
+  counterCount?: number;
 }
 
 export type MinigameId =
@@ -206,4 +208,6 @@ export interface GameState {
   minigamesEnabled: boolean;
   pendingRent: { amount: number; toPlayer: number } | null;
   recentMinigames: MinigameId[];
+  /** When in 'in-debt' phase: amount owed and optional creditor */
+  debt: { amount: number; creditor: number | null } | null;
 }

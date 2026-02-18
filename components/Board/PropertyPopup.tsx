@@ -1,6 +1,7 @@
 'use client';
 
 import { useGame } from '@/context/GameContext';
+import { useAudio } from '@/context/AudioContext';
 import type { Tile, PropertyTile } from '@/types/game';
 import { COLOR_GROUPS } from '@/lib/gameData';
 import { getTileImage } from '@/lib/assetMap';
@@ -120,6 +121,7 @@ function PropertyActions({
   state: ReturnType<typeof useGame>['state'];
 }) {
   const { dispatch } = useGame();
+  const { play } = useAudio();
   const houses = owner.houses[tileIndex] || 0;
   const isMortgaged = owner.mortgaged.includes(tileIndex);
 
@@ -163,7 +165,7 @@ function PropertyActions({
       {canBuildHouse && (
         <button
           className="popupActionBtn popupBuildBtn"
-          onClick={() => dispatch({ type: 'BUILD_HOUSE', tileIndex })}
+          onClick={() => { play('sfx/build-house'); dispatch({ type: 'BUILD_HOUSE', tileIndex }); }}
         >
           Build House (${(tile as PropertyTile).houseCost})
         </button>
@@ -171,7 +173,7 @@ function PropertyActions({
       {canSellHouse && (
         <button
           className="popupActionBtn popupSellBtn"
-          onClick={() => dispatch({ type: 'SELL_HOUSE', tileIndex })}
+          onClick={() => { play('sfx/sell-house'); dispatch({ type: 'SELL_HOUSE', tileIndex }); }}
         >
           Sell House (+${Math.floor((tile as PropertyTile).houseCost / 2)})
         </button>
@@ -179,7 +181,7 @@ function PropertyActions({
       {canMortgage && (
         <button
           className="popupActionBtn popupMortgageBtn"
-          onClick={() => dispatch({ type: 'MORTGAGE', tileIndex })}
+          onClick={() => { play('sfx/mortgage'); dispatch({ type: 'MORTGAGE', tileIndex }); }}
         >
           Mortgage (+${(tile as any).mortgageValue})
         </button>
@@ -187,7 +189,7 @@ function PropertyActions({
       {canUnmortgage && (
         <button
           className="popupActionBtn popupUnmortgageBtn"
-          onClick={() => dispatch({ type: 'UNMORTGAGE', tileIndex })}
+          onClick={() => { play('sfx/unmortgage'); dispatch({ type: 'UNMORTGAGE', tileIndex }); }}
         >
           Unmortgage (-${Math.ceil((tile as any).mortgageValue * 1.1)})
         </button>

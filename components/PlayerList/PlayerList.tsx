@@ -1,15 +1,29 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useAudio } from '@/context/AudioContext';
 import { getNetWorth } from '@/lib/gameEngine';
+import AssetsModal from '@/components/PropertyCard/AssetsModal';
 
 interface PlayerListProps {
   onTrade?: (playerIndex: number) => void;
+  myPlayerIndex?: number | null;
 }
 
-export default function PlayerList({ onTrade }: PlayerListProps) {
+export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerListProps) {
   const { state, dispatch } = useGame();
+  const { play } = useAudio();
+  const [assetsPlayer, setAssetsPlayer] = useState<number | null>(null);
+  const [viewingPlayer, setViewingPlayer] = useState<number | null>(null);
   const offer = state.activeTradeOffer;
+
+  // Auto-open assets modal when entering debt phase
+  useEffect(() => {
+    if (state.phase === 'in-debt') {
+      setAssetsPlayer(state.currentPlayerIndex);
+    }
+  }, [state.phase, state.currentPlayerIndex]);
 
   return (
     <aside className="leftPanel panel">
@@ -18,6 +32,7 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
       {offer && (
         <TradeNotification
           state={state}
+          isRecipient={myPlayerIndex === null ? true : offer.toPlayer === myPlayerIndex}
           onAccept={() => dispatch({ type: 'ACCEPT_TRADE' })}
           onReject={() => dispatch({ type: 'REJECT_TRADE' })}
         />
@@ -35,7 +50,12 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
           return (
             <li
               key={player.id}
-              className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''}`}
+              className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''} ${!isActive && !player.bankrupt ? 'clickablePlayer' : ''}`}
+              onClick={() => {
+                if (!isActive && !player.bankrupt) {
+                  setViewingPlayer(player.id);
+                }
+              }}
             >
               <div className={`avatar ${player.sprite ? 'spriteAvatar' : ''}`} style={{ background: player.color }}>
                 {player.sprite ? (
@@ -62,6 +82,7 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
                     className="tradeBtn"
                     onClick={(e) => {
                       e.stopPropagation();
+                      play('sfx/trade-offer');
                       onTrade(player.id);
                     }}
                   >
@@ -73,19 +94,41 @@ export default function PlayerList({ onTrade }: PlayerListProps) {
           );
         })}
       </ul>
+
+      <button
+        className={`viewAssetsBtn ${state.phase === 'in-debt' ? 'viewAssetsPulse' : ''}`}
+        onClick={() => setAssetsPlayer(state.currentPlayerIndex)}
+      >
+        {state.phase === 'in-debt' ? 'MANAGE ASSETS' : 'View Assets'}
+        {(() => {
+          const p = state.players[state.currentPlayerIndex];
+          return p && p.properties.length > 0 ? ` (${p.properties.length})` : '';
+        })()}
+      </button>
+
+      {assetsPlayer !== null && (
+        <AssetsModal playerIndex={assetsPlayer} onClose={() => setAssetsPlayer(null)} />
+      )}
+
+      {viewingPlayer !== null && (
+        <AssetsModal playerIndex={viewingPlayer} onClose={() => setViewingPlayer(null)} />
+      )}
     </aside>
   );
 }
 
 function TradeNotification({
   state,
+  isRecipient,
   onAccept,
   onReject,
 }: {
   state: ReturnType<typeof useGame>['state'];
+  isRecipient: boolean;
   onAccept: () => void;
   onReject: () => void;
 }) {
+  const { play } = useAudio();
   const offer = state.activeTradeOffer!;
   const from = state.players[offer.fromPlayer];
   const to = state.players[offer.toPlayer];
@@ -122,9 +165,20 @@ function TradeNotification({
         )}
       </div>
 
+      {isRecipient && (
+        <p style={{ color: to.color, fontSize: '0.75rem', fontWeight: 700, textAlign: 'center', margin: '4px 0' }}>
+          {to.name}&apos;s decision:
+        </p>
+      )}
       <div className="tradeNotifActions">
-        <button className="tradeNotifAccept" onClick={onAccept}>Accept</button>
-        <button className="tradeNotifReject" onClick={onReject}>Reject</button>
+        {isRecipient ? (
+          <>
+            <button className="tradeNotifAccept" onClick={() => { play('sfx/trade-accept'); onAccept(); }}>Accept</button>
+            <button className="tradeNotifReject" onClick={() => { play('sfx/trade-reject'); onReject(); }}>Reject</button>
+          </>
+        ) : (
+          <span style={{ color: 'var(--muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>Waiting for {to.name} to respond...</span>
+        )}
       </div>
     </div>
   );

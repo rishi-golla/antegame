@@ -200,6 +200,30 @@ export async function claimWinnings(
 }
 
 /**
+ * Cancel a game with server signature (marks game as CANCELLED on-chain).
+ */
+export async function cancelGame(
+  walletClient: WalletClient,
+  roomCode: string,
+  nonce: string,
+  signature: string,
+): Promise<Hash> {
+  const gameId = roomCodeToGameId(roomCode);
+  const addresses = getAddresses();
+
+  const [account] = await walletClient.getAddresses();
+  const hash = await walletClient.writeContract({
+    account,
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'cancelGame',
+    args: [gameId, nonce as `0x${string}`, signature as `0x${string}`],
+    chain: getChain(),
+  });
+  return hash;
+}
+
+/**
  * Claim refund from a cancelled game.
  */
 export async function claimRefund(

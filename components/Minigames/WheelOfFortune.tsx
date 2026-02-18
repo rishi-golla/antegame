@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface WheelOfFortuneProps {
   onResult: (tier: MinigameTier) => void;
@@ -32,6 +33,8 @@ const WHEEL_SEGMENTS: WheelSegment[] = [
 ];
 
 export default function WheelOfFortune({ onResult, baseAmount, context }: WheelOfFortuneProps) {
+  const { play } = useAudio();
+  const tickIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<WheelSegment | null>(null);
@@ -46,6 +49,18 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
     if (spinning || !canSpin) return;
     setSpinning(true);
     setCanSpin(false);
+    play('minigames/wheel-spin');
+
+    // Tick sound during spin
+    let tickDelay = 80;
+    const scheduleTick = () => {
+      tickIntervalRef.current = setTimeout(() => {
+        play('minigames/wheel-tick');
+        tickDelay = Math.min(tickDelay * 1.15, 500);
+        scheduleTick();
+      }, tickDelay);
+    };
+    scheduleTick();
 
     const baseRotations = 4 + Math.random() * 3;
     const finalPosition = Math.random() * 360;
@@ -58,6 +73,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
     const selectedSegment = WHEEL_SEGMENTS[segmentIndex];
 
     setTimeout(() => {
+      if (tickIntervalRef.current) clearTimeout(tickIntervalRef.current);
       setSpinning(false);
       setResult(selectedSegment);
       setTimeout(() => { onResult(selectedSegment.tier); }, 1500);

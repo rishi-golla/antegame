@@ -22,9 +22,12 @@ type GameAction =
   | { type: 'PROPOSE_TRADE'; offer: import('@/types/game').TradeOffer }
   | { type: 'ACCEPT_TRADE' }
   | { type: 'REJECT_TRADE' }
+  | { type: 'CANCEL_TRADE' }
+  | { type: 'COUNTER_TRADE'; offer: import('@/types/game').TradeOffer }
   | { type: 'GAMBLE'; context: MinigameContext }
   | { type: 'MINIGAME_RESULT'; tier: MinigameTier }
-  | { type: 'PAY_RENT' };
+  | { type: 'PAY_RENT' }
+  | { type: 'RESOLVE_DEBT' };
 
 export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
   const { gameState, sendGameAction, sendPropertyAction, sendTradeAction } = useSocket();
@@ -34,6 +37,7 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
   }
 
   const dispatch: Dispatch<GameAction> = (action) => {
+    console.log('[MultiplayerDispatch]', action.type);
     switch (action.type) {
       case 'ROLL':
         sendGameAction('roll');
@@ -83,6 +87,12 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
       case 'REJECT_TRADE':
         sendTradeAction('reject');
         break;
+      case 'CANCEL_TRADE':
+        sendTradeAction('cancel');
+        break;
+      case 'COUNTER_TRADE':
+        sendTradeAction('counter', { offer: action.offer });
+        break;
       case 'GAMBLE':
         sendGameAction('gamble', { context: action.context });
         break;
@@ -91,6 +101,9 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         break;
       case 'PAY_RENT':
         sendGameAction('pay-rent');
+        break;
+      case 'RESOLVE_DEBT':
+        sendGameAction('resolve-debt');
         break;
     }
   };

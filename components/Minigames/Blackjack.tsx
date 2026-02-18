@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface BlackjackProps {
   onResult: (tier: MinigameTier) => void;
@@ -40,6 +41,7 @@ const calculateHandValue = (hand: Card[]): number => {
 };
 
 export default function Blackjack({ onResult, baseAmount, context }: BlackjackProps) {
+  const { play } = useAudio();
   const [deck, setDeck] = useState<Card[]>(() => createDeck());
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
@@ -66,6 +68,7 @@ export default function Blackjack({ onResult, baseAmount, context }: BlackjackPr
 
   const hit = () => {
     if (!playerTurn || gameEnded || deck.length === 0) return;
+    play('minigames/blackjack-hit');
     const newCard = deck[0];
     const newPlayerHand = [...playerHand, newCard];
     setPlayerHand(newPlayerHand);
@@ -82,6 +85,7 @@ export default function Blackjack({ onResult, baseAmount, context }: BlackjackPr
   const stand = () => {
     if (!playerTurn || gameEnded) return;
     setPlayerTurn(false); setDealerHidden(false);
+    play('minigames/card-flip');
     const playDealerTurn = () => {
       let currentDealerHand = [...dealerHand];
       while (calculateHandValue(currentDealerHand) < 17 && deck.length > 0) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useAudio } from '@/context/AudioContext';
 import Tile from './Tile';
 import type { BoardTile } from './Tile';
 import DicePips from './DicePips';
@@ -39,6 +40,7 @@ const boardTiles = buildBoardTiles();
 
 export default function Board() {
   const { state } = useGame();
+  const { play } = useAudio();
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayPositions, setDisplayPositions] = useState<number[]>([]);
   const [displayDice, setDisplayDice] = useState<[number, number]>([1, 1]);
@@ -121,6 +123,7 @@ export default function Board() {
         }
 
         const nextPos = steps[stepIdx];
+        if (nextPos === 0) play('sfx/pass-go');
         setDisplayPositions((dp) => {
           const next = [...dp];
           next[playerIdx] = nextPos;
@@ -174,6 +177,7 @@ export default function Board() {
   const animateRoll = useCallback((finalDice: [number, number]) => {
     setIsDiceFocus(true);
     setRollPhase('charge');
+    play('sfx/dice-shake');
 
     const jitter = setInterval(() => {
       setDisplayDice([Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)]);
@@ -183,6 +187,7 @@ export default function Board() {
     setTimeout(() => {
       setImpactPulse(true);
       setRollPhase('impact');
+      play('sfx/dice-roll');
       setTimeout(() => setImpactPulse(false), 180);
     }, 520);
 

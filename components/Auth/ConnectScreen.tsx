@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { useAuth } from '@/context/AuthContext';
 import { useEVMAuth } from '@/context/EVMAuthContext';
 import { useMultiChain, type Chain } from '@/context/MultiChainContext';
@@ -17,6 +17,7 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   const { setVisible: setSolanaModalVisible } = useWalletModal();
   const { openConnectModal } = useConnectModal();
   const { isConnected: evmConnected, address: evmAddress } = useAccount();
+  const { disconnectAsync } = useDisconnect();
 
   const [error, setError] = useState('');
   const [connecting, setConnecting] = useState(false);
@@ -34,7 +35,7 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
     }
   }, [solConnected, publicKey, pendingChain, solanaSign, setActiveChain]);
 
-  // Auto-sign after EVM wallet connects
+  // Auto-sign after EVM wallet connects (only when user explicitly chose Base)
   useEffect(() => {
     if (evmConnected && evmAddress && pendingChain === 'base') {
       setPendingChain(null);
@@ -60,18 +61,18 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
     }
   };
 
-  const handleBase = () => {
+  const handleBase = async () => {
     setError('');
-    if (evmConnected && evmAddress) {
-      setConnecting(true);
-      setActiveChain('base');
-      evmSign()
-        .catch((e: any) => setError(e.message || 'Verification failed'))
-        .finally(() => setConnecting(false));
-    } else {
-      setPendingChain('base');
-      openConnectModal?.();
+    // Always disconnect first so the wallet picker modal shows every time
+    // This lets users choose between Phantom, MetaMask, etc.
+    if (evmConnected) {
+      await disconnectAsync();
     }
+    setPendingChain('base');
+    // Give wagmi a tick to clear connection state before opening the modal
+    requestAnimationFrame(() => {
+      openConnectModal?.();
+    });
   };
 
   return (
@@ -91,10 +92,10 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
           </button>
           <button
             className="connectBtn connectBtnSolana"
-            onClick={handleSolana}
-            disabled={connecting}
+            disabled
+            style={{ opacity: 0.4, cursor: 'not-allowed' }}
           >
-            {connecting && pendingChain === 'solana' ? 'CONNECTING...' : 'CONNECT WITH SOLANA'}
+            CONNECT WITH SOLANA (COMING SOON)
           </button>
         </div>
 

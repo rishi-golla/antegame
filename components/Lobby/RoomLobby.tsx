@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
+import { useAudio } from '@/context/AudioContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 
 interface RoomLobbyProps {
@@ -10,11 +11,22 @@ interface RoomLobbyProps {
 
 export default function RoomLobby({ onLeave }: RoomLobbyProps) {
   const { roomState, toggleReady, startGame, leaveRoom, sendChat, chatMessages } = useSocket();
+  const { play } = useAudio();
   const [chatInput, setChatInput] = useState('');
+  const prevPlayerCountRef = useRef(0);
   const [startError, setStartError] = useState('');
   const [copied, setCopied] = useState(false);
 
   const { activeChain } = useMultiChain();
+
+  // Detect new player joining
+  useEffect(() => {
+    if (!roomState) return;
+    if (prevPlayerCountRef.current > 0 && roomState.players.length > prevPlayerCountRef.current) {
+      play('sfx/player-join');
+    }
+    prevPlayerCountRef.current = roomState.players.length;
+  }, [roomState?.players.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!roomState) return null;
 
@@ -95,7 +107,7 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
             </div>
 
             <div className="lobbyActions">
-              <button className="setupStartBtn" onClick={toggleReady} style={{ fontSize: '0.9rem', padding: '10px 16px' }}>
+              <button className="setupStartBtn" onClick={() => { play('sfx/ready-up'); toggleReady(); }} style={{ fontSize: '0.9rem', padding: '10px 16px' }}>
                 {me?.ready ? 'Unready' : 'Ready Up'}
               </button>
               {isHost && (

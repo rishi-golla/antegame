@@ -23,9 +23,10 @@ import {
   startMinigame,
   resolveMinigame,
   payRentNormally,
+  resolveDebt,
 } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
-import { proposeTrade, acceptTrade, rejectTrade } from '@/lib/trading';
+import { proposeTrade, acceptTrade, rejectTrade, cancelTrade, counterTrade } from '@/lib/trading';
 
 type GameAction =
   | { type: 'ROLL' }
@@ -44,9 +45,12 @@ type GameAction =
   | { type: 'PROPOSE_TRADE'; offer: TradeOffer }
   | { type: 'ACCEPT_TRADE' }
   | { type: 'REJECT_TRADE' }
+  | { type: 'CANCEL_TRADE' }
+  | { type: 'COUNTER_TRADE'; offer: TradeOffer }
   | { type: 'GAMBLE'; context: MinigameContext }
   | { type: 'MINIGAME_RESULT'; tier: MinigameTier }
-  | { type: 'PAY_RENT' };
+  | { type: 'PAY_RENT' }
+  | { type: 'RESOLVE_DEBT' };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -82,12 +86,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return acceptTrade(state);
     case 'REJECT_TRADE':
       return rejectTrade(state);
+    case 'CANCEL_TRADE':
+      return cancelTrade(state);
+    case 'COUNTER_TRADE':
+      return counterTrade(state, action.offer);
     case 'GAMBLE':
       return startMinigame(state, action.context);
     case 'MINIGAME_RESULT':
       return resolveMinigame(state, action.tier);
     case 'PAY_RENT':
       return payRentNormally(state);
+    case 'RESOLVE_DEBT':
+      return resolveDebt(state);
     default:
       return state;
   }

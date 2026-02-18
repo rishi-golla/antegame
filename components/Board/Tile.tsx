@@ -39,6 +39,24 @@ const CORNER_ICONS: Record<string, string> = {
   'go-to-jail': '\u2190 JAIL',
 };
 
+/** Short display labels for tiles — keeps text clean on small tiles */
+function getShortLabel(tileData: TileType): string {
+  if (tileData.type === 'corner') return CORNER_ICONS[tileData.cornerKind] ?? tileData.name;
+  if (tileData.type === 'chance') return '?';
+  if (tileData.type === 'community-chest') return 'CC';
+  if (tileData.type === 'tax') return tileData.name.replace('Income Tax', 'TAX').replace('Luxury Tax', 'LUX TAX');
+  if (tileData.type === 'utility') return tileData.name.replace('Electric Company', 'ELEC').replace('Water Works', 'WATER');
+  if (tileData.type === 'railroad') return tileData.name.replace(' Railroad', ' RR');
+
+  // Properties: use just the distinctive word(s)
+  // "Sunset Boulevard" → "Sunset", "Community Chest" → "CC"
+  const name = tileData.name;
+  const words = name.split(' ');
+  if (words.length === 1) return name;
+  // Return first word only — it's always the unique part
+  return words[0];
+}
+
 export default function Tile({ tile, activeTile, players, currentPlayerIndex, onTileClick }: TileProps) {
   const tokensOnTile = players.filter((p) => !p.bankrupt && p.position === tile.index);
   const owner = players.find((p) => !p.bankrupt && p.properties.includes(tile.index));
@@ -48,6 +66,7 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
   const groupColor = tileData.type === 'property' ? GROUP_COLORS[tileData.colorGroup] : null;
   const isCornerTile = tileData.type === 'corner';
   const cornerLabel = isCornerTile ? CORNER_ICONS[tileData.cornerKind] : null;
+  const shortLabel = getShortLabel(tileData);
   const tileImage = getTileImage(tileData);
 
   // Determine color strip position based on tile orientation
@@ -98,7 +117,7 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
         </div>
       )}
 
-      <span className="tileLabelText">{cornerLabel ?? tile.label}</span>
+      <span className="tileLabelText">{isCornerTile ? cornerLabel : shortLabel}</span>
 
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">

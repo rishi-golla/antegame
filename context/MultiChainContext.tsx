@@ -7,7 +7,7 @@
  * this context provides a unified interface for the rest of the app.
  */
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useEVMAuth } from './EVMAuthContext';
 
@@ -55,6 +55,13 @@ export function MultiChainProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
+  // Auto-set activeChain when user session loads (e.g. from cookie on refresh)
+  useEffect(() => {
+    if (activeChain) return; // already set by user action
+    if (evm.user) setActiveChain('base');
+    else if (solana.user) setActiveChain('solana');
+  }, [evm.user, solana.user, activeChain]);
+
   const loading = solana.loading || evm.loading;
 
   // Determine active user based on chain
@@ -92,13 +99,10 @@ export function MultiChainProvider({ children }: { children: ReactNode }) {
   }, [activeChain, evm]);
 
   const disconnect = useCallback(async () => {
-    if (activeChain === 'base') {
-      await evm.disconnect();
-    } else {
-      await solana.disconnect?.();
-    }
+    try { await evm.disconnect(); } catch {}
+    try { await solana.disconnect?.(); } catch {}
     setActiveChain(null);
-  }, [activeChain, evm, solana]);
+  }, [evm, solana]);
 
   const updateProfile = useCallback(async (displayName: string, characterId: string) => {
     if (activeChain === 'base') {

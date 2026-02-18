@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface CoinFlipProps {
   onResult: (tier: MinigameTier) => void;
@@ -18,6 +19,7 @@ interface FlipResult {
 }
 
 export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProps) {
+  const { play } = useAudio();
   const [currentFlip, setCurrentFlip] = useState(1);
   const [flipping, setFlipping] = useState(false);
   const [currentSide, setCurrentSide] = useState<CoinSide>('heads');
@@ -39,6 +41,7 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
 
   const flipCoin = () => {
     if (!guess || flipping || gameEnded) return;
+    play('minigames/coin-flip-air');
     setFlipping(true);
 
     let flipCount = 0;

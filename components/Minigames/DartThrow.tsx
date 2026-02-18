@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface LuckyNumberProps {
   onResult: (tier: MinigameTier) => void;
@@ -10,6 +11,7 @@ interface LuckyNumberProps {
 }
 
 export default function LuckyNumber({ onResult }: LuckyNumberProps) {
+  const { play } = useAudio();
   const [selected, setSelected] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -26,6 +28,7 @@ export default function LuckyNumber({ onResult }: LuckyNumberProps) {
 
   const lockIn = useCallback(() => {
     if (selected === null || locked) return;
+    play('minigames/dart-throw');
     setLocked(true);
     const house = Math.floor(Math.random() * 10) + 1;
     setHouseNumber(house);
@@ -40,7 +43,7 @@ export default function LuckyNumber({ onResult }: LuckyNumberProps) {
       const player = selected!;
       const diff = Math.abs(player - house);
       let tier: MinigameTier;
-      if (diff === 0) tier = 'win';
+      if (diff === 0) { tier = 'win'; play('minigames/dart-bullseye'); }
       else if (diff === 1) tier = 'close-win';
       else if (diff === 2) tier = 'close-loss';
       else if (diff <= 4) tier = 'loss';

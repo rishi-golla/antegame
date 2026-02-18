@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface CardWarProps {
   onResult: (tier: MinigameTier) => void;
@@ -51,6 +52,7 @@ function CardBack() {
 }
 
 export default function CardWar({ onResult }: CardWarProps) {
+  const { play } = useAudio();
   const [round, setRound] = useState(0);
   const [playerWins, setPlayerWins] = useState(0);
   const [houseWins, setHouseWins] = useState(0);
@@ -68,6 +70,7 @@ export default function CardWar({ onResult }: CardWarProps) {
 
   const drawRound = useCallback(() => {
     if (round >= 3 || roundRevealed) return;
+    play('minigames/horse-gallop');
     const pc = randomCard();
     const hc = randomCard();
     setPlayerCard(pc);

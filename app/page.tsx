@@ -17,10 +17,12 @@ import GameSetup from '@/components/GameSetup/GameSetup';
 import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
-import TradeModal from '@/components/Board/TradeModal';
+import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
+import TurnTimer from '@/components/UI/TurnTimer';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
 import WalletButton from '@/components/Auth/WalletButton';
+import RefundModal from '@/components/Lobby/RefundModal';
 
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
@@ -68,33 +70,43 @@ function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
+      <TradeOfferView myPlayerIndex={null} />
       <GameOver onPlayAgain={onPlayAgain} />
     </>
   );
 }
 
 function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; roomCode?: string }) {
-  const { chatMessages, sendChat } = useSocket();
+  const { chatMessages, sendChat, roomState } = useSocket();
   const [tradeTarget, setTradeTarget] = useState<number | null>(null);
+  const myPlayerIndex = roomState?.players.findIndex(p => p.isYou) ?? null;
 
   return (
     <MultiplayerGameProvider>
+      <TurnTimer />
       <main className="gameScreen">
-        <PlayerList onTrade={setTradeTarget} />
+        <PlayerList onTrade={setTradeTarget} myPlayerIndex={myPlayerIndex} />
         <Board />
         <SidePanel chatMessages={chatMessages} onSendChat={sendChat} />
       </main>
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
+      <TradeOfferView myPlayerIndex={myPlayerIndex} />
       <GameOver onPlayAgain={onPlayAgain} roomCode={roomCode} />
     </MultiplayerGameProvider>
   );
 }
 
+function RefundOverlay() {
+  const { pendingRefund, clearPendingRefund } = useSocket();
+  if (!pendingRefund) return null;
+  return <RefundModal refund={pendingRefund} onDone={clearPendingRefund} />;
+}
+
 function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; initialScreen?: 'create' | 'join' }) {
   const [screen, setScreen] = useState<'create' | 'join' | 'lobby' | 'game'>(initialScreen);
-  const { roomState, leaveRoom } = useSocket();
+  const { roomState, leaveRoom, pendingRefund } = useSocket();
 
   useEffect(() => {
     if (roomState?.phase === 'playing' && screen === 'lobby') {
@@ -104,7 +116,8 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
 
   const handleLeaveLobby = () => {
     leaveRoom();
-    onBack();
+    // Stay inside SocketProvider so RefundOverlay can appear
+    setScreen('create');
   };
 
   switch (screen) {
@@ -213,6 +226,7 @@ function AuthGate() {
       return (
         <SocketProvider>
           <WalletButton />
+          <RefundOverlay />
           <OnlineFlow
             onBack={() => setScreen('menu')}
             initialScreen={screen === 'join' ? 'join' : 'create'}
