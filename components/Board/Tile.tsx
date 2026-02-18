@@ -81,7 +81,7 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
 
   return (
     <div
-      className={`tile tile-${tile.index % 4} tile-${tile.orientation} ${tile.isCorner ? 'tile-corner' : ''} ${activeTile === tile.index ? 'activeTile' : ''} ${isMortgaged ? 'tile-mortgaged' : ''} ${isCornerTile ? `tile-corner-${tileData.cornerKind}` : ''}`}
+      className={`tile tile-${tile.index % 4} tile-${tile.orientation} ${tile.isCorner ? 'tile-corner' : ''} ${activeTile === tile.index ? 'activeTile' : ''} ${isMortgaged ? 'tile-mortgaged' : ''} ${isCornerTile ? `tile-corner-${tileData.cornerKind}` : ''} ${tileData.type === 'chance' ? 'tile-risk' : ''} ${tileData.type === 'community-chest' ? 'tile-blind' : ''}`}
       data-tile-index={tile.index}
       style={{
         gridRow: `${tile.row} / span ${tile.rowSpan}`,
@@ -129,7 +129,9 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
         </div>
       )}
 
-      <span className="tileLabelText">{isCornerTile ? cornerLabel : tileLabel}</span>
+      {tileData.type !== 'chance' && tileData.type !== 'community-chest' && (
+        <span className="tileLabelText">{isCornerTile ? cornerLabel : tileLabel}</span>
+      )}
 
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">
