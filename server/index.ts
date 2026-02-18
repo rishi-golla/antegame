@@ -871,7 +871,12 @@ nextApp.prepare().then(() => {
       const room = rm.getRoom(code);
       if (!room) return;
 
-      if (room.phase === 'playing') {
+      if (room.phase === 'finished') {
+        // Game is over — just mark disconnected, don't remove from room
+        // This prevents the winner from losing the room while claiming winnings
+        const player = room.players.find((p) => p.id === socket.id);
+        if (player) player.connected = false;
+      } else if (room.phase === 'playing') {
         // Mark disconnected for reconnection
         const result = rm.markDisconnected(socket.id);
         if (result) {
