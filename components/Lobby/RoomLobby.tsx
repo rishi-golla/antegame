@@ -55,6 +55,14 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const [linkCopied, setLinkCopied] = useState(false);
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/join?room=${roomState.code}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
   return (
     <div className="setupScreen">
       <div className="lobbyCard vipRoom">
@@ -65,6 +73,9 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
             {copied && <span className="copiedToast">Copied!</span>}
           </div>
           <p className="setupSubtitle casinoSubtitle">Share this table number with friends</p>
+          <button className="copyLinkBtn" onClick={handleCopyLink}>
+            {linkCopied ? '✓ Link Copied!' : '🔗 Copy Invite Link'}
+          </button>
           {roomState.entryFeeLamports > 0 && !isBase && (
             <div className="lobbyEntryBanner">
               <span>Entry: {(roomState.entryFeeLamports / 1_000_000_000).toFixed(2)} SOL</span>
