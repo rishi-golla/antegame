@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface CoinFlipProps {
   onResult: (tier: MinigameTier) => void;
+  spectator?: boolean;
   baseAmount: number;
   context: MinigameContext;
 }
@@ -18,7 +20,7 @@ interface FlipResult {
   correct: boolean;
 }
 
-export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProps) {
+export default function CoinFlip({ onResult, baseAmount, context, spectator = false }: CoinFlipProps) {
   const { play } = useAudio();
   const [currentFlip, setCurrentFlip] = useState(1);
   const [flipping, setFlipping] = useState(false);
@@ -27,20 +29,32 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
   const [flipResults, setFlipResults] = useState<FlipResult[]>([]);
   const [gameEnded, setGameEnded] = useState(false);
   const [flipStartTime, setFlipStartTime] = useState<number | null>(null);
+  const [pendingFlipResult, setPendingFlipResult] = useState<CoinSide | null>(null);
+
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'guess') {
+      setGuess(data.side);
+      setFlipStartTime(Date.now());
+    } else if (data.type === 'flip-result') {
+      setPendingFlipResult(data.actual);
+    }
+  }, []);
+
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
   useEffect(() => {
     const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const makeGuess = (side: CoinSide) => {
-    if (flipping || guess || gameEnded) return;
+    if (flipping || guess || gameEnded || spectator) return;
     setGuess(side);
     setFlipStartTime(Date.now());
+    emitAction({ type: 'guess', side });
   };
 
-  const flipCoin = () => {
-    if (!guess || flipping || gameEnded) return;
+  const doFlip = useCallback((actualResult: CoinSide) => {
     play('minigames/coin-flip-air');
     setFlipping(true);
 
@@ -50,45 +64,54 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
       flipCount++;
       if (flipCount >= 10) {
         clearInterval(flipInterval);
-        const actualResult: CoinSide = Math.random() < 0.5 ? 'heads' : 'tails';
         setCurrentSide(actualResult);
-        const isCorrect = guess === actualResult;
-        const flipResult: FlipResult = { actual: actualResult, guessed: guess, correct: isCorrect };
-        const newResults = [...flipResults, flipResult];
-        setFlipResults(newResults);
-
-        setTimeout(() => {
-          setFlipping(false);
-          if (currentFlip === 3) {
-            calculateFinalResult(newResults);
-          } else {
-            setCurrentFlip(currentFlip + 1);
-            setGuess(null);
-          }
-        }, 500);
+        setGuess(g => {
+          const isCorrect = g === actualResult;
+          const flipResult: FlipResult = { actual: actualResult, guessed: g!, correct: isCorrect };
+          setFlipResults(prev => {
+            const newResults = [...prev, flipResult];
+            setTimeout(() => {
+              setFlipping(false);
+              setCurrentFlip(cf => {
+                if (cf === 3) {
+                  setGameEnded(true);
+                  const correctCount = newResults.filter(r => r.correct).length;
+                  setTimeout(() => {
+                    if (correctCount === 3) onResult('win');
+                    else if (correctCount === 2) onResult('close-win');
+                    else if (correctCount === 1) onResult('close-loss');
+                    else onResult('loss');
+                  }, 1000);
+                } else {
+                  setGuess(null);
+                }
+                return cf + 1;
+              });
+            }, 500);
+            return newResults;
+          });
+          return g;
+        });
       }
     }, 150);
-  };
+  }, [play, onResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const calculateFinalResult = (results: FlipResult[]) => {
-    setGameEnded(true);
-    const correctCount = results.filter(r => r.correct).length;
-    const flipTime = flipStartTime ? Date.now() - flipStartTime : 5000;
-    setTimeout(() => {
-      if (correctCount === 3) onResult('win');
-      else if (correctCount === 2) onResult('close-win');
-      else if (correctCount === 1) onResult('close-loss');
-      else if (correctCount === 0 && flipTime < 3000) onResult('catastrophic');
-      else onResult('loss');
-    }, 1000);
-  };
-
+  // Auto-flip after guess
   useEffect(() => {
     if (guess && !flipping) {
-      const autoFlipTimer = setTimeout(() => flipCoin(), 500);
-      return () => clearTimeout(autoFlipTimer);
+      const timer = setTimeout(() => {
+        if (spectator && pendingFlipResult) {
+          doFlip(pendingFlipResult);
+          setPendingFlipResult(null);
+        } else if (!spectator) {
+          const actual: CoinSide = Math.random() < 0.5 ? 'heads' : 'tails';
+          emitAction({ type: 'flip-result', actual });
+          doFlip(actual);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [guess, flipping]);
+  }, [guess, flipping, spectator, pendingFlipResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const coinImg = currentSide === 'heads'
     ? '/assets/minigames/coin/coin-heads.png'
@@ -98,7 +121,7 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
     <div className="coinFlip pixelMinigame">
       <div className="coinHeader">
         <h2 className="coinTitle">COIN FLIP</h2>
-        <div className="coinProgress">FLIP {currentFlip}/3 | CORRECT: {flipResults.filter(r => r.correct).length}</div>
+        <div className="coinProgress">FLIP {Math.min(currentFlip, 3)}/3 | CORRECT: {flipResults.filter(r => r.correct).length}</div>
       </div>
 
       <div className="coinContainer">
@@ -109,8 +132,8 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
 
       {!gameEnded && !flipping && !guess && (
         <div className="coinControls">
-          <button className="coinBtn headsBtn pixelBtn" onClick={() => makeGuess('heads')}>HEADS</button>
-          <button className="coinBtn tailsBtn pixelBtn" onClick={() => makeGuess('tails')}>TAILS</button>
+          <button className="coinBtn headsBtn pixelBtn" onClick={() => makeGuess('heads')} disabled={spectator}>HEADS</button>
+          <button className="coinBtn tailsBtn pixelBtn" onClick={() => makeGuess('tails')} disabled={spectator}>TAILS</button>
         </div>
       )}
 
@@ -133,7 +156,7 @@ export default function CoinFlip({ onResult, baseAmount, context }: CoinFlipProp
       </div>
 
       <div className="coinInstructions">
-        {gameEnded ? 'GAME COMPLETE!' : flipping ? 'FLIPPING...' : guess ? 'GET READY...' : `CALL FLIP ${currentFlip}:`}
+        {gameEnded ? 'GAME COMPLETE!' : flipping ? 'FLIPPING...' : guess ? 'GET READY...' : `CALL FLIP ${Math.min(currentFlip, 3)}:`}
       </div>
 
       <div className="coinPaytable">

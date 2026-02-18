@@ -6,6 +6,7 @@ import { useAudio } from '@/context/AudioContext';
 
 interface CardWarProps {
   onResult: (tier: MinigameTier) => void;
+  spectator?: boolean;
   baseAmount: number;
   context: MinigameContext;
 }

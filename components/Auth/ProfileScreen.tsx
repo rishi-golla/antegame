@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { CHARACTERS } from '@/lib/assetMap';
+import ProfileRefunds from './ProfileRefunds';
 
 interface Stats {
   games_played: number;
@@ -79,11 +80,11 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
             </div>
             <div className="statBox">
               <div className="statValue">{(stats.total_earned_lamports / 1e9).toFixed(2)}</div>
-              <div className="statLabel">SOL Won</div>
+              <div className="statLabel">ETH Won</div>
             </div>
             <div className="statBox">
               <div className="statValue">{(stats.total_lost_lamports / 1e9).toFixed(2)}</div>
-              <div className="statLabel">SOL Lost</div>
+              <div className="statLabel">ETH Lost</div>
             </div>
             <div className="statBox">
               <div className="statValue">{stats.minigames_played}</div>
@@ -104,11 +105,13 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
                 <span>{new Date(h.finished_at * 1000).toLocaleDateString()}</span>
                 <span>{h.player_count}P</span>
                 <span className="profileHistoryWinner">{h.winner_name}</span>
-                <span>{(h.entry_fee_lamports / 1e9).toFixed(2)} SOL</span>
+                <span>{(h.entry_fee_lamports / 1e9).toFixed(2)} ETH</span>
               </div>
             ))}
           </div>
         )}
+
+        <ProfileRefunds />
 
         {editing ? (
           <div className="profileEditSection">

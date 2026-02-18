@@ -80,7 +80,14 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   };
 
   const renderMinigame = () => {
-    const props = { onResult: handleResult, baseAmount: minigame.baseAmount, context: minigame.context };
+    const noOp = () => {};
+    const isSpectator = !isMyTurn;
+    const props = {
+      onResult: isSpectator ? noOp : handleResult,
+      baseAmount: minigame.baseAmount,
+      context: minigame.context,
+      spectator: isSpectator,
+    };
     switch (minigame.id) {
       case 'slots': return <SlotMachine {...props} />;
       case 'higher-lower': return <HigherLower {...props} />;
@@ -131,27 +138,19 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     );
   }
 
-  // Spectator mode: show who's playing but don't render interactive minigame
-  if (!isMyTurn) {
-    const activePlayer = state.players[state.currentPlayerIndex];
-    return (
-      <div className="minigameOverlay pixelOverlay">
-        <div className="minigameIntro" style={{ textAlign: 'center' }}>
-          <h2 className="minigameIntroTitle">{MINIGAME_NAMES[minigame.id] || minigame.id}</h2>
-          <p style={{ fontSize: '1.2rem', marginTop: 16, opacity: 0.8 }}>
-            🎰 <strong>{activePlayer?.name || 'Player'}</strong> is playing...
-          </p>
-          <p style={{ fontSize: '0.85rem', marginTop: 8, opacity: 0.5 }}>
-            Waiting for their result
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Spectators see the minigame but can't interact
+  const spectator = !isMyTurn;
 
   return (
     <div className="minigameOverlay pixelOverlay">
-      {renderMinigame()}
+      {spectator && (
+        <div className="spectatorBanner">
+          👁️ Watching {state.players[state.currentPlayerIndex]?.name || 'Player'}
+        </div>
+      )}
+      <div className={spectator ? 'spectatorView' : ''}>
+        {renderMinigame()}
+      </div>
     </div>
   );
 }

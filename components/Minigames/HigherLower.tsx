@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface HigherLowerProps {
   onResult: (tier: MinigameTier) => void;
+  spectator?: boolean;
   baseAmount: number;
   context: MinigameContext;
 }
@@ -13,11 +15,7 @@ interface HigherLowerProps {
 type Suit = '♠' | '♥' | '♦' | '♣';
 type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
 
-interface Card {
-  rank: Rank;
-  suit: Suit;
-  value: number;
-}
+interface Card { rank: Rank; suit: Suit; value: number; }
 
 const SUITS: Suit[] = ['♠', '♥', '♦', '♣'];
 const RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -40,51 +38,86 @@ const createDeck = (): Card[] => {
   return deck.sort(() => Math.random() - 0.5);
 };
 
-export default function HigherLower({ onResult, baseAmount, context }: HigherLowerProps) {
+export default function HigherLower({ onResult, baseAmount, context, spectator = false }: HigherLowerProps) {
   const { play } = useAudio();
-  const [deck] = useState<Card[]>(() => createDeck());
+  const [deck, setDeck] = useState<Card[]>([]);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [nextCard, setNextCard] = useState<Card | null>(null);
   const [round, setRound] = useState(0);
   const [correctGuesses, setCorrectGuesses] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [allGuesses, setAllGuesses] = useState<boolean[]>([]);
+  const deckRef = useRef<Card[]>([]);
+
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'init') {
+      const d = data.deck as Card[];
+      deckRef.current = d;
+      setDeck(d);
+      setCurrentCard(d[0]);
+      setNextCard(d[1]);
+    } else if (data.type === 'guess') {
+      doGuess(data.isHigher);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
   useEffect(() => {
-    const timer = setTimeout(() => { onResult('catastrophic'); }, 30000);
-    if (deck.length > 0) {
-      setCurrentCard(deck[0]);
-      setNextCard(deck[1]);
+    if (!spectator) {
+      const d = createDeck();
+      deckRef.current = d;
+      setDeck(d);
+      setCurrentCard(d[0]);
+      setNextCard(d[1]);
+      emitAction({ type: 'init', deck: d });
     }
+    const timer = setTimeout(() => { onResult('catastrophic'); }, 30000);
     return () => clearTimeout(timer);
-  }, [onResult]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const doGuess = (isHigher: boolean) => {
+    setCurrentCard(cur => {
+      setNextCard(nxt => {
+        if (!cur || !nxt) return nxt;
+        play('minigames/card-flip');
+        const isCorrect = isHigher ? (nxt.value > cur.value) : (nxt.value < cur.value);
+        const actuallyCorrect = nxt.value !== cur.value && isCorrect;
+
+        setAllGuesses(prev => [...prev, actuallyCorrect]);
+        if (actuallyCorrect) setCorrectGuesses(prev => prev + 1);
+
+        setRound(r => {
+          if (r === 2) {
+            setShowResult(true);
+            setCorrectGuesses(cc => {
+              const finalCorrect = actuallyCorrect ? cc + 1 : cc;
+              setTimeout(() => {
+                if (finalCorrect === 3) onResult('win');
+                else if (finalCorrect === 2) onResult('close-win');
+                else if (finalCorrect === 1) onResult('close-loss');
+                else onResult('catastrophic');
+              }, 1000);
+              return finalCorrect;
+            });
+          } else {
+            setTimeout(() => {
+              setCurrentCard(nxt);
+              setNextCard(deckRef.current[r + 2] || null);
+            }, 1500);
+          }
+          return r + 1;
+        });
+        return nxt;
+      });
+      return cur;
+    });
+  };
 
   const makeGuess = (isHigher: boolean) => {
-    if (!currentCard || !nextCard || showResult) return;
-    play('minigames/card-flip');
-    const isCorrect = isHigher ? (nextCard.value > currentCard.value) : (nextCard.value < currentCard.value);
-    const actuallyCorrect = nextCard.value !== currentCard.value && isCorrect;
-    const newGuesses = [...allGuesses, actuallyCorrect];
-    setAllGuesses(newGuesses);
-    if (actuallyCorrect) setCorrectGuesses(prev => prev + 1);
-
-    if (round === 2) {
-      setShowResult(true);
-      setTimeout(() => {
-        const finalCorrect = actuallyCorrect ? correctGuesses + 1 : correctGuesses;
-        if (finalCorrect === 3) onResult('win');
-        else if (finalCorrect === 2) onResult('close-win');
-        else if (finalCorrect === 1) onResult('close-loss');
-        else if (finalCorrect === 0) onResult('catastrophic');
-        else onResult('loss');
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        setCurrentCard(nextCard);
-        if (deck[round + 2]) setNextCard(deck[round + 2]);
-        setRound(round + 1);
-      }, 1500);
-    }
+    if (!currentCard || !nextCard || showResult || spectator) return;
+    emitAction({ type: 'guess', isHigher });
+    doGuess(isHigher);
   };
 
   const getCardColor = (suit: Suit): string => (suit === '♥' || suit === '♦') ? 'var(--neon-red)' : '#1f2937';
@@ -96,7 +129,7 @@ export default function HigherLower({ onResult, baseAmount, context }: HigherLow
       <div className="hlOverlayBg">
         <div className="higherLowerHeader">
           <h2 className="higherLowerTitle">HIGHER OR LOWER</h2>
-          <div className="higherLowerScore">ROUND {round + 1}/3 | CORRECT: {correctGuesses}</div>
+          <div className="higherLowerScore">ROUND {Math.min(round + 1, 3)}/3 | CORRECT: {correctGuesses}</div>
         </div>
 
         <div className="higherLowerCards">
@@ -129,8 +162,8 @@ export default function HigherLower({ onResult, baseAmount, context }: HigherLow
 
         {!showResult && (
           <div className="higherLowerButtons">
-            <button className="higherLowerBtn higher pixelBtn" onClick={() => makeGuess(true)}>▲ HIGHER</button>
-            <button className="higherLowerBtn lower pixelBtn" onClick={() => makeGuess(false)}>▼ LOWER</button>
+            <button className="higherLowerBtn higher pixelBtn" onClick={() => makeGuess(true)} disabled={spectator}>▲ HIGHER</button>
+            <button className="higherLowerBtn lower pixelBtn" onClick={() => makeGuess(false)} disabled={spectator}>▼ LOWER</button>
           </div>
         )}
 

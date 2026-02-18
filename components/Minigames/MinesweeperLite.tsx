@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface MinesweeperLiteProps {
   onResult: (tier: MinigameTier) => void;
+  spectator?: boolean;
   baseAmount: number;
   context: MinigameContext;
 }
@@ -22,7 +24,7 @@ interface Cell {
 const GRID_SIZE = 9;
 const MINE_COUNT = 3;
 
-export default function MinesweeperLite({ onResult, baseAmount, context }: MinesweeperLiteProps) {
+export default function MinesweeperLite({ onResult, baseAmount, context, spectator = false }: MinesweeperLiteProps) {
   const { play } = useAudio();
   const [grid, setGrid] = useState<Cell[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
@@ -30,55 +32,89 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
   const [safeCount, setSafeCount] = useState(0);
   const [firstClick, setFirstClick] = useState(true);
 
-  useEffect(() => {
-    initializeGrid();
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
-    return () => clearTimeout(timer);
+  // Sync: active player emits actions, spectator receives them
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'init') {
+      // Spectator receives the mine layout from the active player
+      const newGrid: Cell[] = [];
+      for (let i = 0; i < GRID_SIZE; i++) {
+        newGrid.push({ id: i, hasMine: data.mines.includes(i), state: 'hidden', safeRevealed: false });
+      }
+      setGrid(newGrid);
+    } else if (data.type === 'click') {
+      // Replay the click
+      doClick(data.cellId);
+    }
   }, []);
 
-  const initializeGrid = () => {
-    const newGrid: Cell[] = [];
-    for (let i = 0; i < GRID_SIZE; i++) {
-      newGrid.push({ id: i, hasMine: false, state: 'hidden', safeRevealed: false });
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
+
+  useEffect(() => {
+    if (!spectator) {
+      // Active player: generate grid and broadcast mine positions
+      const newGrid: Cell[] = [];
+      for (let i = 0; i < GRID_SIZE; i++) {
+        newGrid.push({ id: i, hasMine: false, state: 'hidden', safeRevealed: false });
+      }
+      const minePositions = new Set<number>();
+      while (minePositions.size < MINE_COUNT) {
+        minePositions.add(Math.floor(Math.random() * GRID_SIZE));
+      }
+      minePositions.forEach(pos => { newGrid[pos].hasMine = true; });
+      setGrid(newGrid);
+      emitAction({ type: 'init', mines: [...minePositions] });
     }
-    const minePositions = new Set<number>();
-    while (minePositions.size < MINE_COUNT) {
-      minePositions.add(Math.floor(Math.random() * GRID_SIZE));
-    }
-    minePositions.forEach(pos => { newGrid[pos].hasMine = true; });
-    setGrid(newGrid);
-  };
+
+    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Shared click logic used by both active player and spectator replay
+  const doClick = useCallback((cellId: number) => {
+    setGrid(prev => {
+      if (!prev.length || prev[cellId]?.state !== 'hidden') return prev;
+      const newGrid = [...prev];
+      const clickedCell = { ...newGrid[cellId] };
+
+      if (clickedCell.hasMine) {
+        play('minigames/mine-boom');
+        clickedCell.state = 'mine';
+        newGrid[cellId] = clickedCell;
+        setGameEnded(true);
+        setFirstClick(fc => {
+          if (fc) {
+            setTimeout(() => onResult('catastrophic'), 1000);
+          } else {
+            setSafeCount(sc => { setTimeout(() => calculateResult(sc), 1000); return sc; });
+          }
+          return false;
+        });
+      } else {
+        play('minigames/mine-safe');
+        clickedCell.state = 'revealed';
+        clickedCell.safeRevealed = true;
+        newGrid[cellId] = clickedCell;
+        setGameStarted(true);
+        setFirstClick(false);
+        setSafeCount(sc => {
+          const newSc = sc + 1;
+          if (newSc === GRID_SIZE - MINE_COUNT) {
+            setGameEnded(true);
+            setTimeout(() => calculateResult(newSc), 500);
+          }
+          return newSc;
+        });
+      }
+
+      return newGrid;
+    });
+  }, [play, onResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const clickCell = (cellId: number) => {
-    if (gameEnded || grid[cellId].state !== 'hidden') return;
+    if (gameEnded || spectator) return;
     play('minigames/mine-click');
-    setGameStarted(true);
-    const newGrid = [...grid];
-    const clickedCell = newGrid[cellId];
-
-    if (clickedCell.hasMine) {
-      play('minigames/mine-boom');
-      clickedCell.state = 'mine';
-      setGrid(newGrid);
-      setGameEnded(true);
-      if (firstClick) {
-        setTimeout(() => onResult('catastrophic'), 1000);
-      } else {
-        setTimeout(() => calculateResult(safeCount), 1000);
-      }
-    } else {
-      play('minigames/mine-safe');
-      clickedCell.state = 'revealed';
-      clickedCell.safeRevealed = true;
-      const newSafeCount = safeCount + 1;
-      setSafeCount(newSafeCount);
-      setGrid(newGrid);
-      setFirstClick(false);
-      if (newSafeCount === GRID_SIZE - MINE_COUNT) {
-        setGameEnded(true);
-        setTimeout(() => calculateResult(newSafeCount), 500);
-      }
-    }
+    emitAction({ type: 'click', cellId });
+    doClick(cellId);
   };
 
   const calculateResult = (safeTilesRevealed: number) => {
@@ -104,7 +140,6 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
         </div>
       );
     }
-    // mine
     return (
       <div className="msTileMine">
         <span className="msTileBomb">💣</span>
@@ -123,7 +158,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
             key={cell.id}
             className={`msCell ${cell.state} ${cell.state === 'mine' ? 'msCellExplode' : ''}`}
             onClick={() => clickCell(cell.id)}
-            disabled={gameEnded || cell.state !== 'hidden'}
+            disabled={gameEnded || cell.state !== 'hidden' || spectator}
           >
             {renderCell(cell)}
           </button>

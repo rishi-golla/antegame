@@ -43,6 +43,24 @@ export function buildHouse(state: GameState, playerIndex: number, tileIndex: num
     throw new Error('Maximum houses (hotel) already built');
   }
 
+  // Cannot build during final rounds
+  if (state.finalRounds) {
+    throw new Error('No building allowed during final rounds');
+  }
+
+  // Housing scarcity check
+  if (currentHouses < 4) {
+    // Building a house (need houses available)
+    if (state.globalHouses <= 0) {
+      throw new Error('No houses available — housing shortage!');
+    }
+  } else {
+    // Upgrading to hotel (need hotel available, returns 4 houses)
+    if (state.globalHotels <= 0) {
+      throw new Error('No hotels available!');
+    }
+  }
+
   // Even building: cannot build if this property already has more than the minimum in the group
   const group = COLOR_GROUPS[tile.colorGroup as keyof typeof COLOR_GROUPS];
   const minInGroup = Math.min(...group.map((idx) => player.houses[idx] || 0));
@@ -54,6 +72,19 @@ export function buildHouse(state: GameState, playerIndex: number, tileIndex: num
     throw new Error('Not enough money');
   }
 
+  // Update housing supply
+  let globalHouses = state.globalHouses;
+  let globalHotels = state.globalHotels;
+
+  if (currentHouses < 4) {
+    // Building a house
+    globalHouses--;
+  } else {
+    // Upgrading to hotel: return 4 houses, take 1 hotel
+    globalHouses += 4;
+    globalHotels--;
+  }
+
   const newPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p;
     return {
@@ -63,7 +94,7 @@ export function buildHouse(state: GameState, playerIndex: number, tileIndex: num
     };
   });
 
-  return { ...state, players: newPlayers };
+  return { ...state, players: newPlayers, globalHouses, globalHotels };
 }
 
 export function sellHouse(state: GameState, playerIndex: number, tileIndex: number): GameState {
@@ -84,6 +115,22 @@ export function sellHouse(state: GameState, playerIndex: number, tileIndex: numb
 
   const refund = Math.floor(tile.houseCost / 2);
 
+  // Update housing supply
+  let globalHouses = state.globalHouses;
+  let globalHotels = state.globalHotels;
+
+  if (currentHouses === 5) {
+    // Downgrading from hotel: return hotel, need 4 houses
+    if (globalHouses < 4) {
+      throw new Error('Not enough houses to downgrade hotel — sell entire hotel instead');
+    }
+    globalHotels++;
+    globalHouses -= 4;
+  } else {
+    // Selling a house
+    globalHouses++;
+  }
+
   const newPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p;
     return {
@@ -93,7 +140,7 @@ export function sellHouse(state: GameState, playerIndex: number, tileIndex: numb
     };
   });
 
-  return { ...state, players: newPlayers };
+  return { ...state, players: newPlayers, globalHouses, globalHotels };
 }
 
 export function mortgageProperty(state: GameState, playerIndex: number, tileIndex: number): GameState {

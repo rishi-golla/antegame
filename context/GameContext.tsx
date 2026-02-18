@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useReducer,
+  useEffect,
   type ReactNode,
   type Dispatch,
 } from 'react';
@@ -140,6 +141,14 @@ export function GameProvider({
     { names: playerNames, sprites: playerSprites, colors: playerColors },
     createGameWithSprites,
   );
+
+  // Auto-advance turn after 1.5s when turn-end phase (no doubles)
+  useEffect(() => {
+    if (state.phase === 'turn-end' && state.doublesCount === 0) {
+      const timer = setTimeout(() => dispatch({ type: 'END_TURN' }), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [state.phase, state.doublesCount]);
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

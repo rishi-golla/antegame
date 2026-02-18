@@ -120,6 +120,31 @@ export const RAILROAD_RENTS = [25, 50, 100, 200];
 
 export const STARTING_MONEY = 1500;
 export const GO_SALARY = 200;
+
+// --- Economy Scaling ---
+export const MAX_GLOBAL_HOUSES = 32;
+export const MAX_GLOBAL_HOTELS = 12;
+export const FINAL_ROUNDS_START = 50;
+export const FINAL_ROUNDS_END = 60;
+
+/** Rent multiplier based on current round */
+export function getRentMultiplier(round: number, finalRounds: boolean): number {
+  if (finalRounds) return 4.0;
+  if (round <= 15) return 1.0;
+  if (round <= 25) return 1.25;
+  if (round <= 35) return 1.5;
+  if (round <= 45) return 2.0;
+  return 3.0;
+}
+
+/** GO salary decreases over time */
+export function getGoSalary(round: number, finalRounds: boolean): number {
+  if (finalRounds) return 0;
+  if (round <= 15) return 200;
+  if (round <= 25) return 150;
+  if (round <= 35) return 100;
+  return 50;
+}
 export const JAIL_BAIL = 50;
 export const MAX_JAIL_TURNS = 3;
 export const MAX_HOUSES = 5; // 5 = hotel

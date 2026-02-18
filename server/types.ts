@@ -70,6 +70,7 @@ export interface ClientToServerEvents {
   'game:gamble': (data: { context: import('@/types/game').MinigameContext }) => void;
   'game:minigame-result': (data: { tier: import('@/types/game').MinigameTier }) => void;
   'game:pay-rent': () => void;
+  'game:minigame-action': (data: any) => void;
   'chat:send': (data: { text: string }) => void;
   'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
   'room:deposit': (data: { txSignature: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
@@ -91,6 +92,7 @@ export interface ServerToClientEvents {
   'game:cancellation:signature': (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => void;
   'game:refund': (data: { walletAddress: string; txSignature: string; amountLamports: number }) => void;
   'turn:timer': (data: { remaining: number; total: number }) => void;
+  'game:minigame-action': (data: any) => void;
 }
 
 export interface RoomClientState {

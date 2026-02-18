@@ -210,4 +210,12 @@ export interface GameState {
   recentMinigames: MinigameId[];
   /** When in 'in-debt' phase: amount owed and optional creditor */
   debt: { amount: number; creditor: number | null } | null;
+  /** Current round number (increments when turn wraps to player 0) */
+  roundNumber: number;
+  /** Global housing supply */
+  globalHouses: number;
+  /** Global hotel supply */
+  globalHotels: number;
+  /** Whether the game is in "Final Rounds" endgame mode */
+  finalRounds: boolean;
 }

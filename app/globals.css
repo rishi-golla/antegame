@@ -1347,6 +1347,41 @@ input {
   transition: all 0.3s var(--ease-out);
 }
 
+.roundIndicator {
+  position: absolute;
+  top: 2%;
+  right: 8%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: rgba(212, 175, 55, 0.7);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.rentMultiplier {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.finalRoundsTimer {
+  color: #ff4444;
+  animation: pulse 1s infinite;
+}
+
+.housingSupply {
+  color: #8fb8ff;
+  font-size: 0.3rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .turnAvatar {
   width: 30px;
   height: 30px;
@@ -2118,6 +2153,27 @@ input {
 /* === Overlay & Curtain === */
 .minigameOverlay.pixelOverlay {
   font-family: 'Press Start 2P', monospace;
+}
+
+.spectatorBanner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 16px;
+  padding: 4px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: #d4af37;
+  white-space: nowrap;
+}
+
+.spectatorView {
+  pointer-events: none;
+  user-select: none;
 }
 
 .minigameCurtain {
@@ -6006,6 +6062,175 @@ img[src*="/assets/"] {
   color: var(--gold-bright);
 }
 
+/* ===== PROFILE REFUNDS ===== */
+
+.profileRefunds {
+  margin-top: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.profileRefundsToggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--gold-bright);
+  transition: background 0.15s;
+}
+
+.profileRefundsToggle:hover {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.profileRefundsArrow {
+  font-size: 0.4rem;
+  opacity: 0.6;
+}
+
+.profileRefundsContent {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.profileRefundsStatus {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: #999;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.profileRefundRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.profileRefundRow:last-of-type {
+  border-bottom: none;
+}
+
+.profileRefundInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profileRefundRoom {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: #ccc;
+}
+
+.profileRefundAmount {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--gold-bright);
+}
+
+.profileRefundDate {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #777;
+}
+
+.profileRefundLocked {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.profileRefundState {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.3rem;
+  color: #999;
+}
+
+.profileRefundClaimBtn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  padding: 6px 14px;
+  background: linear-gradient(180deg, #4caf50, #388e3c);
+  color: white;
+  border: 1px solid #2e7d32;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.profileRefundClaimBtn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #66bb6a, #43a047);
+}
+
+.profileRefundClaimBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profileRefundsSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--gold-bright);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+  margin-bottom: 8px;
+}
+
+.profileRefundClaimAllBtn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #d4a843, #b8860b);
+  color: #1a1a2e;
+  border: 1px solid #a67c00;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.15s;
+}
+
+.profileRefundClaimAllBtn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #e6be5a, #c9971c);
+}
+
+.profileRefundClaimAllBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profileRefundsRefresh {
+  width: 100%;
+  padding: 6px;
+  background: none;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: var(--gold);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.profileRefundsRefresh:hover {
+  border-color: var(--gold-bright);
+}
+
 .profileEditSection {
   margin-top: 12px;
 }
@@ -6505,12 +6730,13 @@ img[src*="/assets/"] {
 .audio-controls-wrapper {
   position: fixed;
   top: 16px;
-  right: 16px;
+  left: 16px;
   z-index: 900;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .audio-controls-icon {

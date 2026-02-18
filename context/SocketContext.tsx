@@ -32,9 +32,10 @@ interface SocketContextValue {
   sendDeposit: (txSignature: string) => Promise<{ ok: boolean; error?: string }>;
   pendingRefund: { nonce: string; signature: string; gameId: string; roomCode: string } | null;
   clearPendingRefund: () => void;
+  rawSocket: any;
 }
 
-const SocketContext = createContext<SocketContextValue | null>(null);
+export const SocketContext = createContext<SocketContextValue | null>(null);
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected] = useState(false);
@@ -258,6 +259,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         sendDeposit,
         pendingRefund,
         clearPendingRefund,
+        rawSocket: getSocket(),
       }}
     >
       {children}

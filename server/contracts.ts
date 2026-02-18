@@ -130,6 +130,32 @@ export async function signCancellation(
 }
 
 /**
+ * Sign a cancellation by raw gameId (for retroactive refunds on old games).
+ */
+export async function signCancellationByGameId(
+  gameId: Hash,
+): Promise<{ nonce: Hash; signature: Hex } | null> {
+  const account = getSignerAccount();
+  if (!account) {
+    console.warn('[contracts] signCancellationByGameId: no signer key, returning null');
+    return null;
+  }
+
+  const nonce = generateNonce();
+
+  const messageHash = keccak256(
+    encodePacked(
+      ['string', 'bytes32', 'bytes32', 'address', 'uint256'],
+      ['CANCEL', gameId, nonce, CONTRACT_ADDRESS, BigInt(CHAIN_ID)],
+    ),
+  );
+
+  const signature = await account.signMessage({ message: { raw: messageHash } });
+
+  return { nonce, signature };
+}
+
+/**
  * Get the signer's public address (for verifying it matches contract's gameSigner).
  */
 export function getSignerAddress(): Address | null {

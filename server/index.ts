@@ -45,6 +45,7 @@ nextApp.prepare().then(() => {
 
   // === TURN TIMER SYSTEM ===
   const TURN_TIME_MS = 45_000;
+  const MINIGAME_TIME_MS = 90_000;
   const turnTimers = new Map<string, { timeout: NodeJS.Timeout; interval: NodeJS.Timeout; remaining: number }>();
 
   function clearTurnTimer(code: string) {
@@ -61,12 +62,14 @@ nextApp.prepare().then(() => {
     const room = rm.getRoom(code);
     if (!room?.gameState || room.gameState.phase === 'game-over') return;
 
-    let remaining = TURN_TIME_MS;
+    const inMinigame = room.gameState.activeMinigame !== null;
+    const timeMs = inMinigame ? MINIGAME_TIME_MS : TURN_TIME_MS;
+    let remaining = timeMs;
 
     // Tick every second
     const interval = setInterval(() => {
       remaining -= 1000;
-      io.to(code).emit('turn:timer', { remaining: Math.max(0, remaining), total: TURN_TIME_MS });
+      io.to(code).emit('turn:timer', { remaining: Math.max(0, remaining), total: timeMs });
       if (remaining <= 0) clearInterval(interval);
     }, 1000);
 
@@ -94,12 +97,12 @@ nextApp.prepare().then(() => {
       if (r.gameState.phase !== 'game-over') {
         startTurnTimer(code);
       }
-    }, TURN_TIME_MS);
+    }, timeMs);
 
     turnTimers.set(code, { timeout, interval, remaining });
 
     // Send initial tick
-    io.to(code).emit('turn:timer', { remaining: TURN_TIME_MS, total: TURN_TIME_MS });
+    io.to(code).emit('turn:timer', { remaining: timeMs, total: timeMs });
   }
   // === END TURN TIMER ===
 
@@ -386,6 +389,21 @@ nextApp.prepare().then(() => {
           if (room.phase === 'finished') {
             broadcastRoomState(code);
           }
+          // Auto-advance turn after 1.5s when turn-end (no doubles)
+          if (room.gameState && room.gameState.phase === 'turn-end' && room.gameState.doublesCount === 0) {
+            setTimeout(() => {
+              const r = rm.getRoom(code);
+              if (!r?.gameState || r.gameState.phase !== 'turn-end') return;
+              r.gameState = endTurn(r.gameState);
+              broadcastGameState(code);
+              if (r.gameState.phase === 'game-over') {
+                r.phase = 'finished';
+                broadcastRoomState(code);
+              } else {
+                startTurnTimer(code);
+              }
+            }, 1500);
+          }
         } else {
           socket.emit('room:error', result.error ?? 'Action failed');
         }
@@ -638,6 +656,17 @@ nextApp.prepare().then(() => {
       } catch (e: any) {
         socket.emit('room:error', e.message ?? 'Gamble failed');
       }
+    });
+
+    // Relay minigame actions to spectators
+    socket.on('game:minigame-action', (data) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) return;
+      const room = rm.getRoom(code);
+      if (!room?.gameState) return;
+      if (!isCurrentPlayer(room, socket.id)) return;
+      // Broadcast to all OTHER players in the room
+      socket.to(code).emit('game:minigame-action', data);
     });
 
     socket.on('game:minigame-result', (data) => {
