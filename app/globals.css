@@ -8378,3 +8378,195 @@ img[src*="/assets/"] {
     gap: 4px;
   }
 }
+
+/* ============================= */
+/* ===== SUBPAGES ============== */
+/* ============================= */
+
+.subpageHero {
+  position: relative;
+  height: 50vh;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.subpageHeroBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.subpageHeroContent {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+}
+
+.subpageTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: var(--gold-bright, #d4af37);
+  text-shadow:
+    0 0 40px rgba(212, 175, 55, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.12em;
+}
+
+.subpageSubtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  color: #a89070;
+  margin-top: 12px;
+  letter-spacing: 0.04em;
+}
+
+.subpageBody {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 80px 24px 100px;
+}
+
+.subpageBlock {
+  margin-bottom: 48px;
+}
+
+.subpageBlock h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #f0e6d6;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+
+.subpageBlock p {
+  font-size: 1.05rem;
+  color: #a89070;
+  line-height: 1.8;
+}
+
+.subpageBlockImage {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.2));
+}
+
+/* Feature rows on /features */
+
+.subpageFeatureRow {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  margin-bottom: 64px;
+}
+
+.subpageFeatureRow:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+.subpageFeatureImage {
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+}
+
+.subpageFeatureImage img {
+  width: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.subpageFeatureText {
+  flex: 1;
+}
+
+.subpageFeatureText h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f0e6d6;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+
+.subpageFeatureText p {
+  font-size: 1.05rem;
+  color: #a89070;
+  line-height: 1.7;
+}
+
+/* Minigame grid on /minigames */
+
+.minigameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.minigameCard {
+  background:
+    linear-gradient(180deg, rgba(30, 15, 15, 0.9) 0%, rgba(20, 10, 10, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: default;
+  transition: border-color 0.3s;
+}
+
+.minigameCard:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.minigameCardIcon {
+  width: 80px;
+  height: 80px;
+  image-rendering: pixelated;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+.minigameCardName {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold-bright, #d4af37);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+
+.minigameCardDesc {
+  font-size: 0.9rem;
+  color: #887060;
+  line-height: 1.5;
+}
+
+/* Subpage responsive */
+
+@media (max-width: 768px) {
+  .subpageTitle {
+    font-size: 2.4rem;
+  }
+
+  .subpageFeatureRow,
+  .subpageFeatureRow:nth-child(even) {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .minigameGrid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .minigameCardIcon {
+    width: 60px;
+    height: 60px;
+  }
+}
