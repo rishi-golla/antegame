@@ -18,10 +18,10 @@ interface QuickPlayProps {
 export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const { user, activeChain } = useMultiChain();
   const { data: walletClient } = useWalletClient();
-  const { isConnected: evmConnected } = useAccount();
+  const { isConnected: evmConnected, address: connectedAddress } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { data: balance } = useBalance({
-    address: user?.walletAddress as `0x${string}` | undefined,
+    address: connectedAddress,
     chainId: getChainId(),
   });
 
@@ -54,13 +54,25 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
       const { getSocket } = await import('@/lib/socket');
       const socket = getSocket();
 
-      const result = await new Promise<{ ok: boolean; code?: string; error?: string }>((resolve) => {
+      // Ensure socket is connected before emitting
+      if (!socket.connected) {
+        setStatus('Connecting to server...');
+        socket.connect();
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Connection timeout — server may be starting up. Try again.')), 8000);
+          socket.once('connect', () => { clearTimeout(timeout); resolve(); });
+          socket.once('connect_error', (err) => { clearTimeout(timeout); reject(new Error(`Connection failed: ${err.message}`)); });
+        });
+      }
+
+      const result = await new Promise<{ ok: boolean; code?: string; error?: string }>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Server did not respond. Try again.')), 10000);
         (socket as any).emit('room:quick-play-base', {
           name: playerName,
           color: char.color,
           buyInEth: buyIn,
           walletAddress: user?.walletAddress,
-        }, resolve);
+        }, (res: any) => { clearTimeout(timeout); resolve(res); });
       });
 
       if (result.ok) {
