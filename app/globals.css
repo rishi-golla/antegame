@@ -22,9 +22,9 @@
   --bg-hover: #3a2020;
   --bg-active: #4a2828;
 
-  /* Colors - Board (Casino Felt) */
-  --board-felt: #0b3d0b;
-  --tile-felt: #0d4a0d;
+  /* Colors - Board (Dark Casino) */
+  --board-felt: #1a0f0f;
+  --tile-felt: #1e1212;
   --board-border: #d4af37;
 
   /* Colors - Text */
@@ -299,9 +299,9 @@ input {
   padding: var(--board-inner-pad);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 24% 20%, rgba(11, 80, 11, 0.3), rgba(11, 80, 11, 0)),
-    radial-gradient(circle at 76% 68%, rgba(11, 61, 11, 0.25), rgba(11, 61, 11, 0)),
-    linear-gradient(145deg, #0b3d0b 0%, #0d4a0d 52%, #0a350a 100%);
+    radial-gradient(circle at 24% 20%, rgba(60, 20, 35, 0.3), transparent),
+    radial-gradient(circle at 76% 68%, rgba(50, 15, 30, 0.25), transparent),
+    linear-gradient(145deg, #1a0f0f 0%, #1e1212 52%, #160e0e 100%);
   box-shadow:
     inset 0 2px 0 rgba(212, 175, 55, 0.2),
     inset 0 -10px 14px rgba(0, 20, 0, 0.3),
@@ -458,17 +458,17 @@ input {
 }
 
 .tile-blind {
-  border-color: #4ade80 !important;
-  background: radial-gradient(circle at 50% 50%, #0a2a10, #061a08) !important;
+  border-color: #d4af37 !important;
+  background: radial-gradient(circle at 50% 50%, #1a1400, #120e00) !important;
   box-shadow:
-    inset 0 0 12px rgba(74, 222, 128, 0.2),
-    0 0 8px rgba(74, 222, 128, 0.15) !important;
+    inset 0 0 12px rgba(212, 175, 55, 0.2),
+    0 0 8px rgba(212, 175, 55, 0.15) !important;
   animation: blindPulse 3.5s ease-in-out infinite;
 }
 
 .tile-blind .tileBackgroundImg {
   opacity: 0.9;
-  filter: saturate(1.3) brightness(1.1);
+  filter: saturate(1.2) brightness(1.15);
 }
 
 @keyframes riskPulse {
@@ -477,8 +477,8 @@ input {
 }
 
 @keyframes blindPulse {
-  0%, 100% { box-shadow: inset 0 0 12px rgba(74,222,128,0.2), 0 0 8px rgba(74,222,128,0.15); }
-  50% { box-shadow: inset 0 0 18px rgba(74,222,128,0.4), 0 0 16px rgba(74,222,128,0.3); }
+  0%, 100% { box-shadow: inset 0 0 12px rgba(212,175,55,0.2), 0 0 8px rgba(212,175,55,0.15); }
+  50% { box-shadow: inset 0 0 18px rgba(212,175,55,0.4), 0 0 16px rgba(212,175,55,0.3); }
 }
 
 .activeTile {
