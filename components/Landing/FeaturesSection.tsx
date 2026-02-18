@@ -6,7 +6,7 @@ interface FeaturePanel {
   id: string;
   title: string;
   text: string;
-  images: string[];
+  image: string;
   reverse?: boolean;
 }
 
@@ -15,44 +15,26 @@ const features: FeaturePanel[] = [
     id: 'features',
     title: 'The Board',
     text: '40 casino-themed properties across 8 color sets. Buy, build, and bankrupt your opponents on a board dripping with neon and velvet.',
-    images: [
-      '/assets/tiles/prop-red.webp',
-      '/assets/tiles/prop-dark-blue.webp',
-      '/assets/tiles/prop-orange.webp',
-      '/assets/tiles/corner-go.webp',
-    ],
+    image: '/assets/landing/feature-board.webp',
   },
   {
     id: 'minigames',
     title: '10 Casino Minigames',
     text: 'Land on Risk or Blind Chest and play blackjack, slots, craps, darts, wheel of fortune, and more. Win big or lose your stake.',
-    images: [
-      '/assets/minigames/slots/slot-machine.png',
-      '/assets/minigames/cards/card-table.png',
-      '/assets/minigames/wheel/wheel.png',
-      '/assets/minigames/dice/dice-cup.png',
-    ],
+    image: '/assets/landing/feature-minigames.webp',
     reverse: true,
   },
   {
     id: 'onchain',
     title: 'Fully On-Chain',
     text: 'Smart contract escrow on Base. Every game is settled transparently. Your crypto, your keys, your winnings.',
-    images: [
-      '/assets/misc/casino-crest.webp',
-      '/assets/tiles/corner-jail.webp',
-    ],
+    image: '/assets/landing/feature-onchain.webp',
   },
   {
     id: 'multiplayer',
     title: 'Play With Friends',
     text: 'Create private rooms, invite friends, or jump into quick play. Up to 6 players per game with real-time chat.',
-    images: [
-      '/assets/sprites/mobster.webp',
-      '/assets/sprites/card-shark.webp',
-      '/assets/sprites/tourist.webp',
-      '/assets/sprites/vip.webp',
-    ],
+    image: '/assets/landing/feature-multiplayer.webp',
     reverse: true,
   },
 ];
@@ -82,10 +64,8 @@ function FeatureCard({ feature }: { feature: FeaturePanel }) {
       id={feature.id}
       className={`featurePanel ${feature.reverse ? 'featurePanelReverse' : ''}`}
     >
-      <div className="featureImages">
-        {feature.images.map((src, i) => (
-          <img key={i} src={src} alt="" className="featureImage" loading="lazy" />
-        ))}
+      <div className="featureImageWrap">
+        <img src={feature.image} alt={feature.title} className="featureImage" loading="lazy" />
       </div>
       <div className="featureText">
         <h3 className="featureTitle">{feature.title}</h3>

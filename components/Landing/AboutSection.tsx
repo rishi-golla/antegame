@@ -1,8 +1,28 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
 export default function AboutSection() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('landingAboutVisible');
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="landingAbout" id="about">
+    <section className="landingAbout" id="about" ref={ref}>
       <div className="landingAboutInner">
         <div className="landingDivider">
           <span className="landingDividerLine" />
@@ -16,7 +36,7 @@ export default function AboutSection() {
           The pot goes to the last player standing.
         </p>
         <img
-          src="/assets/misc/casino-crest.webp"
+          src="/assets/landing/crest-emblem.webp"
           alt=""
           className="landingAboutCrest"
         />
