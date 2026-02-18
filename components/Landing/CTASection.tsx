@@ -8,61 +8,48 @@ interface CTASectionProps {
   connecting: boolean;
 }
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 25 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-};
-
 export default function CTASection({ onConnect, onFreePlay, connecting }: CTASectionProps) {
   return (
-    <section className="landingCTA">
+    <section className="ctaSection">
+      <div className="ctaBg">
+        <img src="/assets/landing/feature-multiplayer.webp" alt="" className="ctaBgImg" />
+      </div>
+      <div className="ctaOverlay" />
+
       <motion.div
-        className="landingCTAInner"
-        variants={container}
-        initial="hidden"
-        whileInView="show"
+        className="ctaContent"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
-        <motion.h2 className="landingCTATitle" variants={fadeUp}>
-          Ready to Ante Up?
-        </motion.h2>
-        <motion.p className="landingCTASubtitle" variants={fadeUp}>
-          Connect your wallet and join the table.
-        </motion.p>
-        <motion.div className="landingCTAButtons" variants={fadeUp}>
+        <p className="ctaLabel">Ready?</p>
+        <h2 className="ctaTitle">Ante Up</h2>
+        <p className="ctaSubtitle">Connect your wallet. Join the table. Take the pot.</p>
+
+        <div className="ctaButtons">
           <motion.button
-            className="landingCTABtn landingCTABtnPrimary"
+            className="ctaBtnPrimary"
             onClick={onConnect}
             disabled={connecting}
-            whileHover={{ scale: 1.03, y: -2 }}
+            whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
           >
             {connecting ? 'Connecting...' : 'Connect with Base'}
           </motion.button>
-          <motion.button
-            className="landingCTABtn landingCTABtnDisabled"
-            disabled
-            initial={{ opacity: 0.4 }}
-          >
-            Connect with Solana (Coming Soon)
-          </motion.button>
           {onFreePlay && (
             <motion.button
-              className="landingCTABtn landingCTABtnGhost"
+              className="ctaBtnGhost"
               onClick={onFreePlay}
-              whileHover={{ scale: 1.02, borderColor: 'rgba(212, 175, 55, 0.3)' }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              Play for Free
+              Try Free Play
             </motion.button>
           )}
-        </motion.div>
+        </div>
+
+        <p className="ctaSolana">Solana support coming soon</p>
       </motion.div>
     </section>
   );
