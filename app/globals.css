@@ -467,8 +467,11 @@ input {
 }
 
 .tile-blind .tileBackgroundImg {
-  opacity: 0.9;
+  opacity: 0.85;
   filter: saturate(1.3) brightness(1.1);
+  object-fit: contain !important;
+  transform: none !important;
+  padding: 4px;
 }
 
 @keyframes riskPulse {

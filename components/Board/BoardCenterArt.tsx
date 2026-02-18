@@ -143,10 +143,10 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
   return (
     <div className="boardCenterArt">
-      {/* Casino crest */}
+      {/* Ante logo */}
       <img
-        src="/assets/misc/casino-crest.webp"
-        alt="Casino Crest"
+        src="/assets/misc/ante-logo.png"
+        alt="Ante"
         className="casinoCrestImg"
         draggable={false}
       />
