@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { useMultiChain } from '@/context/MultiChainContext';
-import { useSocket } from '@/context/SocketContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { useWalletClient, useBalance, useAccount } from 'wagmi';
+import { useWalletClient, useBalance, useAccount, useSwitchChain } from 'wagmi';
+import { waitForTransactionReceipt } from '@wagmi/core';
+import { wagmiConfig } from '@/context/EVMWalletContext';
 import { getChainId } from '@/lib/contracts/addresses';
+import { createGameOnChain, joinGameOnChain } from '@/lib/contracts/monopolyGame';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useChainId } from 'wagmi';
 
 const BUY_IN_OPTIONS = ['0.001', '0.01', '0.05', '0.25', '0.5'];
+const TX_RECEIPT_TIMEOUT = 60_000;
 
 interface QuickPlayProps {
   onMatched: () => void;
@@ -20,6 +24,10 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const { data: walletClient } = useWalletClient();
   const { isConnected: evmConnected, address: connectedAddress } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const { switchChainAsync } = useSwitchChain();
+  const currentChainId = useChainId();
+  const targetChainId = getChainId();
+  const wrongChain = currentChainId !== targetChainId;
   const { data: balance } = useBalance({
     address: connectedAddress,
     chainId: getChainId(),
@@ -41,31 +49,38 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
 
   const handleFindMatch = async () => {
     const playerName = name.trim() || user?.displayName || 'Player';
-    if (!walletReady) {
+    if (!walletReady || !walletClient) {
       setError('Wallet not connected.');
       openConnectModal?.();
       return;
     }
     setLoading(true);
     setError('');
-    setStatus('Searching for match...');
 
     try {
+      // Auto-switch chain if needed
+      if (wrongChain) {
+        setStatus('Switching network...');
+        await switchChainAsync({ chainId: targetChainId });
+      }
+
       const { getSocket } = await import('@/lib/socket');
       const socket = getSocket();
 
-      // Ensure socket is connected before emitting
+      // Ensure socket is connected
       if (!socket.connected) {
         setStatus('Connecting to server...');
         socket.connect();
         await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error('Connection timeout — server may be starting up. Try again.')), 8000);
+          const timeout = setTimeout(() => reject(new Error('Connection timeout. Try again.')), 8000);
           socket.once('connect', () => { clearTimeout(timeout); resolve(); });
           socket.once('connect_error', (err) => { clearTimeout(timeout); reject(new Error(`Connection failed: ${err.message}`)); });
         });
       }
 
-      const result = await new Promise<{ ok: boolean; code?: string; error?: string }>((resolve, reject) => {
+      // Step 1: Find/create room on server
+      setStatus('Finding match...');
+      const result = await new Promise<{ ok: boolean; code?: string; isHost?: boolean; error?: string }>((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Server did not respond. Try again.')), 10000);
         (socket as any).emit('room:quick-play-base', {
           name: playerName,
@@ -75,14 +90,50 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
         }, (res: any) => { clearTimeout(timeout); resolve(res); });
       });
 
-      if (result.ok) {
-        setStatus('Match found!');
-        onMatched();
-      } else {
-        setError(result.error ?? 'Failed to find match');
+      if (!result.ok || !result.code) {
+        throw new Error(result.error ?? 'Failed to find match');
       }
+
+      const roomCode = result.code;
+      const isHost = result.isHost ?? false;
+
+      // Step 2: On-chain deposit
+      setStatus('Waiting for wallet approval...');
+      let txHash: string;
+      if (isHost) {
+        txHash = await createGameOnChain(walletClient, roomCode, 6, buyIn);
+      } else {
+        txHash = await joinGameOnChain(walletClient, roomCode, buyIn);
+      }
+
+      // Step 3: Wait for tx confirmation
+      setStatus('Confirming on-chain...');
+      const receipt = await Promise.race([
+        waitForTransactionReceipt(wagmiConfig, { hash: txHash as `0x${string}` }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Transaction timed out. Check your wallet.')), TX_RECEIPT_TIMEOUT)
+        ),
+      ]);
+
+      if (receipt.status === 'reverted') {
+        socket.emit('room:leave');
+        throw new Error('Transaction reverted on-chain');
+      }
+
+      // Step 4: Notify server deposit confirmed
+      setStatus('Deposit confirmed! Entering lobby...');
+      await new Promise<void>((resolve) => {
+        (socket as any).emit('room:base-deposit', { txHash }, () => resolve());
+      });
+
+      onMatched();
     } catch (err: any) {
-      setError(err.message ?? 'Matchmaking failed');
+      // If user rejected or tx failed, leave the room so slot is freed
+      try {
+        const { getSocket } = await import('@/lib/socket');
+        getSocket().emit('room:leave');
+      } catch {}
+      setError(err?.shortMessage || err?.message || 'Something went wrong');
     } finally {
       setLoading(false);
       setStatus('');
@@ -166,9 +217,9 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
           onClick={handleFindMatch}
           disabled={loading || (isBase && !walletReady) || (isBase && balanceEth < parseFloat(buyIn))}
         >
-          {loading ? status || 'Searching...' : '🎰 Find Match'}
+          {loading ? status || 'Processing...' : `🎰 Find Match (${buyIn} ETH)`}
         </button>
-        <button className="lobbyBackBtn" onClick={onBack}>Back</button>
+        <button className="lobbyBackBtn" onClick={onBack} disabled={loading}>Back</button>
       </div>
     </div>
   );

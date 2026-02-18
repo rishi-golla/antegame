@@ -698,7 +698,7 @@ nextApp.prepare().then(() => {
           broadcastRoomState(existing.code);
           systemMessage(existing.code, `${data.name} joined the table.`);
           checkQuickPlayCountdown(existing.code);
-          cb({ ok: true, code: existing.code });
+          cb({ ok: true, code: existing.code, isHost: false });
         } else {
           cb(joinResult);
         }
@@ -709,7 +709,7 @@ nextApp.prepare().then(() => {
           broadcastRoomState(result.code);
           systemMessage(result.code, `${data.name} created a table. Waiting for players...`);
         }
-        cb(result);
+        cb({ ...result, isHost: true });
       }
     });
 
