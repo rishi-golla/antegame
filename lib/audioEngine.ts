@@ -55,6 +55,8 @@ class AudioEngine {
     return this.ctx;
   }
 
+  private _pendingMusicId: string | null = null;
+
   /** Mobile autoplay unlock — resume suspended context on first user gesture */
   private initUnlockListener(): void {
     const unlock = () => {
@@ -62,7 +64,15 @@ class AudioEngine {
       this._unlocked = true;
       const ctx = this.ensureContext();
       if (ctx.state === 'suspended') {
-        ctx.resume();
+        ctx.resume().then(() => {
+          // Retry pending music that failed due to suspended context
+          if (this._pendingMusicId && !this.currentMusicSource) {
+            const id = this._pendingMusicId;
+            this._pendingMusicId = null;
+            this.currentMusicId = null; // force replay
+            this.playMusic(id);
+          }
+        });
       }
       document.removeEventListener('click', unlock);
       document.removeEventListener('touchstart', unlock);
@@ -147,6 +157,7 @@ class AudioEngine {
   /** Start looping BGM with 500ms crossfade from current track */
   playMusic(trackId: string): void {
     if (this.currentMusicId === trackId) return;
+    this._pendingMusicId = trackId;
 
     const buffer = this.cache.get(trackId);
     if (!buffer) {

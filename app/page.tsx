@@ -31,23 +31,31 @@ const IN_GAME_SCREENS: Screen[] = ['free-play-game', 'game'];
 
 function LobbyMusic({ screen }: { screen: Screen }) {
   const { playMusic, stopMusic } = useAudio();
-  const started = useRef(false);
+  const playing = useRef(false);
 
   useEffect(() => {
     if (IN_GAME_SCREENS.includes(screen)) {
       stopMusic();
-      started.current = false;
+      playing.current = false;
       return;
     }
-    const start = () => {
-      if (!started.current) {
-        started.current = true;
-        playMusic('music/bgm-lobby');
-      }
+
+    const tryPlay = () => {
+      if (playing.current) return;
+      playMusic('music/bgm-lobby');
+      playing.current = true;
     };
-    start();
-    document.addEventListener('click', start, { once: true });
-    return () => document.removeEventListener('click', start);
+
+    // Try immediately (works if user already interacted)
+    tryPlay();
+
+    // Also retry on next click (in case AudioContext was suspended)
+    const onClick = () => {
+      playing.current = false; // reset so playMusic fires again
+      tryPlay();
+    };
+    document.addEventListener('click', onClick, { once: true });
+    return () => document.removeEventListener('click', onClick);
   }, [screen, playMusic, stopMusic]);
 
   return null;
