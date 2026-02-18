@@ -188,6 +188,10 @@ nextApp.prepare().then(() => {
         clearInterval(timer);
         quickPlayCountdowns.delete(code);
         if (room.players.length >= 2) {
+          // Auto-ready all players for quick play start
+          for (const p of room.players) {
+            p.ready = true;
+          }
           const startResult = rm.startGame(code, room.hostId);
           if (startResult.ok && room.gameState) {
             broadcastGameState(code);
