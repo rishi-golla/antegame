@@ -72,6 +72,23 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
     });
 
     (window as any).slotIntervals = spinIntervals;
+
+    // Auto-stop reels with staggered timing
+    setTimeout(() => stopReelAuto(0, spinIntervals), 1500);
+    setTimeout(() => stopReelAuto(1, spinIntervals), 2500);
+    setTimeout(() => stopReelAuto(2, spinIntervals), 3500);
+  };
+
+  const stopReelAuto = (reelIndex: number, intervals: any[]) => {
+    if (intervals[reelIndex]) clearInterval(intervals[reelIndex]);
+    if (reelRefs[reelIndex].current) {
+      reelRefs[reelIndex].current!.classList.remove('pixelSpin');
+    }
+    const finalSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    play('minigames/slot-stop');
+    setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
+    setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
+    setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
   };
 
   const stopReel = (reelIndex: number) => {

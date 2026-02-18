@@ -28,8 +28,8 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
   const [dialRotation, setDialRotation] = useState([0, 0, 0]);
 
   useEffect(() => {
-    setCombination([Math.floor(Math.random() * 10), Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)]);
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
+    setCombination([Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)]);
+    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 45000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -38,7 +38,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
     play('minigames/safe-dial');
     setCurrentGuess(prev => {
       const n = [...prev];
-      n[dialIndex] = (n[dialIndex] + direction + 10) % 10;
+      n[dialIndex] = (n[dialIndex] + direction + 5) % 5;
       return n;
     });
     setDialRotation(prev => {
@@ -49,7 +49,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
   };
 
   const submitGuess = () => {
-    if (gameEnded || attempts.length >= 3) return;
+    if (gameEnded || attempts.length >= 4) return;
     let correctPosition = 0;
     let correctDigit = 0;
     const comboUsed = [false, false, false];
@@ -73,10 +73,10 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
     if (correctPosition === 3) {
       play('minigames/safe-crack');
       setCracked(true); setGameEnded(true);
-      setTimeout(() => onResult(currentAttempt === 1 ? 'win' : currentAttempt === 2 ? 'close-win' : 'close-loss'), 1500);
+      setTimeout(() => onResult(currentAttempt <= 2 ? 'win' : currentAttempt === 3 ? 'close-win' : 'close-loss'), 1500);
       return;
     }
-    if (currentAttempt === 3) {
+    if (currentAttempt === 4) {
       setGameEnded(true);
       const totalCorrect = Math.max(...newAttempts.map(a => a.correctPosition + a.correctDigit));
       setTimeout(() => onResult(totalCorrect >= 2 ? 'loss' : 'catastrophic'), 1000);
@@ -91,7 +91,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
       <div className="safeHeader">
         <h2 className="safeTitle">SAFE CRACKER</h2>
         <div className="safeProgress">
-          ATTEMPT {currentAttempt}/3
+          ATTEMPT {currentAttempt}/4
           {cracked && <span className="crackedBadge">CRACKED!</span>}
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
             ))}
           </div>
 
-          {!gameEnded && currentAttempt <= 3 && (
+          {!gameEnded && currentAttempt <= 4 && (
             <button className="submitBtn pixelBtn" onClick={submitGuess}>TRY COMBINATION</button>
           )}
         </div>
@@ -137,7 +137,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
       </div>
 
       <div className="safeInstructions">
-        {cracked ? 'SAFE CRACKED!' : gameEnded ? `FAILED! CODE: [${combination.join('')}]` : 'SET COMBO AND TRY. 🟢=RIGHT PLACE 🟡=WRONG PLACE'}
+        {cracked ? 'SAFE CRACKED!' : gameEnded ? `FAILED! CODE: [${combination.join('')}]` : 'DIGITS 0-4. SET COMBO AND TRY. 🟢=RIGHT PLACE 🟡=WRONG PLACE'}
       </div>
     </div>
   );
