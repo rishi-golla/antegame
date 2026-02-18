@@ -11,8 +11,9 @@ import { useMultiChain, type Chain } from '@/context/MultiChainContext';
 
 import LandingNav from './LandingNav';
 import HeroSection from './HeroSection';
-import AboutSection from './AboutSection';
-import FeaturesSection from './FeaturesSection';
+import HowItWorks from './HowItWorks';
+import FeatureStrip from './FeatureStrip';
+import StatsStrip from './StatsStrip';
 import CTASection from './CTASection';
 import LandingFooter from './LandingFooter';
 
@@ -32,7 +33,6 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
 
-  // Auto-sign after Solana wallet connects
   useEffect(() => {
     if (solConnected && publicKey && pendingChain === 'solana') {
       setPendingChain(null);
@@ -44,7 +44,6 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
     }
   }, [solConnected, publicKey, pendingChain, solanaSign, setActiveChain]);
 
-  // Auto-sign after EVM wallet connects
   useEffect(() => {
     if (evmConnected && evmAddress && pendingChain === 'base') {
       setPendingChain(null);
@@ -73,9 +72,10 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
   return (
     <div className="landingPage">
       <LandingNav onConnect={handleBase} connecting={connecting} />
-      <HeroSection />
-      <AboutSection />
-      <FeaturesSection />
+      <HeroSection onConnect={handleBase} onFreePlay={onFreePlay} connecting={connecting} />
+      <StatsStrip />
+      <HowItWorks />
+      <FeatureStrip />
       <CTASection onConnect={handleBase} onFreePlay={onFreePlay} connecting={connecting} />
       <LandingFooter />
       {error && <div className="landingError">{error}</div>}
