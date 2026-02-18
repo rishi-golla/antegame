@@ -17,7 +17,7 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
   const [startError, setStartError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const { activeChain } = useMultiChain();
+  const { activeChain, user } = useMultiChain();
 
   // Detect new player joining
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
 
   const [linkCopied, setLinkCopied] = useState(false);
   const handleCopyLink = () => {
-    const myWallet = me?.walletAddress ?? '';
+    const myWallet = user?.walletAddress ?? '';
     const refParam = myWallet ? `&ref=${myWallet}` : '';
     const url = `${window.location.origin}/join?room=${roomState.code}${refParam}`;
     navigator.clipboard.writeText(url);
