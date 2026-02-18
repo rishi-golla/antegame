@@ -39,22 +39,26 @@ const CORNER_ICONS: Record<string, string> = {
   'go-to-jail': '\u2190 JAIL',
 };
 
-/** Short display labels for tiles — keeps text clean on small tiles */
-function getShortLabel(tileData: TileType): string {
+/** Display labels for tiles — full name shown on two lines via CSS */
+function getTileLabel(tileData: TileType): string {
   if (tileData.type === 'corner') return CORNER_ICONS[tileData.cornerKind] ?? tileData.name;
   if (tileData.type === 'chance') return 'RISK';
-  if (tileData.type === 'community-chest') return 'BLIND';
-  if (tileData.type === 'tax') return tileData.name.replace('Income Tax', 'TAX').replace('Luxury Tax', 'LUX TAX');
-  if (tileData.type === 'utility') return tileData.name.replace('Electric Company', 'ELEC').replace('Water Works', 'WATER');
-  if (tileData.type === 'railroad') return tileData.name.replace(' Railroad', ' RR');
+  if (tileData.type === 'community-chest') return 'BLIND CHEST';
+  if (tileData.type === 'tax') return tileData.name;
+  if (tileData.type === 'utility') return tileData.name;
+  if (tileData.type === 'railroad') return tileData.name;
+  return tileData.name;
+}
 
-  // Properties: use just the distinctive word(s)
-  // "Sunset Boulevard" → "Sunset", "Blind Chest" → "BLIND"
-  const name = tileData.name;
-  const words = name.split(' ');
-  if (words.length === 1) return name;
-  // Return first word only — it's always the unique part
-  return words[0];
+/** Rotation degrees for tile images based on orientation */
+function getImageRotation(orientation: string): number {
+  switch (orientation) {
+    case 'bottom': return 0;
+    case 'top': return 180;
+    case 'left': return 90;
+    case 'right': return -90;
+    default: return 0;
+  }
 }
 
 export default function Tile({ tile, activeTile, players, currentPlayerIndex, onTileClick }: TileProps) {
@@ -66,8 +70,9 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
   const groupColor = tileData.type === 'property' ? GROUP_COLORS[tileData.colorGroup] : null;
   const isCornerTile = tileData.type === 'corner';
   const cornerLabel = isCornerTile ? CORNER_ICONS[tileData.cornerKind] : null;
-  const shortLabel = getShortLabel(tileData);
+  const tileLabel = getTileLabel(tileData);
   const tileImage = getTileImage(tileData);
+  const imageRotation = getImageRotation(tile.orientation);
 
   // Determine color strip position based on tile orientation
   const stripClass = groupColor
@@ -90,6 +95,7 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
           src={tileImage}
           alt=""
           className="tileBackgroundImg"
+          style={!tile.isCorner && imageRotation !== 0 ? { transform: `rotate(${imageRotation}deg) scale(1.15)` } : undefined}
           draggable={false}
         />
       )}
@@ -123,7 +129,7 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
         </div>
       )}
 
-      <span className="tileLabelText">{isCornerTile ? cornerLabel : shortLabel}</span>
+      <span className="tileLabelText">{isCornerTile ? cornerLabel : tileLabel}</span>
 
       {tokensOnTile.length > 0 && (
         <div className="tokenStack">
