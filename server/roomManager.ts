@@ -318,6 +318,10 @@ export class RoomManager {
     const player = room.players.find((p) => p.id === socketId);
     if (!player) return false;
     player.deposited = true;
+    // Auto-ready on deposit for quick play rooms
+    if (room.isQuickPlay) {
+      player.ready = true;
+    }
     return true;
   }
 
