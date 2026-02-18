@@ -202,6 +202,23 @@ export async function claimWinnings(
 /**
  * Cancel a game with server signature (marks game as CANCELLED on-chain).
  */
+export async function getOnChainGameState(
+  roomCode: string,
+): Promise<number> {
+  const gameId = roomCodeToGameId(roomCode);
+  const addresses = getAddresses();
+  const { createPublicClient, http } = await import('viem');
+  const client = createPublicClient({ chain: getChain(), transport: http(getRpcUrl()) });
+  const game = await client.readContract({
+    address: addresses.monopolyGame,
+    abi: MONOPOLY_GAME_ABI,
+    functionName: 'getGame',
+    args: [gameId],
+  }) as unknown as any[];
+  // game[4] is the state enum: 0=WAITING, 1=ACTIVE, 2=SETTLED, 3=CANCELLED
+  return Number(game[4]);
+}
+
 export async function cancelGame(
   walletClient: WalletClient,
   roomCode: string,
