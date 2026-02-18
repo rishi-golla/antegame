@@ -49,6 +49,7 @@ export default function FeaturesPage() {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <h1 className="subpageTitle">Features</h1>
+          <p className="subpageSubtitle">Everything that makes Ante tick.</p>
         </motion.div>
       </section>
 

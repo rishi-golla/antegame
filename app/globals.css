@@ -8075,9 +8075,9 @@ img[src*="/assets/"] {
 
 .statsSection {
   padding: 48px 24px;
-  background: linear-gradient(180deg, rgba(6, 3, 10, 1) 0%, rgba(15, 8, 20, 1) 100%);
-  border-top: 1px solid rgba(212, 175, 55, 0.06);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.06);
+  background: linear-gradient(180deg, rgba(12, 6, 16, 1) 0%, rgba(20, 12, 28, 1) 100%);
+  border-top: 1px solid rgba(212, 175, 55, 0.15);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
 }
 
 .statsInner {
@@ -8114,7 +8114,9 @@ img[src*="/assets/"] {
 
 .hiwSection {
   padding: 100px 24px;
-  background: rgba(15, 8, 20, 1);
+  background: linear-gradient(180deg, rgba(20, 12, 28, 1) 0%, rgba(30, 16, 36, 1) 50%, rgba(20, 12, 28, 1) 100%);
+  border-top: 1px solid rgba(212, 175, 55, 0.1);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 }
 
 .hiwInner {
@@ -8151,13 +8153,13 @@ img[src*="/assets/"] {
 }
 
 .hiwCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(212, 175, 55, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.12);
   border-radius: 16px;
   padding: 32px 20px;
   text-align: center;
   position: relative;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
 }
 
 .hiwCardNumber {
@@ -8176,9 +8178,12 @@ img[src*="/assets/"] {
 }
 
 .hiwCardIcon {
-  font-size: 2rem;
+  width: 64px;
+  height: 64px;
   display: block;
-  margin: 12px 0 16px;
+  margin: 12px auto 16px;
+  image-rendering: pixelated;
+  object-fit: contain;
 }
 
 .hiwCardTitle {
@@ -8200,7 +8205,7 @@ img[src*="/assets/"] {
 
 .fsSection {
   padding: 100px 24px;
-  background: linear-gradient(180deg, rgba(15, 8, 20, 1) 0%, rgba(6, 3, 10, 1) 100%);
+  background: linear-gradient(180deg, rgba(20, 12, 28, 1) 0%, rgba(12, 6, 18, 1) 100%);
 }
 
 .fsInner {
@@ -8233,13 +8238,17 @@ img[src*="/assets/"] {
   gap: 24px;
 }
 
+.fsGrid3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .fsCard {
   display: block;
   text-decoration: none;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(212, 175, 55, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(212, 175, 55, 0.12);
+  background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
   transition: border-color 0.3s;
 }
@@ -8592,6 +8601,10 @@ img[src*="/assets/"] {
   }
 
   .fsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fsGrid3 {
     grid-template-columns: 1fr;
   }
 

@@ -4,34 +4,28 @@ import { motion } from 'framer-motion';
 
 const features = [
   {
-    title: 'The Board',
-    desc: '40 casino-themed properties. Buy, build, bankrupt.',
+    title: 'Not Your Dad\'s Board Game',
+    desc: 'Monopoly meets poker night. 40 tiles, 10 minigames, real stakes. Every game ends with one winner and one fat payout.',
     image: '/assets/landing/feature-board.webp',
     href: '/features',
   },
   {
-    title: 'Minigames',
-    desc: '10 casino games from slots to blackjack.',
-    image: '/assets/landing/feature-minigames.webp',
-    href: '/minigames',
-  },
-  {
-    title: 'On-Chain',
-    desc: 'Smart contract escrow. Transparent settlement.',
+    title: 'No Trust Required',
+    desc: 'Escrow holds the pot. Smart contract settles. You never hand your ETH to anyone — code does the math.',
     image: '/assets/landing/feature-onchain.webp',
     href: '/features',
   },
   {
-    title: 'Multiplayer',
-    desc: 'Private rooms, quick play, up to 6 players.',
-    image: '/assets/landing/feature-multiplayer.webp',
+    title: 'Built for Degen Hours',
+    desc: 'Quick games. Private rooms. Trash talk in chat. This isn\'t a farm-and-wait game — you play, you win, you leave.',
+    image: '/assets/landing/feature-multiplayer-room.webp',
     href: '/features',
   },
 ];
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
+  show: { transition: { staggerChildren: 0.12 } },
 };
 
 const item = {
@@ -49,10 +43,10 @@ export default function FeatureStrip() {
         whileInView="show"
         viewport={{ once: true, amount: 0.2 }}
       >
-        <motion.p className="fsLabel" variants={item}>Explore</motion.p>
+        <motion.p className="fsLabel" variants={item}>Why Ante</motion.p>
         <motion.h2 className="fsTitle" variants={item}>What makes Ante different</motion.h2>
 
-        <div className="fsGrid">
+        <div className="fsGrid fsGrid3">
           {features.map((f, i) => (
             <motion.a
               key={i}
@@ -69,7 +63,7 @@ export default function FeatureStrip() {
               <div className="fsCardBody">
                 <h3 className="fsCardTitle">{f.title}</h3>
                 <p className="fsCardDesc">{f.desc}</p>
-                <span className="fsCardArrow">→</span>
+                <span className="fsCardArrow">&rarr;</span>
               </div>
             </motion.a>
           ))}

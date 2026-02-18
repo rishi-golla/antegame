@@ -6,26 +6,26 @@ const steps = [
   {
     number: '01',
     title: 'Connect',
-    desc: 'Link your wallet on Base. MetaMask, Coinbase, or WalletConnect.',
-    icon: '🔗',
+    desc: 'Plug in your wallet. Base chain. 10 seconds.',
+    icon: '/assets/landing/icons/icon-connect.webp',
   },
   {
     number: '02',
     title: 'Stake',
-    desc: 'Choose a table. Stake ETH into the smart contract escrow.',
-    icon: '💎',
+    desc: 'Pick a table. Throw ETH in the pot. The smart contract holds it.',
+    icon: '/assets/landing/icons/icon-stake.webp',
   },
   {
     number: '03',
-    title: 'Play',
-    desc: 'Roll dice, buy properties, play minigames. Bankrupt your opponents.',
-    icon: '🎲',
+    title: 'Roll',
+    desc: 'Move around the board. Buy casinos. Land on minigames. Wreck your friends.',
+    icon: '/assets/landing/icons/icon-roll.webp',
   },
   {
     number: '04',
-    title: 'Win',
-    desc: 'Last player standing takes the pot. Settled on-chain.',
-    icon: '🏆',
+    title: 'Collect',
+    desc: 'Last one standing takes it all. Settled on-chain, instant.',
+    icon: '/assets/landing/icons/icon-collect.webp',
   },
 ];
 
@@ -50,7 +50,7 @@ export default function HowItWorks() {
         viewport={{ once: true, amount: 0.3 }}
       >
         <motion.p className="hiwLabel" variants={item}>How It Works</motion.p>
-        <motion.h2 className="hiwTitle" variants={item}>Four steps to the table</motion.h2>
+        <motion.h2 className="hiwTitle" variants={item}>From wallet to winnings</motion.h2>
 
         <div className="hiwGrid">
           {steps.map((step, i) => (
@@ -62,14 +62,13 @@ export default function HowItWorks() {
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
               <span className="hiwCardNumber">{step.number}</span>
-              <span className="hiwCardIcon">{step.icon}</span>
+              <img src={step.icon} alt={step.title} className="hiwCardIcon" />
               <h3 className="hiwCardTitle">{step.title}</h3>
               <p className="hiwCardDesc">{step.desc}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Connector line */}
         <div className="hiwConnector" />
       </motion.div>
     </section>
