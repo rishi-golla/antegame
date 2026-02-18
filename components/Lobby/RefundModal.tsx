@@ -1,25 +1,50 @@
 'use client';
 
 import { useState } from 'react';
-import { useWalletClient } from 'wagmi';
+import { useWalletClient, useAccount } from 'wagmi';
 import { cancelGame, claimRefund, getOnChainGameState, OnChainGameState } from '@/lib/contracts/monopolyGame';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '@/context/EVMWalletContext';
+import { createPublicClient, http, keccak256, encodePacked } from 'viem';
+import { getChainEnv, getRpcUrl, getAddresses } from '@/lib/contracts/addresses';
+import { base, baseSepolia } from 'viem/chains';
+function getChain() { return getChainEnv() === 'base-mainnet' ? base : baseSepolia; }
+import { MONOPOLY_GAME_ABI } from '@/lib/contracts/abi/MonopolyGame';
 
 interface RefundModalProps {
   refund: { nonce: string; signature: string; gameId: string; roomCode: string };
   onDone: () => void;
 }
 
+/** Check if this wallet has already claimed their refund */
+async function hasAlreadyClaimed(roomCode: string, playerAddress: string): Promise<boolean> {
+  try {
+    const client = createPublicClient({ chain: getChain(), transport: http(getRpcUrl()) });
+    const gameId = keccak256(encodePacked(['string'], [roomCode]));
+    // Simulate claimRefund — if it reverts, already claimed
+    await client.simulateContract({
+      address: getAddresses().monopolyGame,
+      abi: MONOPOLY_GAME_ABI,
+      functionName: 'claimRefund',
+      args: [gameId],
+      account: playerAddress as `0x${string}`,
+    });
+    return false; // simulation passed, refund still available
+  } catch {
+    return true; // reverts = already claimed or not eligible
+  }
+}
+
 export default function RefundModal({ refund, onDone }: RefundModalProps) {
   const { data: walletClient } = useWalletClient();
+  const { address } = useAccount();
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
   const handleRefund = async () => {
-    if (!walletClient) {
+    if (!walletClient || !address) {
       setError('Wallet not connected');
       return;
     }
@@ -27,8 +52,16 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
     setError('');
 
     try {
+      // Step 0: Check if already claimed
+      setStatus('Checking refund status...');
+      const alreadyClaimed = await hasAlreadyClaimed(refund.roomCode, address);
+      if (alreadyClaimed) {
+        setStatus('');
+        setDone(true);
+        return;
+      }
+
       // Step 1: Check on-chain state — only cancel if not already cancelled
-      setStatus('Checking game state...');
       const gameState = await getOnChainGameState(refund.roomCode);
 
       if (gameState !== OnChainGameState.CANCELLED) {
@@ -43,13 +76,19 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
             setLoading(false);
             return;
           }
-          // Otherwise assume cancelled, continue
+          // Otherwise assume already cancelled by another player, continue
         }
-      }
 
-      // Brief delay after cancel to ensure state is indexed
-      if (gameState !== OnChainGameState.CANCELLED) {
+        // Wait for state to index after cancel
         await new Promise(r => setTimeout(r, 2000));
+
+        // Re-check: maybe another player's cancel went through
+        const recheckState = await getOnChainGameState(refund.roomCode);
+        if (recheckState !== OnChainGameState.CANCELLED) {
+          setError('Failed to cancel game on-chain. Try again.');
+          setLoading(false);
+          return;
+        }
       }
 
       // Step 2: Claim refund
@@ -63,9 +102,9 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
         return;
       }
 
-      setStatus('Refund complete!');
+      setStatus('');
       setDone(true);
-      setTimeout(onDone, 2000);
+      setTimeout(onDone, 3000);
     } catch (err: any) {
       const msg = err?.shortMessage || err?.message || '';
       if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('user rejected')) {
@@ -83,7 +122,8 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
       <div className="setupCard" style={{ maxWidth: 400 }}>
         <h2 className="setupTitle" style={{ fontSize: '1.4rem' }}>💰 Claim Refund</h2>
         <p style={{ textAlign: 'center', opacity: 0.8, marginBottom: 16 }}>
-          Room <strong>{refund.roomCode}</strong> was cancelled. Your deposit is available for refund.
+          Room <strong>{refund.roomCode}</strong> was cancelled.
+          {!done && ' Your deposit is available for refund.'}
         </p>
 
         {error && <p className="lobbyError">{error}</p>}
@@ -95,7 +135,10 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
           </button>
         )}
         {done && (
-          <p style={{ textAlign: 'center', color: '#4caf50', fontWeight: 700 }}>✅ Refund sent to your wallet</p>
+          <>
+            <p style={{ textAlign: 'center', color: '#4caf50', fontWeight: 700 }}>✅ Refund complete</p>
+            <button className="lobbyBackBtn" onClick={onDone} style={{ marginTop: 12 }}>Close</button>
+          </>
         )}
       </div>
     </div>
