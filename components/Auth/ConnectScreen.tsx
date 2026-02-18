@@ -78,7 +78,7 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
     <div className="connectScreen">
       <div className="connectCard">
         <div className="connectDice">&#x1F3B2;</div>
-        <h1 className="connectTitle">MONOPOLY CASINO</h1>
+        <h1 className="connectTitle">ANTE</h1>
         <p className="connectTagline">Stake crypto. Roll dice. Win the pot.</p>
 
         <div className="connectChainPicker">
