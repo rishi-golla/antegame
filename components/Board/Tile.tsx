@@ -54,7 +54,7 @@ function getTileLabel(tileData: TileType): string {
 function getImageRotation(orientation: string): number {
   switch (orientation) {
     case 'bottom': return 0;
-    case 'top': return 180;
+    case 'top': return 0;
     case 'left': return 90;
     case 'right': return -90;
     default: return 0;
