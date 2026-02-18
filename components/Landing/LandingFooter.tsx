@@ -18,7 +18,7 @@ export default function LandingFooter() {
     >
       <div className="landingFooterInner">
         <motion.div className="landingFooterBrand" variants={fadeIn}>
-          <img src="/assets/misc/ante-logo.webp" alt="Ante" className="landingFooterLogo" />
+          <span className="landingFooterTitle">Ante</span>
         </motion.div>
 
         <motion.div className="landingFooterLinks" variants={fadeIn}>

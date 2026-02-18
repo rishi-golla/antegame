@@ -7803,15 +7803,22 @@ img[src*="/assets/"] {
 }
 
 .landingNavLogo {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid rgba(212, 175, 55, 0.6);
+  padding: 2px;
+  background: rgba(15, 8, 20, 0.8);
   filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.3));
-  transition: transform 0.2s;
+  transition: transform 0.2s, border-color 0.2s;
+  image-rendering: pixelated;
+  object-fit: cover;
 }
 
 .landingNavLogo:hover {
   transform: scale(1.1);
+  border-color: #d4af37;
 }
 
 .landingNavLinks {
@@ -8459,6 +8466,14 @@ img[src*="/assets/"] {
   height: 64px;
   image-rendering: pixelated;
   filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.2));
+}
+
+.landingFooterTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #d4af37;
+  letter-spacing: 0.08em;
 }
 
 .landingFooterLinks {
