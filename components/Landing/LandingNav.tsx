@@ -39,11 +39,6 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <img
-            src="/assets/sprites/card-shark.webp"
-            alt="Ante"
-            className="landingNavLogo"
-          />
           <span className="landingNavBrandText">ANTE</span>
         </motion.a>
 
