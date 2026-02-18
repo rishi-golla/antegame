@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
+import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
 import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
 
@@ -14,6 +15,7 @@ interface BoardCenterArtProps {
 export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterArtProps) {
   const { state, dispatch } = useGame();
   const { play } = useAudio();
+  const { isMyTurn } = useMultiplayerTurn();
 
   // Auto-resolve card effect after overlay dismisses
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -200,45 +202,53 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
       {/* Buy/Gamble/Decline buttons */}
       {state.phase === 'buying' && !isRolling ? (
-        <div className="buyDeclineRow">
-          {player.money >= (state.tiles[player.position] as any).price && (
-            <button className="rollButton buyButton" onClick={() => { play('sfx/buy-property'); dispatch({ type: 'BUY' }); }} disabled={isAnimating}>
-              Buy ${(state.tiles[player.position] as any).price}
-            </button>
-          )}
-          {state.minigamesEnabled && (
-            <button 
-              className="rollButton gambleBtn" 
-              onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'buying' }); }} 
-              disabled={isAnimating}
-            >
-              Gamble
-            </button>
-          )}
-          <button className="rollButton declineButton" onClick={() => { play('sfx/decline-property'); dispatch({ type: 'DECLINE' }); }} disabled={isAnimating}>
-            Pass
-          </button>
-        </div>
-      ) : state.phase === 'paying-rent' && !isRolling ? (
-        <div className="payRentPhase">
+        isMyTurn ? (
           <div className="buyDeclineRow">
-            <button className="rollButton buyButton" onClick={() => { play('sfx/pay-rent'); dispatch({ type: 'PAY_RENT' }); }} disabled={isAnimating}>
-              Pay ${state.pendingRent?.amount || 0}
-            </button>
-            {state.minigamesEnabled && state.pendingRent && (
+            {player.money >= (state.tiles[player.position] as any).price && (
+              <button className="rollButton buyButton" onClick={() => { play('sfx/buy-property'); dispatch({ type: 'BUY' }); }} disabled={isAnimating}>
+                Buy ${(state.tiles[player.position] as any).price}
+              </button>
+            )}
+            {state.minigamesEnabled && (
               <button 
                 className="rollButton gambleBtn" 
-                onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'rent' }); }} 
+                onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'buying' }); }} 
                 disabled={isAnimating}
               >
                 Gamble
               </button>
             )}
+            <button className="rollButton declineButton" onClick={() => { play('sfx/decline-property'); dispatch({ type: 'DECLINE' }); }} disabled={isAnimating}>
+              Pass
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="waitingLabel">{player.name} is deciding...</div>
+        )
+      ) : state.phase === 'paying-rent' && !isRolling ? (
+        isMyTurn ? (
+          <div className="payRentPhase">
+            <div className="buyDeclineRow">
+              <button className="rollButton buyButton" onClick={() => { play('sfx/pay-rent'); dispatch({ type: 'PAY_RENT' }); }} disabled={isAnimating}>
+                Pay ${state.pendingRent?.amount || 0}
+              </button>
+              {state.minigamesEnabled && state.pendingRent && (
+                <button 
+                  className="rollButton gambleBtn" 
+                  onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'rent' }); }} 
+                  disabled={isAnimating}
+                >
+                  Gamble
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="waitingLabel">{player.name} owes rent...</div>
+        )
       ) : state.phase === 'minigame' && state.activeMinigame ? (
         <MinigameOverlay />
-      ) : (
+      ) : isMyTurn ? (
         <button
           className="rollButton"
           onClick={handleMainAction}
@@ -246,6 +256,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         >
           {getButtonLabel()}
         </button>
+      ) : (
+        <div className="waitingLabel">{player.name}&apos;s turn</div>
       )}
       <p className="rollHint">{getHint()}</p>
 

@@ -547,6 +547,25 @@ input {
   text-shadow: 0 0 10px rgba(212, 175, 55, 0.4), 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
+.waitingLabel {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #d4a843;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0.8;
+  animation: waitingPulse 2s ease-in-out infinite;
+}
+
+@keyframes waitingPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .rollButton {
   position: absolute;
   left: 50%;
