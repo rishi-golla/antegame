@@ -88,6 +88,10 @@ body {
 
 body {
   overflow: hidden;
+}
+
+body:has(.landingPage) {
+  overflow: auto;
   font-family: 'Nunito', sans-serif;
   color: var(--ink);
   background:
