@@ -22,6 +22,7 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia, base } from 'viem/chains';
+import { loadSecureKeys } from './keys';
 
 // --- Config ---
 
@@ -32,8 +33,9 @@ const RPC_URL = process.env.BASE_RPC_URL ?? (
 const CHAIN_ID = CHAIN_ENV === 'base-mainnet' ? 8453 : 84532;
 const CONTRACT_ADDRESS = (process.env.MONOPOLY_GAME_ADDRESS ?? '0x0000000000000000000000000000000000000000') as Address;
 
-// Game signer private key -- MUST be set in production
-const SIGNER_PRIVATE_KEY = process.env.GAME_SIGNER_PRIVATE_KEY as Hex | undefined;
+// Game signer private key -- loaded from secure keyfile, fallback to env
+const secureKeys = loadSecureKeys();
+const SIGNER_PRIVATE_KEY = (secureKeys.GAME_SIGNER_PRIVATE_KEY ?? process.env.GAME_SIGNER_PRIVATE_KEY) as Hex | undefined;
 
 function getChain() {
   return CHAIN_ENV === 'base-mainnet' ? base : baseSepolia;
