@@ -295,7 +295,10 @@ function AuthGate() {
 
   return (
     <>
-      <AudioControls onHome={screen !== 'menu' ? () => setScreen('menu') : undefined} />
+      <AudioControls
+        onHome={screen !== 'menu' ? () => setScreen('menu') : undefined}
+        inGame={screen === 'free-play-game' || screen === 'create' || screen === 'join' || screen === 'quick-play'}
+      />
       <LobbyMusic screen={screen} />
       {content}
     </>

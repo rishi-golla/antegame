@@ -6888,6 +6888,12 @@ img[src*="/assets/"] {
   gap: 8px;
 }
 
+.audio-controls-wrapper.audio-controls-ingame {
+  top: auto;
+  bottom: 16px;
+  left: 16px;
+}
+
 .audio-controls-icon {
   width: 40px;
   height: 40px;
