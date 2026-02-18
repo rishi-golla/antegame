@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface LuckyNumberProps {
   onResult: (tier: MinigameTier) => void;
@@ -11,7 +12,7 @@ interface LuckyNumberProps {
   context: MinigameContext;
 }
 
-export default function LuckyNumber({ onResult }: LuckyNumberProps) {
+export default function LuckyNumber({ onResult, spectator = false }: LuckyNumberProps) {
   const { play } = useAudio();
   const [selected, setSelected] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
@@ -20,6 +21,19 @@ export default function LuckyNumber({ onResult }: LuckyNumberProps) {
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(false);
 
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'select') {
+      setSelected(data.num);
+    } else if (data.type === 'lock') {
+      setSelected(data.selected);
+      setLocked(true);
+      setHouseNumber(data.house);
+      setCountdown(3);
+    }
+  }, []);
+
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!done) onResult('catastrophic');
@@ -27,14 +41,21 @@ export default function LuckyNumber({ onResult }: LuckyNumberProps) {
     return () => clearTimeout(timer);
   }, [done, onResult]);
 
+  const selectNumber = (num: number) => {
+    if (locked || spectator) return;
+    setSelected(num);
+    emitAction({ type: 'select', num });
+  };
+
   const lockIn = useCallback(() => {
-    if (selected === null || locked) return;
+    if (selected === null || locked || spectator) return;
     play('minigames/dart-throw');
-    setLocked(true);
     const house = Math.floor(Math.random() * 10) + 1;
+    setLocked(true);
     setHouseNumber(house);
     setCountdown(3);
-  }, [selected, locked]);
+    emitAction({ type: 'lock', selected, house });
+  }, [selected, locked, spectator, emitAction]);
 
   useEffect(() => {
     if (countdown === null || countdown < 0) return;
@@ -72,14 +93,15 @@ export default function LuckyNumber({ onResult }: LuckyNumberProps) {
               <button
                 key={n}
                 className={`luckyChip pixelBtn ${selected === n ? 'luckyChipSelected' : ''}`}
-                onClick={() => setSelected(n)}
+                onClick={() => selectNumber(n)}
+                disabled={spectator}
               >
                 {n}
               </button>
             ))}
           </div>
           {selected !== null && (
-            <button className="luckyLockBtn pixelBtn" onClick={lockIn}>
+            <button className="luckyLockBtn pixelBtn" onClick={lockIn} disabled={spectator}>
               LOCK IN
             </button>
           )}
