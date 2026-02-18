@@ -7767,6 +7767,7 @@ img[src*="/assets/"] {
   color: #e8ddd0;
   font-family: 'Nunito', sans-serif;
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 /* ----- Landing Nav ----- */
@@ -7883,74 +7884,29 @@ img[src*="/assets/"] {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 50% 30%, rgba(82, 20, 44, 0.6) 0%, transparent 70%),
-    radial-gradient(ellipse at 20% 80%, rgba(139, 69, 19, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(139, 69, 19, 0.15) 0%, transparent 50%),
-    linear-gradient(180deg, #0a0507 0%, #1a0a14 40%, #0d0608 100%);
+}
+
+.heroBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.heroBgImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
 }
 
 .heroOverlay {
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
-    );
+    radial-gradient(ellipse at 50% 40%, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%),
+    linear-gradient(180deg, rgba(10, 5, 7, 0.4) 0%, transparent 30%, transparent 70%, rgba(10, 5, 7, 0.9) 100%);
   pointer-events: none;
   z-index: 1;
-}
-
-.heroFloaters {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.heroFloat {
-  position: absolute;
-  image-rendering: pixelated;
-  opacity: 0.2;
-  animation: heroFloatAnim 6s ease-in-out infinite;
-}
-
-.heroFloatDice1 {
-  width: 64px;
-  top: 15%;
-  left: 8%;
-  animation-delay: 0s;
-}
-
-.heroFloatDice2 {
-  width: 52px;
-  top: 25%;
-  right: 10%;
-  animation-delay: -2s;
-}
-
-.heroFloatCards {
-  width: 72px;
-  bottom: 30%;
-  left: 12%;
-  animation-delay: -4s;
-}
-
-.heroFloatCoin {
-  width: 56px;
-  bottom: 25%;
-  right: 15%;
-  animation-delay: -1s;
-}
-
-@keyframes heroFloatAnim {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-12px) rotate(3deg); }
-  75% { transform: translateY(8px) rotate(-2deg); }
 }
 
 .heroContent {
@@ -8011,41 +7967,6 @@ img[src*="/assets/"] {
 .heroSocialLink:hover {
   color: var(--gold-bright, #d4af37);
   transform: scale(1.15);
-}
-
-/* Hero characters along bottom */
-
-.heroCharacters {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 4;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding: 0 5%;
-  pointer-events: none;
-}
-
-.heroChar {
-  image-rendering: pixelated;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.8));
-}
-
-.heroCharLeft {
-  width: 120px;
-  transform: scaleX(1);
-}
-
-.heroCharCenter {
-  width: 140px;
-  margin-bottom: 10px;
-}
-
-.heroCharRight {
-  width: 120px;
-  transform: scaleX(-1);
 }
 
 /* Scroll hint */
@@ -8130,11 +8051,22 @@ img[src*="/assets/"] {
 }
 
 .landingAboutCrest {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   image-rendering: pixelated;
-  opacity: 0.3;
-  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.2));
+  opacity: 0.5;
+  filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.3));
+}
+
+.landingAbout {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.landingAboutVisible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ----- Features Section ----- */
@@ -8164,27 +8096,25 @@ img[src*="/assets/"] {
   flex-direction: row-reverse;
 }
 
-.featureImages {
+.featureImageWrap {
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(212, 175, 55, 0.05);
 }
 
 .featureImage {
   width: 100%;
-  aspect-ratio: 1;
-  object-fit: contain;
+  display: block;
   image-rendering: pixelated;
-  border-radius: 8px;
-  background: #1a0f0f;
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  padding: 12px;
-  transition: transform 0.3s;
+  transition: transform 0.4s ease;
 }
 
-.featureImage:hover {
-  transform: scale(1.05);
+.featureImageWrap:hover .featureImage {
+  transform: scale(1.03);
 }
 
 .featureText {
@@ -8433,15 +8363,6 @@ img[src*="/assets/"] {
   .heroLogo {
     width: 120px;
     height: 120px;
-  }
-
-  .heroCharLeft,
-  .heroCharRight {
-    width: 80px;
-  }
-
-  .heroCharCenter {
-    width: 100px;
   }
 
   .featurePanel,
