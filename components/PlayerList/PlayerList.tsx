@@ -41,6 +41,7 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
       <ul>
         {state.players.map((player) => {
           const isActive = state.currentPlayerIndex === player.id;
+          const isMe = myPlayerIndex === null || myPlayerIndex === player.id;
           const worth = getNetWorth(state, player.id);
           const canTrade = player.id !== state.currentPlayerIndex &&
             !player.bankrupt &&
@@ -50,10 +51,14 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
           return (
             <li
               key={player.id}
-              className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''} ${!isActive && !player.bankrupt ? 'clickablePlayer' : ''}`}
+              className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''} ${!player.bankrupt ? 'clickablePlayer' : ''}`}
               onClick={() => {
-                if (!isActive && !player.bankrupt) {
-                  setViewingPlayer(player.id);
+                if (!player.bankrupt) {
+                  if (isMe) {
+                    setAssetsPlayer(player.id);
+                  } else {
+                    setViewingPlayer(player.id);
+                  }
                 }
               }}
             >
@@ -75,6 +80,9 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                     <span className="netWorth">Net: ${worth.toLocaleString()}</span>
                   )}
                 </div>
+                {isMe && player.properties.length > 0 && (
+                  <span className="assetsHint">{player.properties.length} assets — tap to view</span>
+                )}
                 {player.inJail && <span className="jailBadge">In Jail</span>}
                 {player.bankrupt && <span className="bankruptBadge">Bankrupt</span>}
                 {canTrade && onTrade && (
@@ -95,16 +103,14 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
         })}
       </ul>
 
-      <button
-        className={`viewAssetsBtn ${state.phase === 'in-debt' ? 'viewAssetsPulse' : ''}`}
-        onClick={() => setAssetsPlayer(state.currentPlayerIndex)}
-      >
-        {state.phase === 'in-debt' ? 'MANAGE ASSETS' : 'View Assets'}
-        {(() => {
-          const p = state.players[state.currentPlayerIndex];
-          return p && p.properties.length > 0 ? ` (${p.properties.length})` : '';
-        })()}
-      </button>
+      {state.phase === 'in-debt' && (
+        <button
+          className="viewAssetsBtn viewAssetsPulse"
+          onClick={() => setAssetsPlayer(state.currentPlayerIndex)}
+        >
+          ⚠️ MANAGE ASSETS
+        </button>
+      )}
 
       {assetsPlayer !== null && (
         <AssetsModal playerIndex={assetsPlayer} onClose={() => setAssetsPlayer(null)} />

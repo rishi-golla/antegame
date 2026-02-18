@@ -196,7 +196,7 @@ input {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .leftPanel li {
@@ -6607,6 +6607,13 @@ img[src*="/assets/"] {
 .propCardUnmort { color: #2196f3; border-color: #2196f3; }
 
 /* --- View Assets Button --- */
+.assetsHint {
+  font-size: 0.6rem;
+  color: #d4af37;
+  opacity: 0.6;
+  font-style: italic;
+}
+
 .viewAssetsBtn {
   display: block;
   width: calc(100% - 16px);
