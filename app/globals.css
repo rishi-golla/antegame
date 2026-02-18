@@ -7808,10 +7808,12 @@ img[src*="/assets/"] {
   cursor: pointer;
   border-radius: 50%;
   border: 1.5px solid rgba(212, 175, 55, 0.25);
+  background: rgba(10, 5, 15, 0.9);
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
   transition: transform 0.2s, filter 0.2s, border-color 0.2s;
   image-rendering: pixelated;
   object-fit: contain;
+  padding: 3px;
 }
 
 .landingNavLogo:hover {
