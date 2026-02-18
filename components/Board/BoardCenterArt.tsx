@@ -27,6 +27,20 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       if (resolveTimerRef.current) clearTimeout(resolveTimerRef.current);
     };
   }, [state.phase, isAnimating, dispatch]);
+
+  // Auto-advance turn-end after 1 second (no manual "Next Player" click needed)
+  const turnEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (state.phase === 'turn-end') {
+      turnEndTimerRef.current = setTimeout(() => {
+        play('sfx/turn-start');
+        dispatch({ type: 'END_TURN' });
+      }, 1000);
+    }
+    return () => {
+      if (turnEndTimerRef.current) clearTimeout(turnEndTimerRef.current);
+    };
+  }, [state.phase, dispatch, play]);
   const player = state.players[state.currentPlayerIndex];
   const disabled = isRolling || isAnimating || state.phase === 'game-over';
 

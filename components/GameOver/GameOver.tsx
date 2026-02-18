@@ -141,9 +141,17 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
           </p>
         )}
 
-        <button className="setupStartBtn" onClick={onPlayAgain} style={{ marginTop: 12 }}>
-          Play Again
-        </button>
+        {/* Only show Play Again after winner has claimed or for non-Base/non-winner */}
+        {(!isBase || !isWinner || claimed) && (
+          <button className="setupStartBtn" onClick={onPlayAgain} style={{ marginTop: 12 }}>
+            Play Again
+          </button>
+        )}
+        {isBase && isWinner && !claimed && (
+          <p style={{ marginTop: 8, fontSize: '0.65rem', opacity: 0.5, textAlign: 'center' }}>
+            Claim your winnings before leaving
+          </p>
+        )}
       </div>
     </div>
   );

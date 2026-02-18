@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import DicePips from '@/components/Board/DicePips';
 import { useAudio } from '@/context/AudioContext';
@@ -22,13 +22,13 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
   const [rollPhase, setRollPhase] = useState<'idle' | 'charge' | 'throw' | 'impact' | 'result'>('idle');
   const [gameStarted, setGameStarted] = useState(false);
   const [result, setResult] = useState<number | null>(null);
-  const pendingRollRef = useRef<{ d1: number; d2: number } | null>(null);
+  const [pendingRoll, setPendingRoll] = useState<{ d1: number; d2: number } | null>(null);
 
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'select-target') {
       setTargetNumber(data.num);
     } else if (data.type === 'roll') {
-      pendingRollRef.current = { d1: data.d1, d2: data.d2 };
+      setPendingRoll({ d1: data.d1, d2: data.d2 });
     }
   }, []);
 
@@ -89,12 +89,12 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
 
   // Spectator: react when pending roll arrives
   useEffect(() => {
-    if (spectator && pendingRollRef.current && targetNumber && !rolling) {
-      const { d1, d2 } = pendingRollRef.current;
-      pendingRollRef.current = null;
+    if (spectator && pendingRoll && targetNumber && !rolling) {
+      const { d1, d2 } = pendingRoll;
+      setPendingRoll(null);
       animateRoll(d1, d2);
     }
-  }, [spectator, targetNumber, rolling]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [spectator, pendingRoll, targetNumber, rolling]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectTarget = (num: number) => {
     if (!gameStarted && !spectator) {
