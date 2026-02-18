@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useAudio } from '@/context/AudioContext';
 
-export default function AudioControls({ onHome }: { onHome?: () => void } = {}) {
+export default function AudioControls({ onHome, inGame }: { onHome?: () => void; inGame?: boolean } = {}) {
   const { sfxVolume, musicVolume, setSfxVolume, setMusicVolume, muted, toggleMute } = useAudio();
   const [expanded, setExpanded] = useState(false);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,7 +33,7 @@ export default function AudioControls({ onHome }: { onHome?: () => void } = {}) 
 
   return (
     <div
-      className="audio-controls-wrapper"
+      className={`audio-controls-wrapper ${inGame ? 'audio-controls-ingame' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
