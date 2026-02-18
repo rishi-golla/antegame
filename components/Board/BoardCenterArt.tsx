@@ -17,13 +17,26 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   const { play } = useAudio();
   const { isMyTurn } = useMultiplayerTurn();
 
-  // Auto-resolve card effect after overlay dismisses
+  // Auto-apply drawn card after 2 seconds (dismisses the full-screen overlay)
+  const applyCardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (state.phase === 'drawing-card' && state.drawnCard && isMyTurn) {
+      applyCardTimerRef.current = setTimeout(() => {
+        dispatch({ type: 'APPLY_CARD' });
+      }, 2000);
+    }
+    return () => {
+      if (applyCardTimerRef.current) clearTimeout(applyCardTimerRef.current);
+    };
+  }, [state.phase, state.drawnCard, isMyTurn, dispatch]);
+
+  // Auto-resolve card effect after applying
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (state.phase === 'applying-card' && !isAnimating) {
       resolveTimerRef.current = setTimeout(() => {
         dispatch({ type: 'RESOLVE_CARD' });
-      }, 400); // brief pause after card overlay fades
+      }, 400);
     }
     return () => {
       if (resolveTimerRef.current) clearTimeout(resolveTimerRef.current);
