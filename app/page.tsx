@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAudio } from '@/context/AudioContext';
 import { GameProvider } from '@/context/GameContext';
 import { WalletContextProvider } from '@/context/WalletContext';
 import { EVMWalletProvider } from '@/context/EVMWalletContext';
@@ -25,6 +26,32 @@ import WalletButton from '@/components/Auth/WalletButton';
 import RefundModal from '@/components/Lobby/RefundModal';
 
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
+
+const IN_GAME_SCREENS: Screen[] = ['free-play-game', 'game'];
+
+function LobbyMusic({ screen }: { screen: Screen }) {
+  const { playMusic, stopMusic } = useAudio();
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (IN_GAME_SCREENS.includes(screen)) {
+      stopMusic();
+      started.current = false;
+      return;
+    }
+    const start = () => {
+      if (!started.current) {
+        started.current = true;
+        playMusic('music/bgm-lobby');
+      }
+    };
+    start();
+    document.addEventListener('click', start, { once: true });
+    return () => document.removeEventListener('click', start);
+  }, [screen, playMusic, stopMusic]);
+
+  return null;
+}
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
@@ -59,7 +86,10 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 }
 
 function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
+  const { stopMusic } = useAudio();
   const [tradeTarget, setTradeTarget] = useState<number | null>(null);
+
+  useEffect(() => { stopMusic(); }, [stopMusic]);
   return (
     <>
       <main className="gameScreen">
@@ -78,8 +108,11 @@ function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
 
 function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; roomCode?: string }) {
   const { chatMessages, sendChat, roomState } = useSocket();
+  const { stopMusic } = useAudio();
   const [tradeTarget, setTradeTarget] = useState<number | null>(null);
   const myPlayerIndex = roomState?.players.findIndex(p => p.isYou) ?? null;
+
+  useEffect(() => { stopMusic(); }, [stopMusic]);
 
   return (
     <MultiplayerGameProvider>
@@ -148,15 +181,15 @@ function AuthGate() {
   }
 
   if (!user) {
-    return <ConnectScreen onFreePlay={() => setScreen('free-play-setup')} />;
+    return <><LobbyMusic screen="menu" /><ConnectScreen onFreePlay={() => setScreen('free-play-setup')} /></>;
   }
 
   // New user needs profile setup
   if (!user.displayName || !user.characterId) {
-    return <ProfileSetup />;
+    return <><LobbyMusic screen="menu" /><ProfileSetup /></>;
   }
 
-  switch (screen) {
+  const content = (() => { switch (screen) {
     case 'menu':
       return <MainMenu onNavigate={setScreen} />;
 
@@ -236,10 +269,12 @@ function AuthGate() {
 
     default:
       return <MainMenu onNavigate={setScreen} />;
-  }
+  } })();
+
+  return <><LobbyMusic screen={screen} />{content}</>;
 }
 
-export default function Home() {
+function Home() {
   return (
     <WalletContextProvider>
       <EVMWalletProvider>
@@ -254,3 +289,6 @@ export default function Home() {
     </WalletContextProvider>
   );
 }
+
+import dynamic from 'next/dynamic';
+export default dynamic(() => Promise.resolve(Home), { ssr: false });

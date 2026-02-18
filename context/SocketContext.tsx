@@ -154,11 +154,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     if (action === 'propose' && data?.offer) {
       socket.emit('game:propose-trade', { offer: data.offer as any });
     } else if (action === 'accept') {
-      socket.emit('game:accept-trade', {}, (res: any) => {
+      (socket as any).emit('game:accept-trade', {}, (res: any) => {
         console.log('[sendTradeAction] accept callback:', res);
       });
     } else if (action === 'reject') {
-      socket.emit('game:reject-trade', {}, (res: any) => {
+      (socket as any).emit('game:reject-trade', {}, (res: any) => {
         console.log('[sendTradeAction] reject callback:', res);
       });
     } else if (action === 'cancel') {
@@ -203,7 +203,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendGameAction = useCallback((action: string, data?: Record<string, unknown>) => {
-    const socket = getSocket();
+    const socket = getSocket() as any;
     if (action === 'jail-escape' && data?.method) {
       socket.emit('game:jail-escape', { method: data.method as 'bail' | 'card' | 'roll' });
       return;
