@@ -8058,16 +8058,7 @@ img[src*="/assets/"] {
   filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.3));
 }
 
-.landingAbout {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.landingAboutVisible {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* framer-motion handles About animations */
 
 /* ----- Features Section ----- */
 
@@ -8082,14 +8073,6 @@ img[src*="/assets/"] {
   display: flex;
   align-items: center;
   gap: 60px;
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.featurePanelVisible {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .featurePanelReverse {
@@ -8110,11 +8093,6 @@ img[src*="/assets/"] {
   width: 100%;
   display: block;
   image-rendering: pixelated;
-  transition: transform 0.4s ease;
-}
-
-.featureImageWrap:hover .featureImage {
-  transform: scale(1.03);
 }
 
 .featureText {
