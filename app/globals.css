@@ -7822,13 +7822,19 @@ img[src*="/assets/"] {
   border-color: rgba(212, 175, 55, 0.5);
 }
 
+.landingNavBrand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 8px;
+}
+
 .landingNavBrandText {
   font-family: 'Cinzel', serif;
   font-size: 1.15rem;
   font-weight: 800;
   color: #d4af37;
   letter-spacing: 0.12em;
-  margin-left: 8px;
 }
 
 .landingNavLinks {
