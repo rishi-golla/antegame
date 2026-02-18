@@ -42,14 +42,14 @@ const CORNER_ICONS: Record<string, string> = {
 /** Short display labels for tiles — keeps text clean on small tiles */
 function getShortLabel(tileData: TileType): string {
   if (tileData.type === 'corner') return CORNER_ICONS[tileData.cornerKind] ?? tileData.name;
-  if (tileData.type === 'chance') return '?';
-  if (tileData.type === 'community-chest') return 'CC';
+  if (tileData.type === 'chance') return 'RISK';
+  if (tileData.type === 'community-chest') return 'BLIND';
   if (tileData.type === 'tax') return tileData.name.replace('Income Tax', 'TAX').replace('Luxury Tax', 'LUX TAX');
   if (tileData.type === 'utility') return tileData.name.replace('Electric Company', 'ELEC').replace('Water Works', 'WATER');
   if (tileData.type === 'railroad') return tileData.name.replace(' Railroad', ' RR');
 
   // Properties: use just the distinctive word(s)
-  // "Sunset Boulevard" → "Sunset", "Community Chest" → "CC"
+  // "Sunset Boulevard" → "Sunset", "Blind Chest" → "BLIND"
   const name = tileData.name;
   const words = name.split(' ');
   if (words.length === 1) return name;

@@ -2,7 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { AudioProvider } from '@/context/AudioContext';
 export const metadata: Metadata = {
-  title: 'Monopoly Game',
+  title: 'Ante',
   description: 'Multiplayer indie monopoly-style board game',
 };
 

@@ -31,7 +31,7 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: 'Monopoly Game',
+    appName: 'Ante',
     projectId: PROJECT_ID,
   }
 );

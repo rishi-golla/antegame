@@ -38,7 +38,7 @@ setInterval(() => {
 }, 60000);
 
 function nonceMessage(nonce: string): string {
-  return `Sign this message to connect to Monopoly Casino.\n\nNonce: ${nonce}`;
+  return `Sign this message to connect to Ante Casino.\n\nNonce: ${nonce}`;
 }
 
 // GET /api/auth/nonce

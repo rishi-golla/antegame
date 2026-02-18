@@ -59,7 +59,7 @@ export default function GameSetup({ onStart }: GameSetupProps) {
   return (
     <div className="setupScreen">
       <div className="setupCard">
-        <h1 className="setupTitle marqueeTitle">Monopoly</h1>
+        <h1 className="setupTitle marqueeTitle">Ante</h1>
         <p className="setupSubtitle casinoSubtitle">Choose your characters</p>
 
         <div className="setupPlayerCount">

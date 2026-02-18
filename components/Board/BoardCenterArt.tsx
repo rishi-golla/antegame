@@ -189,14 +189,31 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         draggable={false}
       />
 
-      {/* Drawn card overlay */}
+      {/* Full-screen card overlay (renders via portal-style positioning) */}
       {state.drawnCard && !isRolling && (
-        <div className="drawnCardOverlay">
-          <div className={`drawnCard ${state.drawnCard.deckType === 'chance' ? 'drawnCardChance' : 'drawnCardChest'}`}>
-            <span className="drawnCardType">
-              {state.drawnCard.deckType === 'chance' ? 'Chance' : 'Community Chest'}
-            </span>
-            <p className="drawnCardText">{state.drawnCard.text}</p>
+        <div className="cardOverlayFullscreen">
+          <div className="cardOverlayBackdrop" />
+          <div className={`cardOverlayCard ${state.drawnCard.deckType === 'chance' ? 'cardRisk' : 'cardBlind'}`}>
+            <div className="cardOverlayCorner cardCornerTL" />
+            <div className="cardOverlayCorner cardCornerTR" />
+            <div className="cardOverlayCorner cardCornerBL" />
+            <div className="cardOverlayCorner cardCornerBR" />
+            <div className="cardOverlayDeckLabel">
+              {state.drawnCard.deckType === 'chance' ? '⚡ RISK' : '📦 BLIND CHEST'}
+            </div>
+            <div className="cardOverlayDivider" />
+            <p className="cardOverlayText">{state.drawnCard.text}</p>
+            <div className="cardOverlayDivider" />
+            <div className="cardOverlayFooter">
+              {state.drawnCard.effect.kind === 'collect' && `+$${state.drawnCard.effect.amount}`}
+              {state.drawnCard.effect.kind === 'pay' && `-$${state.drawnCard.effect.amount}`}
+              {state.drawnCard.effect.kind === 'move-to' && 'MOVE'}
+              {state.drawnCard.effect.kind === 'go-to-jail' && 'JAIL'}
+              {state.drawnCard.effect.kind === 'get-out-of-jail' && 'FREE'}
+              {state.drawnCard.effect.kind === 'collect-from-each' && `+$${state.drawnCard.effect.amount} EACH`}
+              {state.drawnCard.effect.kind === 'pay-each-player' && `-$${state.drawnCard.effect.amount} EACH`}
+              {state.drawnCard.effect.kind === 'repairs' && 'REPAIRS'}
+            </div>
           </div>
         </div>
       )}
