@@ -77,6 +77,11 @@ export function applyGameAction(
     return { ok: false, error: 'Action failed' };
   }
 
+  // Auto-advance turn-end when no doubles (skip the "Next Player" click)
+  if (newState.phase === 'turn-end' && newState.doublesCount === 0) {
+    newState = endTurn(newState);
+  }
+
   room.gameState = newState;
   room.lastActivity = Date.now();
 
@@ -95,7 +100,13 @@ export function applyJailEscape(
   if (!room.gameState) return { ok: false, error: 'Game not started' };
   if (!isCurrentPlayer(room, socketId)) return { ok: false, error: 'Not your turn' };
 
-  const newState = attemptJailEscape(room.gameState, method);
+  let newState = attemptJailEscape(room.gameState, method);
+
+  // Auto-advance turn-end when no doubles
+  if (newState.phase === 'turn-end' && newState.doublesCount === 0) {
+    newState = endTurn(newState);
+  }
+
   room.gameState = newState;
   room.lastActivity = Date.now();
 

@@ -71,6 +71,8 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
           setFlipResults(prev => {
             const newResults = [...prev, flipResult];
             setTimeout(() => {
+              // Clear guess BEFORE flipping=false to prevent the auto-flip effect re-triggering
+              setGuess(null);
               setFlipping(false);
               setCurrentFlip(cf => {
                 if (cf === 3) {
@@ -82,8 +84,6 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
                     else if (correctCount === 1) onResult('close-loss');
                     else onResult('loss');
                   }, 1000);
-                } else {
-                  setGuess(null);
                 }
                 return cf + 1;
               });

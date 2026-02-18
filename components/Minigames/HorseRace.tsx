@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
 import { useMinigameSync } from '@/hooks/useMinigameSync';
@@ -62,11 +62,11 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
   const [houseCard, setHouseCard] = useState<CardData | null>(null);
   const [roundRevealed, setRoundRevealed] = useState(false);
   const [done, setDone] = useState(false);
-  const pendingDrawRef = useRef<{ pc: CardData; hc: CardData } | null>(null);
+  const [pendingDraw, setPendingDraw] = useState<{ pc: CardData; hc: CardData } | null>(null);
 
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'draw') {
-      pendingDrawRef.current = { pc: data.pc, hc: data.hc };
+      setPendingDraw({ pc: data.pc, hc: data.hc });
     }
   }, []);
 
@@ -116,12 +116,12 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
 
   // Spectator: react when pending draw arrives
   useEffect(() => {
-    if (spectator && pendingDrawRef.current && !roundRevealed) {
-      const { pc, hc } = pendingDrawRef.current;
-      pendingDrawRef.current = null;
+    if (spectator && pendingDraw && !roundRevealed) {
+      const { pc, hc } = pendingDraw;
+      setPendingDraw(null);
       executeRound(pc, hc);
     }
-  }, [spectator, roundRevealed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [spectator, pendingDraw, roundRevealed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const drawRound = useCallback(() => {
     if (round >= 3 || roundRevealed || spectator) return;
