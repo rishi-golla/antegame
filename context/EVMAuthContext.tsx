@@ -14,7 +14,7 @@ interface EVMAuthContextType {
   user: EVMUser | null;
   loading: boolean;
   isNewUser: boolean;
-  connectAndSign: () => Promise<void>;
+  connectAndSign: (ref?: string) => Promise<void>;
   disconnect: () => Promise<void>;
   updateProfile: (displayName: string, characterId: string) => Promise<void>;
 }
@@ -60,7 +60,7 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Auto-sign when wallet connects and no session exists
-  const connectAndSign = useCallback(async () => {
+  const connectAndSign = useCallback(async (ref?: string) => {
     if (!address) return;
 
     try {
@@ -71,6 +71,9 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
       // Sign with EVM wallet
       const signature = await signMessageAsync({ message });
 
+      // Check for ref param in URL if not passed directly
+      const refParam = ref ?? new URLSearchParams(window.location.search).get('ref') ?? undefined;
+
       // Verify on server
       const verifyRes = await fetch('/api/auth/verify-wallet', {
         method: 'POST',
@@ -80,6 +83,7 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
           signature,
           nonce,
           chain: 'base',
+          ...(refParam ? { ref: refParam } : {}),
         }),
       });
 

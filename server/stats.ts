@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db, getReferrer, recordReferralEarning } from './db';
 
 export interface GameResultData {
   durationMs: number;
@@ -53,7 +53,23 @@ export function recordGameResult(data: GameResultData): number {
       );
     }
 
-    return result.lastInsertRowid as number;
+    const gameId = result.lastInsertRowid as number;
+
+    // Credit referral earnings (10% of house profit per referred player)
+    if (data.houseProfitLamports > 0) {
+      const referralRate = 0.10; // 10% of house profit
+      const perPlayerShare = Math.floor(data.houseProfitLamports * referralRate / data.playerCount);
+      if (perPlayerShare > 0) {
+        for (const player of data.players) {
+          const referrer = getReferrer(player.walletAddress);
+          if (referrer) {
+            recordReferralEarning(referrer, player.walletAddress, gameId, String(perPlayerShare));
+          }
+        }
+      }
+    }
+
+    return gameId;
   });
 
   return run();
