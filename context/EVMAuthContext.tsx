@@ -45,14 +45,6 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        // On localhost, always start fresh (dev convenience)
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-          wagmiDisconnect();
-          setUser(null);
-          setLoading(false);
-          return;
-        }
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         if (data.user) {
