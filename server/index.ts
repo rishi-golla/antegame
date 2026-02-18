@@ -215,15 +215,18 @@ nextApp.prepare().then(() => {
     const room = rm.getRoom(code);
     if (!room || !room.isQuickPlay) return;
 
-    const playerCount = room.players.length;
+    // Only count deposited players for countdown (on-chain rooms)
+    const depositedCount = room.isOnChain
+      ? room.players.filter((p: any) => p.deposited).length
+      : room.players.length;
     const hasCountdown = quickPlayCountdowns.has(code);
 
-    if (playerCount >= 6) {
+    if (depositedCount >= 6) {
       const existing = quickPlayCountdowns.get(code);
       if (!existing || existing.remaining > 5) {
         startQuickPlayCountdown(code, 5);
       }
-    } else if (playerCount >= 4) {
+    } else if (depositedCount >= 4) {
       if (!hasCountdown) {
         startQuickPlayCountdown(code, 30);
       }
@@ -774,6 +777,8 @@ nextApp.prepare().then(() => {
         systemMessage(code, `${player.name} deposited ${room.buyInEth} ETH on Base.`);
       }
       broadcastRoomState(code);
+      // Check if enough deposited players to start countdown
+      checkQuickPlayCountdown(code);
       cb({ ok: true });
     });
 
