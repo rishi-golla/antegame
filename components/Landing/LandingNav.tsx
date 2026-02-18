@@ -43,6 +43,7 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
             alt="Ante"
             className="landingNavLogo"
           />
+          <span className="landingNavBrandText">ANTE</span>
         </motion.a>
 
         <div className={`landingNavLinks ${menuOpen ? 'landingNavLinksOpen' : ''}`}>
