@@ -3,15 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useAudio } from '@/context/AudioContext';
-import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { createGameOnChain, joinGameOnChain } from '@/lib/contracts/monopolyGame';
-import { useWalletClient } from 'wagmi';
-import { waitForTransactionReceipt } from '@wagmi/core';
-import { wagmiConfig } from '@/context/EVMWalletContext';
 import ChatView from '@/components/SidePanel/ChatView';
-
-const TX_RECEIPT_TIMEOUT = 60_000;
 
 interface QuickPlayLobbyProps {
   onLeave: () => void;
@@ -21,27 +14,8 @@ interface QuickPlayLobbyProps {
 export default function QuickPlayLobby({ onLeave, onGameStart }: QuickPlayLobbyProps) {
   const { roomState, leaveRoom, chatMessages, sendChat } = useSocket();
   const { play } = useAudio();
-  const { user } = useMultiChain();
-  const { data: walletClient } = useWalletClient();
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [depositStatus, setDepositStatus] = useState<'pending' | 'depositing' | 'confirmed'>('pending');
-  const [depositError, setDepositError] = useState('');
-  const [statusMsg, setStatusMsg] = useState('');
   const prevPlayerCount = useRef(0);
-
-  // Detect if I'm the room creator (first player / host)
-  const myPlayer = roomState?.players.find(p => p.isYou);
-  const isHost = roomState?.players[0]?.isYou ?? false;
-  const roomCode = (roomState as any)?.code || '';
-  const buyIn = (roomState as any)?.buyInEth || '0';
-  const maxPlayers = 6;
-
-  // Check if already deposited (reconnection case)
-  useEffect(() => {
-    if (myPlayer && (myPlayer as any).deposited) {
-      setDepositStatus('confirmed');
-    }
-  }, [myPlayer]);
 
   // Listen for countdown events
   useEffect(() => {
@@ -86,69 +60,25 @@ export default function QuickPlayLobby({ onLeave, onGameStart }: QuickPlayLobbyP
     prevPlayerCount.current = count;
   }, [roomState?.players.length, play]);
 
-  const handleDeposit = async () => {
-    if (!walletClient || !roomCode || !buyIn) return;
-    setDepositStatus('depositing');
-    setDepositError('');
+  if (!roomState) return null;
 
-    try {
-      // Host creates game on-chain, others join
-      let txHash: string;
-      if (isHost) {
-        setStatusMsg('Creating game on-chain...');
-        txHash = await createGameOnChain(walletClient, roomCode, maxPlayers, buyIn);
-      } else {
-        setStatusMsg('Joining game on-chain...');
-        txHash = await joinGameOnChain(walletClient, roomCode, buyIn);
-      }
-
-      // Wait for confirmation
-      setStatusMsg('Confirming transaction...');
-      const receipt = await Promise.race([
-        waitForTransactionReceipt(wagmiConfig, { hash: txHash as `0x${string}` }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Transaction timed out. Check your wallet.')), TX_RECEIPT_TIMEOUT)
-        ),
-      ]);
-
-      if (receipt.status === 'reverted') {
-        throw new Error('Transaction reverted on-chain');
-      }
-
-      // Notify server
-      setStatusMsg('Deposit confirmed!');
-      const { getSocket } = await import('@/lib/socket');
-      await new Promise<void>((resolve) => {
-        getSocket().emit('room:base-deposit' as any, { txHash }, () => resolve());
-      });
-
-      setDepositStatus('confirmed');
-      setStatusMsg('');
-      play('sfx/coin');
-    } catch (err: any) {
-      setDepositStatus('pending');
-      setDepositError(err?.shortMessage || err?.message || 'Deposit failed');
-      setStatusMsg('');
-    }
-  };
+  const maxPlayers = 6;
+  const playerCount = roomState.players.length;
+  const emptySlots = maxPlayers - playerCount;
+  const buyIn = (roomState as any).buyInEth || '?';
+  const depositedCount = roomState.players.filter((p: any) => p.deposited).length;
 
   const handleLeave = () => {
     leaveRoom();
     onLeave();
   };
 
-  if (!roomState) return null;
-
-  const playerCount = roomState.players.length;
-  const emptySlots = maxPlayers - playerCount;
-  const depositedCount = roomState.players.filter((p: any) => p.deposited).length;
-
   return (
     <div className="setupScreen">
       <div className="setupCard quickPlayLobbyCard">
         <h1 className="setupTitle marqueeTitle">Quick Play</h1>
         <div className="qpTierBadge">{buyIn} ETH</div>
-        <p className="qpPlayerCount">{playerCount}/{maxPlayers} Players</p>
+        <p className="qpPlayerCount">{depositedCount}/{maxPlayers} Players Deposited</p>
 
         <div className="qpPlayerList">
           {roomState.players.map((p: any, i: number) => {
@@ -173,44 +103,17 @@ export default function QuickPlayLobby({ onLeave, onGameStart }: QuickPlayLobbyP
           ))}
         </div>
 
-        {/* Deposit section */}
-        {depositStatus === 'pending' && (
-          <button
-            className="setupStartBtn"
-            onClick={handleDeposit}
-            disabled={!walletClient}
-          >
-            💰 Deposit {buyIn} ETH
-          </button>
-        )}
-
-        {depositStatus === 'depositing' && (
-          <div className="qpStatusMsg" style={{ color: '#d4a843' }}>
-            {statusMsg || 'Processing...'}
-          </div>
-        )}
-
-        {depositStatus === 'confirmed' && (
-          <div className="qpStatusMsg" style={{ color: '#4ade80' }}>
-            ✅ Deposited — {depositedCount}/{playerCount} ready
-          </div>
-        )}
-
-        {depositError && (
-          <p className="lobbyError">{depositError}</p>
-        )}
-
         {countdown !== null && (
           <div className={`qpCountdown ${countdown <= 5 ? 'qpCountdownUrgent' : ''}`}>
             ⏱ Starting in: <span className="qpCountdownNum">{countdown}s</span>
           </div>
         )}
 
-        {countdown === null && depositStatus === 'confirmed' && (
+        {countdown === null && (
           <p className="qpStatusMsg" style={{ opacity: 0.7 }}>
-            {playerCount < 4
-              ? `Waiting for more players to join & deposit (need ${4 - depositedCount} more)...`
-              : 'All deposits in — starting soon!'}
+            {depositedCount < 4
+              ? `Waiting for ${4 - depositedCount} more player${4 - depositedCount > 1 ? 's' : ''} to join & deposit...`
+              : 'Enough players — starting soon!'}
           </p>
         )}
 
