@@ -188,19 +188,25 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         )}
       </div>
 
-      <img
-        src="/assets/misc/community-chest-deck.webp"
-        alt="Community Chest"
-        className="deckImg deckCommunity"
-        draggable={false}
-      />
+      <div className="deckStack deckCommunity">
+        <img
+          src="/assets/misc/community-chest-deck.webp"
+          alt="Blind Chest"
+          className="deckImg"
+          draggable={false}
+        />
+        <span className="deckLabel deckLabelBlind">BLIND CHEST</span>
+      </div>
 
-      <img
-        src="/assets/misc/chance-deck.webp"
-        alt="Chance"
-        className="deckImg deckChance"
-        draggable={false}
-      />
+      <div className="deckStack deckChance">
+        <img
+          src="/assets/misc/chance-deck.webp"
+          alt="Risk"
+          className="deckImg"
+          draggable={false}
+        />
+        <span className="deckLabel deckLabelRisk">⚡ RISK</span>
+      </div>
 
       {/* Full-screen card overlay (renders via portal-style positioning) */}
       {state.drawnCard && !isRolling && (
