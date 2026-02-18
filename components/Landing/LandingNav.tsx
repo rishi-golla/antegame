@@ -39,7 +39,7 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
           whileTap={{ scale: 0.95 }}
         >
           <img
-            src="/assets/misc/ante-logo.webp"
+            src="/assets/misc/ante-cardshark.webp"
             alt="Ante"
             className="landingNavLogo"
           />
