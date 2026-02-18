@@ -50,15 +50,9 @@ function getTileLabel(tileData: TileType): string {
   return tileData.name;
 }
 
-/** Rotation degrees for tile images based on orientation */
-function getImageRotation(orientation: string): number {
-  switch (orientation) {
-    case 'bottom': return 0;
-    case 'top': return 0;
-    case 'left': return 90;
-    case 'right': return -90;
-    default: return 0;
-  }
+/** No rotation — pixel art looks best upright regardless of tile edge */
+function getImageRotation(_orientation: string): number {
+  return 0;
 }
 
 export default function Tile({ tile, activeTile, players, currentPlayerIndex, onTileClick }: TileProps) {
