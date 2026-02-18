@@ -23,16 +23,17 @@
     "better-sqlite3": "^12.6.2",
     "bs58": "^6.0.0",
     "express": "^5.2.1",
+    "framer-motion": "^12.34.2",
     "next": "^14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "tweetnacl": "^1.0.3",
-    "viem": "^2.46.1",
-    "wagmi": "^2.12.31",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "tweetnacl": "^1.0.3",
+    "typescript": "^5.9.3",
+    "viem": "^2.46.1",
+    "wagmi": "^2.12.31"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
 interface FeaturePanel {
   id: string;
@@ -39,47 +39,56 @@ const features: FeaturePanel[] = [
   },
 ];
 
-function FeatureCard({ feature }: { feature: FeaturePanel }) {
-  const ref = useRef<HTMLDivElement>(null);
+function FeatureCard({ feature, index }: { feature: FeaturePanel; index: number }) {
+  const imgVariants = {
+    hidden: { opacity: 0, x: feature.reverse ? 60 : -60 },
+    show: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  };
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('featurePanelVisible');
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.15 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const textVariants = {
+    hidden: { opacity: 0, x: feature.reverse ? -40 : 40 },
+    show: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.8, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  };
 
   return (
-    <div
-      ref={ref}
+    <motion.div
       id={feature.id}
-      className={`featurePanel ${feature.reverse ? 'featurePanelReverse' : ''}`}
+      className={`featurePanel featurePanelVisible ${feature.reverse ? 'featurePanelReverse' : ''}`}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
     >
-      <div className="featureImageWrap">
-        <img src={feature.image} alt={feature.title} className="featureImage" loading="lazy" />
-      </div>
-      <div className="featureText">
+      <motion.div className="featureImageWrap" variants={imgVariants}>
+        <motion.img
+          src={feature.image}
+          alt={feature.title}
+          className="featureImage"
+          loading="lazy"
+          whileHover={{ scale: 1.03 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+        />
+      </motion.div>
+      <motion.div className="featureText" variants={textVariants}>
         <h3 className="featureTitle">{feature.title}</h3>
         <p className="featureDesc">{feature.text}</p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export default function FeaturesSection() {
   return (
     <section className="landingFeatures">
-      {features.map((f) => (
-        <FeatureCard key={f.id} feature={f} />
+      {features.map((f, i) => (
+        <FeatureCard key={f.id} feature={f} index={i} />
       ))}
     </section>
   );
