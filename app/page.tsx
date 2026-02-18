@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAudio } from '@/context/AudioContext';
 import { GameProvider } from '@/context/GameContext';
 import { WalletContextProvider } from '@/context/WalletContext';
@@ -169,7 +169,7 @@ function RefundOverlay() {
   return <RefundModal refund={pendingRefund} onDone={clearPendingRefund} />;
 }
 
-function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; initialScreen?: 'create' | 'join' }) {
+function OnlineFlow({ onBack, initialScreen = 'create', roomCode: initialRoomCode }: { onBack: () => void; initialScreen?: 'create' | 'join'; roomCode?: string }) {
   const [screen, setScreen] = useState<'create' | 'join' | 'lobby' | 'game'>(initialScreen);
   const { roomState, leaveRoom, pendingRefund } = useSocket();
 
@@ -189,7 +189,7 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
     case 'create':
       return <CreateRoom onCreated={() => setScreen('lobby')} onBack={onBack} />;
     case 'join':
-      return <JoinRoom onJoined={() => setScreen('lobby')} onBack={onBack} />;
+      return <JoinRoom onJoined={() => setScreen('lobby')} onBack={onBack} initialCode={initialRoomCode} />;
     case 'lobby':
       return <RoomLobby onLeave={handleLeaveLobby} />;
     case 'game':
@@ -197,10 +197,76 @@ function OnlineFlow({ onBack, initialScreen = 'create' }: { onBack: () => void; 
   }
 }
 
+/** Map screen state to URL path and extract screen from URL */
+function screenToPath(screen: Screen, roomCode?: string): string {
+  switch (screen) {
+    case 'menu': return '/';
+    case 'free-play-setup': return '/free-play';
+    case 'free-play-game': return '/free-play/game';
+    case 'quick-play': return '/quick-play';
+    case 'create': return '/create';
+    case 'join': return roomCode ? `/join?room=${roomCode}` : '/join';
+    case 'lobby': return roomCode ? `/lobby?room=${roomCode}` : '/lobby';
+    case 'game': return roomCode ? `/game?room=${roomCode}` : '/game';
+    case 'profile': return '/profile';
+    case 'leaderboard': return '/leaderboard';
+    default: return '/';
+  }
+}
+
+function pathToScreen(): { screen: Screen; roomCode?: string } {
+  if (typeof window === 'undefined') return { screen: 'menu' };
+  const path = window.location.pathname;
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get('room') ?? undefined;
+
+  if (path === '/free-play/game') return { screen: 'free-play-game' };
+  if (path === '/free-play') return { screen: 'free-play-setup' };
+  if (path === '/quick-play') return { screen: 'quick-play' };
+  if (path === '/create') return { screen: 'create' };
+  if (path === '/join') return { screen: 'join', roomCode: room };
+  if (path === '/lobby') return { screen: 'lobby', roomCode: room };
+  if (path === '/game') return { screen: 'game', roomCode: room };
+  if (path === '/profile') return { screen: 'profile' };
+  if (path === '/leaderboard') return { screen: 'leaderboard' };
+  // Also check for ?room= on root (shared link)
+  if (room) return { screen: 'join', roomCode: room };
+  return { screen: 'menu' };
+}
+
 function AuthGate() {
   const { user, loading, isNewUser } = useMultiChain();
-  const [screen, setScreen] = useState<Screen>('menu');
+  const initial = pathToScreen();
+  const [screen, setScreen] = useState<Screen>(initial.screen);
+  const [pendingRoomCode, setPendingRoomCode] = useState<string | undefined>(initial.roomCode);
   const [freePlayConfig, setFreePlayConfig] = useState<{ names: string[]; sprites: string[]; colors: string[] } | null>(null);
+  const suppressPushRef = useRef(false);
+
+  // Push browser history on screen change
+  const navigate = useCallback((newScreen: Screen, roomCode?: string) => {
+    setScreen(newScreen);
+    if (roomCode) setPendingRoomCode(roomCode);
+    const path = screenToPath(newScreen, roomCode ?? pendingRoomCode);
+    window.history.pushState({ screen: newScreen, roomCode }, '', path);
+  }, [pendingRoomCode]);
+
+  // Handle back/forward button
+  useEffect(() => {
+    const handlePop = () => {
+      const { screen: s, roomCode } = pathToScreen();
+      suppressPushRef.current = true;
+      setScreen(s);
+      if (roomCode) setPendingRoomCode(roomCode);
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  // Replace initial state so first back doesn't break
+  useEffect(() => {
+    const path = screenToPath(initial.screen, initial.roomCode);
+    window.history.replaceState({ screen: initial.screen, roomCode: initial.roomCode }, '', path);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -213,7 +279,7 @@ function AuthGate() {
   }
 
   if (!user) {
-    return <><StopMusic /><ConnectScreen onFreePlay={() => setScreen('free-play-setup')} /></>;
+    return <><StopMusic /><ConnectScreen onFreePlay={() => navigate('free-play-setup')} /></>;
   }
 
   // New user needs profile setup
@@ -223,14 +289,14 @@ function AuthGate() {
 
   const content = (() => { switch (screen) {
     case 'menu':
-      return <MainMenu onNavigate={setScreen} />;
+      return <MainMenu onNavigate={navigate} />;
 
     case 'free-play-setup':
       return (
         <GameSetup
           onStart={(names, sprites, colors) => {
             setFreePlayConfig({ names, sprites, colors });
-            setScreen('free-play-game');
+            navigate('free-play-game');
           }}
         />
       );
@@ -239,7 +305,7 @@ function AuthGate() {
       const cfg = freePlayConfig || { names: ['Player 1', 'Player 2'], sprites: ['', ''], colors: ['#ff6b6b', '#5cd6c0'] };
       return (
         <GameProvider playerNames={cfg.names} playerSprites={cfg.sprites} playerColors={cfg.colors}>
-          <FreePlayScreen onPlayAgain={() => setScreen('menu')} />
+          <FreePlayScreen onPlayAgain={() => navigate('menu')} />
         </GameProvider>
       );
     }
@@ -249,7 +315,7 @@ function AuthGate() {
         <SocketProvider>
           <WalletButton />
           <RefundOverlay />
-          <QuickPlayFlow onBack={() => setScreen('menu')} />
+          <QuickPlayFlow onBack={() => navigate('menu')} />
         </SocketProvider>
       );
 
@@ -257,7 +323,7 @@ function AuthGate() {
       return (
         <>
           <WalletButton />
-          <ProfileScreen onBack={() => setScreen('menu')} />
+          <ProfileScreen onBack={() => navigate('menu')} />
         </>
       );
 
@@ -269,7 +335,7 @@ function AuthGate() {
           <div className="setupCard">
             <h1 className="setupTitle marqueeTitle">Leaderboard</h1>
             <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
-            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
+            <button className="lobbyBackBtn" onClick={() => navigate('menu')}>Back</button>
           </div>
         </div>
       );
@@ -283,20 +349,21 @@ function AuthGate() {
           <WalletButton />
           <RefundOverlay />
           <OnlineFlow
-            onBack={() => setScreen('menu')}
+            onBack={() => navigate('menu')}
             initialScreen={screen === 'join' ? 'join' : 'create'}
+            roomCode={pendingRoomCode}
           />
         </SocketProvider>
       );
 
     default:
-      return <MainMenu onNavigate={setScreen} />;
+      return <MainMenu onNavigate={navigate} />;
   } })();
 
   return (
     <>
       <AudioControls
-        onHome={screen !== 'menu' ? () => setScreen('menu') : undefined}
+        onHome={screen !== 'menu' ? () => navigate('menu') : undefined}
         inGame={screen === 'free-play-game' || screen === 'create' || screen === 'join' || screen === 'quick-play'}
       />
       <LobbyMusic screen={screen} />

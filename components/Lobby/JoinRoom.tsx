@@ -16,9 +16,10 @@ const TX_RECEIPT_TIMEOUT = 60_000; // 60 seconds
 interface JoinRoomProps {
   onJoined: () => void;
   onBack: () => void;
+  initialCode?: string;
 }
 
-export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
+export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProps) {
   const { joinRoom } = useSocket();
   const { user, activeChain } = useMultiChain();
   const { data: walletClient } = useWalletClient();
@@ -30,7 +31,7 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
   });
 
   const [name, setName] = useState(user?.displayName ?? '');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode ?? '');
   const [selectedChar, setSelectedChar] = useState(
     user?.characterId ?? CHARACTERS[1].id
   );
