@@ -1,18 +1,11 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { motion } from 'framer-motion';
 
 export default function HeroSection({ onConnect, onFreePlay, connecting }: { onConnect: () => void; onFreePlay?: () => void; connecting: boolean }) {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
-  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
   return (
-    <section className="heroSection" ref={ref}>
-      <motion.div className="heroBg" style={{ y: bgY }}>
+    <section className="heroSection">
+      <div className="heroBg">
         <motion.img
           src="/assets/landing/hero-bg.webp"
           alt=""
@@ -21,7 +14,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
           animate={{ scale: 1 }}
           transition={{ duration: 2.5, ease: [0.25, 0.46, 0.45, 0.94] }}
         />
-      </motion.div>
+      </div>
       <div className="heroOverlay" />
 
       {/* Animated particles */}
@@ -46,7 +39,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
         ))}
       </div>
 
-      <motion.div className="heroContent" style={{ y: contentY, opacity }}>
+      <motion.div className="heroContent">
         <motion.div
           className="heroBadge"
           initial={{ opacity: 0, scale: 0.8 }}
