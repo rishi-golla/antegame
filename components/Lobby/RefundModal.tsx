@@ -47,6 +47,11 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
         }
       }
 
+      // Brief delay after cancel to ensure state is indexed
+      if (gameState !== OnChainGameState.CANCELLED) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
       // Step 2: Claim refund
       setStatus('Claiming refund...');
       const refundHash = await claimRefund(walletClient, refund.roomCode);
