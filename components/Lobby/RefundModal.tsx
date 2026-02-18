@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useWalletClient } from 'wagmi';
-import { cancelGame, claimRefund } from '@/lib/contracts/monopolyGame';
+import { cancelGame, claimRefund, getOnChainGameState, OnChainGameState } from '@/lib/contracts/monopolyGame';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '@/context/EVMWalletContext';
 
@@ -27,21 +27,24 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
     setError('');
 
     try {
-      // Step 1: Try to cancel the game on-chain (may already be cancelled)
-      setStatus('Cancelling game on-chain...');
-      try {
-        const cancelHash = await cancelGame(walletClient, refund.roomCode, refund.nonce, refund.signature);
-        await waitForTransactionReceipt(wagmiConfig, { hash: cancelHash as `0x${string}` });
-      } catch (cancelErr: any) {
-        // If user rejected wallet prompt, stop entirely
-        const msg = cancelErr?.shortMessage || cancelErr?.message || '';
-        if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('user rejected')) {
-          setError('Transaction rejected');
-          setLoading(false);
-          return;
+      // Step 1: Check on-chain state — only cancel if not already cancelled
+      setStatus('Checking game state...');
+      const gameState = await getOnChainGameState(refund.roomCode);
+
+      if (gameState !== OnChainGameState.CANCELLED) {
+        setStatus('Cancelling game on-chain...');
+        try {
+          const cancelHash = await cancelGame(walletClient, refund.roomCode, refund.nonce, refund.signature);
+          await waitForTransactionReceipt(wagmiConfig, { hash: cancelHash as `0x${string}` });
+        } catch (cancelErr: any) {
+          const msg = cancelErr?.shortMessage || cancelErr?.message || '';
+          if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('user rejected')) {
+            setError('Transaction rejected');
+            setLoading(false);
+            return;
+          }
+          // Otherwise assume cancelled, continue
         }
-        // Otherwise assume already cancelled, continue to claim
-        console.log('Cancel may have already been done, proceeding to claim refund...');
       }
 
       // Step 2: Claim refund
