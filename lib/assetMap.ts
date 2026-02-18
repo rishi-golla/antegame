@@ -38,7 +38,7 @@ export function getTileImage(tile: Tile): string | null {
     case 'chance':
       return '/assets/tiles/chance.webp';
     case 'community-chest':
-      return '/assets/tiles/chance.webp';
+      return '/assets/tiles/community-chest.webp';
     case 'corner':
       return CORNER_TILE_IMAGES[tile.cornerKind];
     default:
