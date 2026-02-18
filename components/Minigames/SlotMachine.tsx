@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface SlotMachineProps {
   onResult: (tier: MinigameTier) => void;
@@ -20,10 +21,10 @@ const SYMBOL_IMAGES: Record<SlotSymbol, string> = {
   seven: '/assets/minigames/slots/seven.png',
   diamond: '/assets/minigames/slots/diamond.png',
   bar: '/assets/minigames/slots/bar.png',
-  skull: '/assets/minigames/slots/cherry.png', // skull uses cherry placeholder
+  skull: '/assets/minigames/slots/cherry.png',
 };
 
-export default function SlotMachine({ onResult, baseAmount, context }: SlotMachineProps) {
+export default function SlotMachine({ onResult, baseAmount, context, spectator = false }: SlotMachineProps) {
   const { play } = useAudio();
   const [reels, setReels] = useState<SlotSymbol[]>(['cherry', 'cherry', 'cherry']);
   const [spinning, setSpinning] = useState([false, false, false]);
@@ -32,34 +33,63 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
   const [gameStarted, setGameStarted] = useState(false);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [leverPulled, setLeverPulled] = useState(false);
+  const finalReelsRef = useRef<SlotSymbol[]>(['cherry', 'cherry', 'cherry']);
+  const startTriggeredRef = useRef(false);
 
   const reelRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
 
+  const doStartRef = useRef<(finals: SlotSymbol[]) => void>(() => {});
+
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'start') {
+      doStartRef.current(data.finalReels);
+    }
+  }, []);
+
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onResult('catastrophic');
-    }, 30000);
+    const timer = setTimeout(() => { onResult('catastrophic'); }, 30000);
     setTimeoutId(timer);
     return () => { if (timer) clearTimeout(timer); };
   }, [onResult]);
 
   useEffect(() => {
-    if (stopped.every(Boolean)) {
+    if (stopped.every(Boolean) && gameStarted) {
       if (timeoutId) clearTimeout(timeoutId);
-      calculateResult();
+      const [r1, r2, r3] = reels;
+      if (r1 === 'skull' && r2 === 'skull' && r3 === 'skull') { onResult('catastrophic'); return; }
+      if (r1 === r2 && r2 === r3) { onResult('win'); return; }
+      const getIndex = (s: SlotSymbol) => SYMBOLS.indexOf(s);
+      if (r1 === r2) { const d = Math.abs(getIndex(r2) - getIndex(r3)); if (d === 1 || d === SYMBOLS.length - 1) { onResult('close-win'); return; } }
+      if (r2 === r3) { const d = Math.abs(getIndex(r1) - getIndex(r2)); if (d === 1 || d === SYMBOLS.length - 1) { onResult('close-win'); return; } }
+      if (r1 === r2 || r2 === r3 || r1 === r3) { onResult('close-loss'); return; }
+      onResult('loss');
     }
-  }, [stopped]);
+  }, [stopped]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startGame = () => {
+  const stopReelAuto = useCallback((reelIndex: number, intervals: any[], finalSymbol: SlotSymbol) => {
+    if (intervals[reelIndex]) clearInterval(intervals[reelIndex]);
+    if (reelRefs[reelIndex]?.current) {
+      reelRefs[reelIndex].current!.classList.remove('pixelSpin');
+    }
+    play('minigames/slot-stop');
+    setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
+    setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
+    setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
+  }, [play]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const doStart = useCallback((finals: SlotSymbol[]) => {
+    if (startTriggeredRef.current) return;
+    startTriggeredRef.current = true;
+    finalReelsRef.current = finals;
     setGameStarted(true);
     setLeverPulled(true);
     setSpinning([true, true, true]);
     play('minigames/slot-spin');
 
     reelRefs.forEach((ref) => {
-      if (ref.current) {
-        ref.current.classList.add('pixelSpin');
-      }
+      if (ref.current) ref.current.classList.add('pixelSpin');
     });
 
     const spinIntervals = reelRefs.map((_, index) => {
@@ -75,25 +105,27 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
     (window as any).slotIntervals = spinIntervals;
 
     // Auto-stop reels with staggered timing
-    setTimeout(() => stopReelAuto(0, spinIntervals), 1500);
-    setTimeout(() => stopReelAuto(1, spinIntervals), 2500);
-    setTimeout(() => stopReelAuto(2, spinIntervals), 3500);
-  };
+    setTimeout(() => stopReelAuto(0, spinIntervals, finals[0]), 1500);
+    setTimeout(() => stopReelAuto(1, spinIntervals, finals[1]), 2500);
+    setTimeout(() => stopReelAuto(2, spinIntervals, finals[2]), 3500);
+  }, [play, stopReelAuto]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const stopReelAuto = (reelIndex: number, intervals: any[]) => {
-    if (intervals[reelIndex]) clearInterval(intervals[reelIndex]);
-    if (reelRefs[reelIndex].current) {
-      reelRefs[reelIndex].current!.classList.remove('pixelSpin');
-    }
-    const finalSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-    play('minigames/slot-stop');
-    setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
-    setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
-    setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
+  // Keep ref in sync
+  useEffect(() => { doStartRef.current = doStart; }, [doStart]);
+
+  const startGame = () => {
+    if (spectator || gameStarted) return;
+    const finals: SlotSymbol[] = [
+      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+    ];
+    emitAction({ type: 'start', finalReels: finals });
+    doStart(finals);
   };
 
   const stopReel = (reelIndex: number) => {
-    if (reelIndex !== currentReel || stopped[reelIndex] || !spinning[reelIndex]) return;
+    if (reelIndex !== currentReel || stopped[reelIndex] || !spinning[reelIndex] || spectator) return;
 
     const intervals = (window as any).slotIntervals || [];
     if (intervals[reelIndex]) clearInterval(intervals[reelIndex]);
@@ -102,24 +134,12 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
       reelRefs[reelIndex].current!.classList.remove('pixelSpin');
     }
 
-    const finalSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    const finalSymbol = finalReelsRef.current[reelIndex];
     play('minigames/slot-stop');
     setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
-
     setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
     setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
     setCurrentReel(currentReel + 1);
-  };
-
-  const calculateResult = () => {
-    const [r1, r2, r3] = reels;
-    if (r1 === 'skull' && r2 === 'skull' && r3 === 'skull') { onResult('catastrophic'); return; }
-    if (r1 === r2 && r2 === r3) { onResult('win'); return; }
-    const getIndex = (s: SlotSymbol) => SYMBOLS.indexOf(s);
-    if (r1 === r2) { const d = Math.abs(getIndex(r2) - getIndex(r3)); if (d === 1 || d === SYMBOLS.length - 1) { onResult('close-win'); return; } }
-    if (r2 === r3) { const d = Math.abs(getIndex(r1) - getIndex(r2)); if (d === 1 || d === SYMBOLS.length - 1) { onResult('close-win'); return; } }
-    if (r1 === r2 || r2 === r3 || r1 === r3) { onResult('close-loss'); return; }
-    onResult('loss');
   };
 
   return (
@@ -128,7 +148,7 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
         <img src="/assets/minigames/slots/slot-machine.png" alt="" className="slotFrameImg" />
         <div className="slotHeader">
           <h2 className="slotTitle">SLOT MACHINE</h2>
-          <div className={`slotLever ${leverPulled ? 'pulled' : ''}`} onClick={!gameStarted ? startGame : undefined}>
+          <div className={`slotLever ${leverPulled ? 'pulled' : ''}`} onClick={!gameStarted && !spectator ? startGame : undefined}>
             <div className="leverArm"></div>
             <div className="leverKnob"></div>
           </div>
@@ -154,7 +174,7 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
         {!gameStarted ? (
           <p>PULL THE LEVER!</p>
         ) : currentReel < 3 ? (
-          <p>TAP REEL {currentReel + 1} TO STOP!</p>
+          <p>{spectator ? 'WATCHING...' : `TAP REEL ${currentReel + 1} TO STOP!`}</p>
         ) : (
           <p>CALCULATING...</p>
         )}

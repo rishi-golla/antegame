@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface CardWarProps {
   onResult: (tier: MinigameTier) => void;
@@ -52,7 +53,7 @@ function CardBack() {
   );
 }
 
-export default function CardWar({ onResult }: CardWarProps) {
+export default function CardWar({ onResult, spectator = false }: CardWarProps) {
   const { play } = useAudio();
   const [round, setRound] = useState(0);
   const [playerWins, setPlayerWins] = useState(0);
@@ -61,6 +62,15 @@ export default function CardWar({ onResult }: CardWarProps) {
   const [houseCard, setHouseCard] = useState<CardData | null>(null);
   const [roundRevealed, setRoundRevealed] = useState(false);
   const [done, setDone] = useState(false);
+  const pendingDrawRef = useRef<{ pc: CardData; hc: CardData } | null>(null);
+
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'draw') {
+      pendingDrawRef.current = { pc: data.pc, hc: data.hc };
+    }
+  }, []);
+
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -69,11 +79,8 @@ export default function CardWar({ onResult }: CardWarProps) {
     return () => clearTimeout(timer);
   }, [done, onResult]);
 
-  const drawRound = useCallback(() => {
-    if (round >= 3 || roundRevealed) return;
+  const executeRound = useCallback((pc: CardData, hc: CardData) => {
     play('minigames/horse-gallop');
-    const pc = randomCard();
-    const hc = randomCard();
     setPlayerCard(pc);
     setHouseCard(hc);
     setRoundRevealed(true);
@@ -105,7 +112,24 @@ export default function CardWar({ onResult }: CardWarProps) {
       setPlayerCard(null);
       setHouseCard(null);
     }, 1500);
-  }, [round, roundRevealed, playerWins, houseWins, onResult]);
+  }, [round, playerWins, houseWins, onResult, play]);
+
+  // Spectator: react when pending draw arrives
+  useEffect(() => {
+    if (spectator && pendingDrawRef.current && !roundRevealed) {
+      const { pc, hc } = pendingDrawRef.current;
+      pendingDrawRef.current = null;
+      executeRound(pc, hc);
+    }
+  }, [spectator, roundRevealed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const drawRound = useCallback(() => {
+    if (round >= 3 || roundRevealed || spectator) return;
+    const pc = randomCard();
+    const hc = randomCard();
+    emitAction({ type: 'draw', pc, hc });
+    executeRound(pc, hc);
+  }, [round, roundRevealed, spectator, emitAction, executeRound]);
 
   return (
     <div className="cardWar pixelMinigame">
@@ -130,7 +154,7 @@ export default function CardWar({ onResult }: CardWarProps) {
       </div>
 
       {round < 3 && !roundRevealed && (
-        <button className="cardWarDrawBtn pixelBtn" onClick={drawRound}>
+        <button className="cardWarDrawBtn pixelBtn" onClick={drawRound} disabled={spectator}>
           DRAW
         </button>
       )}

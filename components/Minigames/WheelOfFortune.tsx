@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
+import { useMinigameSync } from '@/hooks/useMinigameSync';
 
 interface WheelOfFortuneProps {
   onResult: (tier: MinigameTier) => void;
@@ -33,26 +34,22 @@ const WHEEL_SEGMENTS: WheelSegment[] = [
   { id: 12, tier: 'catastrophic', label: '☠', color: '#ef4444' }
 ];
 
-export default function WheelOfFortune({ onResult, baseAmount, context }: WheelOfFortuneProps) {
+export default function WheelOfFortune({ onResult, baseAmount, context, spectator = false }: WheelOfFortuneProps) {
   const { play } = useAudio();
   const tickIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<WheelSegment | null>(null);
   const [canSpin, setCanSpin] = useState(true);
+  const spinTriggeredRef = useRef(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => { if (canSpin) onResult('catastrophic'); }, 30000);
-    return () => clearTimeout(timer);
-  }, [onResult, canSpin]);
-
-  const spinWheel = () => {
-    if (spinning || !canSpin) return;
+  const doSpin = useCallback((totalRotation: number, selectedSegment: WheelSegment) => {
+    if (spinTriggeredRef.current) return;
+    spinTriggeredRef.current = true;
     setSpinning(true);
     setCanSpin(false);
     play('minigames/wheel-spin');
 
-    // Tick sound during spin
     let tickDelay = 80;
     const scheduleTick = () => {
       tickIntervalRef.current = setTimeout(() => {
@@ -63,15 +60,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
     };
     scheduleTick();
 
-    const baseRotations = 4 + Math.random() * 3;
-    const finalPosition = Math.random() * 360;
-    const totalRotation = rotation + (baseRotations * 360) + finalPosition;
     setRotation(totalRotation);
-
-    const segmentAngle = 360 / 12;
-    const normalizedAngle = (360 - (totalRotation % 360)) % 360;
-    const segmentIndex = Math.floor(normalizedAngle / segmentAngle);
-    const selectedSegment = WHEEL_SEGMENTS[segmentIndex];
 
     setTimeout(() => {
       if (tickIntervalRef.current) clearTimeout(tickIntervalRef.current);
@@ -79,6 +68,38 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
       setResult(selectedSegment);
       setTimeout(() => { onResult(selectedSegment.tier); }, 1500);
     }, 3500);
+  }, [play, onResult]);
+
+  const doSpinRef = useRef(doSpin);
+  useEffect(() => { doSpinRef.current = doSpin; }, [doSpin]);
+
+  const handleRemoteAction = useCallback((data: any) => {
+    if (data.type === 'spin') {
+      doSpinRef.current(data.totalRotation, data.selectedSegment);
+    }
+  }, []);
+
+  const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { if (canSpin) onResult('catastrophic'); }, 30000);
+    return () => clearTimeout(timer);
+  }, [onResult, canSpin]);
+
+  const spinWheel = () => {
+    if (spinning || !canSpin || spectator) return;
+
+    const baseRotations = 4 + Math.random() * 3;
+    const finalPosition = Math.random() * 360;
+    const totalRotation = rotation + (baseRotations * 360) + finalPosition;
+
+    const segmentAngle = 360 / 12;
+    const normalizedAngle = (360 - (totalRotation % 360)) % 360;
+    const segmentIndex = Math.floor(normalizedAngle / segmentAngle);
+    const selectedSegment = WHEEL_SEGMENTS[segmentIndex];
+
+    emitAction({ type: 'spin', totalRotation, selectedSegment });
+    doSpin(totalRotation, selectedSegment);
   };
 
   const size = 280;
@@ -92,7 +113,6 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
       <h2 className="wheelTitle">WHEEL OF FORTUNE</h2>
 
       <div className="wheelContainer" style={{ width: size + 40, height: size + 60, position: 'relative', margin: '0 auto' }}>
-        {/* Pointer at top */}
         <div style={{
           position: 'absolute',
           top: -8,
@@ -106,7 +126,6 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
           ▼
         </div>
 
-        {/* SVG Wheel */}
         <svg
           width={size + 20}
           height={size + 20}
@@ -116,7 +135,6 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
             transition: spinning ? 'transform 3.5s cubic-bezier(0.15, 0.6, 0.35, 1)' : 'none',
           }}
         >
-          {/* Outer ring */}
           <circle cx={cx} cy={cy} r={radius + 3} fill="none" stroke="#8b7320" strokeWidth="6" />
 
           {WHEEL_SEGMENTS.map((seg, i) => {
@@ -156,16 +174,15 @@ export default function WheelOfFortune({ onResult, baseAmount, context }: WheelO
             );
           })}
 
-          {/* Center circle */}
           <circle cx={cx} cy={cy} r={20} fill="#1a0f0f" stroke="#d4af37" strokeWidth="3" />
           <circle cx={cx} cy={cy} r={8} fill="#d4af37" />
         </svg>
 
-        {/* Spin button overlay */}
         {canSpin && !spinning && !result && (
           <button
             className="wheelSpinBtn pixelBtn"
             onClick={spinWheel}
+            disabled={spectator}
             style={{
               position: 'absolute',
               bottom: 10,
