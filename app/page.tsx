@@ -58,7 +58,7 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
     <div className="setupScreen">
       <WalletButton />
       <div className="setupCard casinoMenuCard">
-        <h1 className="setupTitle marqueeTitle">Monopoly</h1>
+        <h1 className="setupTitle marqueeTitle">Ante</h1>
         <p className="setupSubtitle casinoSubtitle">Choose how to play</p>
         <div className="menuButtons">
           <button className="setupStartBtn neonBtn" onClick={() => onNavigate('quick-play')}>

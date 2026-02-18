@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Sign message
     const message = new TextEncoder().encode(
-      `Sign this message to connect to Monopoly Casino.\n\nNonce: ${nonce}`
+      `Sign this message to connect to Ante Casino.\n\nNonce: ${nonce}`
     );
     const signature = await wallet.signMessage(message);
 

@@ -44,11 +44,11 @@ function tax(index: number, name: string, amount: number): TaxTile {
 }
 
 function chance(index: number): ChanceTile {
-  return { index, name: 'Chance', type: 'chance' };
+  return { index, name: 'Risk', type: 'chance' };
 }
 
 function chest(index: number): CommunityChestTile {
-  return { index, name: 'Community Chest', type: 'community-chest' };
+  return { index, name: 'Blind Chest', type: 'community-chest' };
 }
 
 function corner(

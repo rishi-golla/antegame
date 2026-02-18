@@ -1,5 +1,5 @@
 /**
- * AudioEngine — Singleton Web Audio API manager for the Monopoly game.
+ * AudioEngine — Singleton Web Audio API manager for Ante.
  * Handles SFX playback, looping BGM with crossfade, volume/mute controls,
  * and mobile autoplay unlock.
  */
