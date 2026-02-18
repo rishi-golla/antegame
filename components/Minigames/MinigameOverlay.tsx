@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
+import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import type { MinigameTier } from '@/types/game';
 import MinigameResult from './MinigameResult';
 import SlotMachine from './SlotMachine';
@@ -38,13 +39,14 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const [showResult, setShowResult] = useState(false);
   const [resultTier, setResultTier] = useState<MinigameTier | null>(null);
   const [curtainOpen, setCurtainOpen] = useState(false);
+  const [resultLocked, setResultLocked] = useState(false);
+  const { isMyTurn } = useMultiplayerTurn();
 
   const minigame = state.activeMinigame;
 
   useEffect(() => {
     if (minigame?.status === 'intro') {
       playMusic('music/bgm-minigame');
-      // Start curtain opening
       setTimeout(() => setCurtainOpen(true), 100);
       const timer = setTimeout(() => {
         setShowIntro(false);
@@ -56,9 +58,11 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   if (!minigame) return null;
 
   const handleResult = (tier: MinigameTier) => {
+    // Prevent double-result from timeout + game completion race
+    if (resultLocked) return;
+    setResultLocked(true);
     setResultTier(tier);
     setShowResult(true);
-    // Play tier-specific sound
     if (tier === 'win') play('minigames/tier-win');
     else if (tier === 'close-win') play('minigames/tier-close-win');
     else if (tier === 'close-loss') play('minigames/tier-close-loss');
@@ -122,6 +126,24 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
             <div className="tierRow tier-loss">LOSS: 200% PENALTY</div>
             <div className="tierRow tier-catastrophic">DISASTER: 500% PENALTY</div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Spectator mode: show who's playing but don't render interactive minigame
+  if (!isMyTurn) {
+    const activePlayer = state.players[state.currentPlayerIndex];
+    return (
+      <div className="minigameOverlay pixelOverlay">
+        <div className="minigameIntro" style={{ textAlign: 'center' }}>
+          <h2 className="minigameIntroTitle">{MINIGAME_NAMES[minigame.id] || minigame.id}</h2>
+          <p style={{ fontSize: '1.2rem', marginTop: 16, opacity: 0.8 }}>
+            🎰 <strong>{activePlayer?.name || 'Player'}</strong> is playing...
+          </p>
+          <p style={{ fontSize: '0.85rem', marginTop: 8, opacity: 0.5 }}>
+            Waiting for their result
+          </p>
         </div>
       </div>
     );

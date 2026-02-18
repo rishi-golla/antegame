@@ -788,7 +788,7 @@ nextApp.prepare().then(() => {
     });
 
     // Disconnect
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       const code = rm.findRoomBySocket(socket.id);
       if (!code) return;
 
@@ -802,6 +802,43 @@ nextApp.prepare().then(() => {
           systemMessage(code, `${room.players.find((p) => p.id === socket.id)?.name ?? 'A player'} disconnected.`);
           io.to(code).emit('player:disconnected', { playerIndex: result.playerIndex });
           broadcastRoomState(code);
+
+          // Check if ALL players are now disconnected — auto-cancel and prepare refunds
+          const allDisconnected = room.players.every((p: any) => !p.connected);
+          if (allDisconnected && room.isOnChain) {
+            console.log(`[room ${code}] All players disconnected — auto-cancelling for refunds`);
+            try {
+              const cancellation = await signCancellation(code);
+              if (cancellation) {
+                const gameId = roomCodeToGameId(code);
+                // Store pending refunds so players can claim later
+                const pendingRefunds = room.players
+                  .filter((p: any) => p.deposited && p.walletAddress)
+                  .map((p: any) => ({
+                    walletAddress: p.walletAddress,
+                    roomCode: code,
+                    gameId,
+                    nonce: cancellation.nonce,
+                    signature: cancellation.signature,
+                    timestamp: Date.now(),
+                  }));
+
+                // Write to file for persistence
+                const fs = await import('fs');
+                const refundPath = './pending-refunds.json';
+                let existing: any[] = [];
+                try { existing = JSON.parse(fs.readFileSync(refundPath, 'utf8')); } catch {}
+                existing.push(...pendingRefunds);
+                fs.writeFileSync(refundPath, JSON.stringify(existing, null, 2));
+                console.log(`[room ${code}] Stored ${pendingRefunds.length} pending refunds`);
+
+                room.phase = 'finished';
+                broadcastRoomState(code);
+              }
+            } catch (err) {
+              console.error(`[room ${code}] Failed to auto-cancel:`, err);
+            }
+          }
         }
       } else {
         // In lobby, just leave
@@ -816,6 +853,21 @@ nextApp.prepare().then(() => {
   });
 
   // Next.js handler
+  // API: Check pending refunds for a wallet address
+  app.get('/api/refunds/:address', (req, res) => {
+    try {
+      const fs = require('fs');
+      const refundPath = './pending-refunds.json';
+      let refunds: any[] = [];
+      try { refunds = JSON.parse(fs.readFileSync(refundPath, 'utf8')); } catch {}
+      const addr = req.params.address.toLowerCase();
+      const matching = refunds.filter((r: any) => r.walletAddress?.toLowerCase() === addr);
+      res.json({ refunds: matching });
+    } catch {
+      res.json({ refunds: [] });
+    }
+  });
+
   app.all('{*path}', (req, res) => {
     return handle(req, res);
   });
