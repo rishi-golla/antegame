@@ -6212,11 +6212,19 @@ img[src*="/assets/"] {
 
 /* ===== WALLET BUTTON ===== */
 
-.walletBtnWrap {
+/* ===== TOP BAR (Referral + Wallet) ===== */
+.topBarBtns {
   position: fixed;
   top: 12px;
   right: 12px;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.walletBtnWrap {
+  position: relative;
 }
 
 .walletBtn {
@@ -6282,6 +6290,138 @@ img[src*="/assets/"] {
 
 .walletDropdownBtn:hover {
   background: rgba(255,0,0,0.1);
+}
+
+/* ===== REFERRAL BUTTON + PANEL ===== */
+.referralBtnWrap {
+  position: relative;
+}
+
+.referralBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #b8860b, #daa520);
+  border: 2px solid var(--gold-bright);
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #1a0f0f;
+  font-weight: bold;
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.referralBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(218, 165, 32, 0.5);
+}
+
+.referralPanel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--burgundy);
+  border: 2px solid var(--gold);
+  padding: 16px;
+  min-width: 300px;
+  max-width: 340px;
+  z-index: 1001;
+}
+
+.referralPanelTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: var(--gold-bright);
+  margin-bottom: 8px;
+}
+
+.referralPanelDesc {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.referralPanelDesc strong {
+  color: var(--gold-bright);
+}
+
+.referralLinkRow {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.referralLinkInput {
+  flex: 1;
+  padding: 6px 8px;
+  background: #0d0808;
+  border: 1px solid #333;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.55rem;
+  outline: none;
+  min-width: 0;
+}
+
+.referralLinkInput:focus {
+  border-color: var(--gold);
+}
+
+.referralCopyBtn {
+  padding: 6px 12px;
+  background: var(--gold);
+  border: none;
+  color: #1a0f0f;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  cursor: pointer;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.referralCopyBtn:hover {
+  background: var(--gold-bright);
+}
+
+.referralStats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.referralStatRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #aaa;
+}
+
+.referralStatVal {
+  color: var(--gold-bright);
+}
+
+.referralLoading {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: #666;
+  text-align: center;
+  padding: 8px;
+}
+
+.referralDisclaimer {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.28rem;
+  color: #666;
+  line-height: 1.5;
+  border-top: 1px solid #333;
+  padding-top: 8px;
+  margin: 0;
 }
 
 /* ===== QUICK PLAY / FEE CHIPS ===== */

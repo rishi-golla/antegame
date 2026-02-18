@@ -25,6 +25,7 @@ import ProfileSetup from '@/components/Auth/ProfileSetup';
 import ProfileScreen from '@/components/Auth/ProfileScreen';
 import AudioControls from '@/components/UI/AudioControls';
 import WalletButton from '@/components/Auth/WalletButton';
+import ReferralButton from '@/components/Auth/ReferralButton';
 import RefundModal from '@/components/Lobby/RefundModal';
 import QuickPlay from '@/components/Lobby/QuickPlay';
 import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
@@ -56,7 +57,7 @@ function LobbyMusic({ screen }: { screen: Screen }) {
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
     <div className="setupScreen">
-      <WalletButton />
+      <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
       <div className="setupCard casinoMenuCard">
         <h1 className="setupTitle marqueeTitle">Ante</h1>
         <p className="setupSubtitle casinoSubtitle">Choose how to play</p>
@@ -313,7 +314,7 @@ function AuthGate() {
     case 'quick-play':
       return (
         <SocketProvider>
-          <WalletButton />
+          <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
           <RefundOverlay />
           <QuickPlayFlow onBack={() => navigate('menu')} />
         </SocketProvider>
@@ -322,7 +323,7 @@ function AuthGate() {
     case 'profile':
       return (
         <>
-          <WalletButton />
+          <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
           <ProfileScreen onBack={() => navigate('menu')} />
         </>
       );
@@ -331,7 +332,7 @@ function AuthGate() {
       // Placeholder until batch 9.5
       return (
         <div className="setupScreen">
-          <WalletButton />
+          <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
           <div className="setupCard">
             <h1 className="setupTitle">Leaderboard</h1>
             <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
@@ -346,7 +347,7 @@ function AuthGate() {
     case 'game':
       return (
         <SocketProvider>
-          <WalletButton />
+          <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
           <RefundOverlay />
           <OnlineFlow
             onBack={() => navigate('menu')}
