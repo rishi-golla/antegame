@@ -245,6 +245,21 @@ export class RoomManager {
     return undefined;
   }
 
+  // Find quick-play room by ETH buy-in tier
+  findQuickPlayRoomByEth(buyInEth: string): Room | undefined {
+    for (const [, room] of this.rooms) {
+      if (
+        room.isQuickPlay &&
+        room.phase === 'lobby' &&
+        room.buyInEth === buyInEth &&
+        room.players.length < room.maxPlayers
+      ) {
+        return room;
+      }
+    }
+    return undefined;
+  }
+
   // Create a quick-play room
   createQuickPlayRoom(
     socketId: string,
@@ -258,6 +273,27 @@ export class RoomManager {
       const room = this.rooms.get(result.code)!;
       room.isQuickPlay = true;
       room.entryFeeLamports = entryFeeLamports;
+      const player = room.players[0];
+      player.walletAddress = walletAddress;
+    }
+    return result;
+  }
+
+  // Create a quick-play room for Base chain (ETH tiers)
+  createQuickPlayRoomBase(
+    socketId: string,
+    name: string,
+    color: string,
+    buyInEth: string,
+    walletAddress: string
+  ): { ok: boolean; code?: string; error?: string } {
+    const result = this.createRoom(socketId, name, color, 6);
+    if (result.ok && result.code) {
+      const room = this.rooms.get(result.code)!;
+      room.isQuickPlay = true;
+      room.buyInEth = buyInEth;
+      room.isOnChain = true;
+      room.maxPlayers = 6;
       const player = room.players[0];
       player.walletAddress = walletAddress;
     }

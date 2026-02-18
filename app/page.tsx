@@ -24,38 +24,22 @@ import ConnectScreen from '@/components/Auth/ConnectScreen';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
 import WalletButton from '@/components/Auth/WalletButton';
 import RefundModal from '@/components/Lobby/RefundModal';
+import QuickPlay from '@/components/Lobby/QuickPlay';
+import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
 
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
-const IN_GAME_SCREENS: Screen[] = ['free-play-game', 'game'];
+const MENU_MUSIC_SCREENS: Screen[] = ['menu', 'quick-play', 'profile', 'leaderboard'];
 
 function LobbyMusic({ screen }: { screen: Screen }) {
   const { playMusic, stopMusic } = useAudio();
-  const playing = useRef(false);
 
   useEffect(() => {
-    if (IN_GAME_SCREENS.includes(screen)) {
-      stopMusic();
-      playing.current = false;
-      return;
-    }
-
-    const tryPlay = () => {
-      if (playing.current) return;
+    if (MENU_MUSIC_SCREENS.includes(screen)) {
       playMusic('music/bgm-lobby');
-      playing.current = true;
-    };
-
-    // Try immediately (works if user already interacted)
-    tryPlay();
-
-    // Also retry on next click (in case AudioContext was suspended)
-    const onClick = () => {
-      playing.current = false; // reset so playMusic fires again
-      tryPlay();
-    };
-    document.addEventListener('click', onClick, { once: true });
-    return () => document.removeEventListener('click', onClick);
+    } else {
+      stopMusic();
+    }
   }, [screen, playMusic, stopMusic]);
 
   return null;
@@ -139,6 +123,38 @@ function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; 
   );
 }
 
+function QuickPlayFlow({ onBack }: { onBack: () => void }) {
+  const [qpScreen, setQpScreen] = useState<'select' | 'lobby' | 'game'>('select');
+  const { roomState } = useSocket();
+  const myPlayerIndex = roomState?.players.findIndex(p => p.isYou) ?? null;
+
+  useEffect(() => {
+    if (roomState?.phase === 'playing' && qpScreen === 'lobby') {
+      setQpScreen('game');
+    }
+  }, [roomState?.phase, qpScreen]);
+
+  switch (qpScreen) {
+    case 'select':
+      return <QuickPlay onMatched={() => setQpScreen('lobby')} onBack={onBack} />;
+    case 'lobby':
+      return <QuickPlayLobby onLeave={() => setQpScreen('select')} onGameStart={() => setQpScreen('game')} />;
+    case 'game':
+      return (
+        <MultiplayerGameProvider>
+          <TurnTimer />
+          <main className="gameScreen">
+            <PlayerList myPlayerIndex={myPlayerIndex} />
+            <Board />
+            <SidePanel />
+          </main>
+          <TradeOfferView myPlayerIndex={myPlayerIndex} />
+          <GameOver onPlayAgain={onBack} roomCode={roomState?.code} />
+        </MultiplayerGameProvider>
+      );
+  }
+}
+
 function RefundOverlay() {
   const { pendingRefund, clearPendingRefund } = useSocket();
   if (!pendingRefund) return null;
@@ -189,12 +205,12 @@ function AuthGate() {
   }
 
   if (!user) {
-    return <><LobbyMusic screen="menu" /><ConnectScreen onFreePlay={() => setScreen('free-play-setup')} /></>;
+    return <ConnectScreen onFreePlay={() => setScreen('free-play-setup')} />;
   }
 
   // New user needs profile setup
   if (!user.displayName || !user.characterId) {
-    return <><LobbyMusic screen="menu" /><ProfileSetup /></>;
+    return <ProfileSetup />;
   }
 
   const content = (() => { switch (screen) {
@@ -221,16 +237,11 @@ function AuthGate() {
     }
 
     case 'quick-play':
-      // Placeholder until batch 9.4
       return (
-        <div className="setupScreen">
+        <SocketProvider>
           <WalletButton />
-          <div className="setupCard">
-            <h1 className="setupTitle marqueeTitle">Quick Play</h1>
-            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
-            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
-          </div>
-        </div>
+          <QuickPlayFlow onBack={() => setScreen('menu')} />
+        </SocketProvider>
       );
 
     case 'profile':
