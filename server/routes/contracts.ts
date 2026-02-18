@@ -20,7 +20,7 @@
  */
 
 import { Router } from 'express';
-import { signSettlement, signCancellation, getSignerAddress, roomCodeToGameId } from '../contracts';
+import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
 import type { RoomManager } from '../roomManager';
 
 let _rm: RoomManager | null = null;
@@ -89,6 +89,27 @@ router.post('/cancellation-signature', async (req, res) => {
 
   const gameId = roomCodeToGameId(roomCode);
   res.json({ nonce: result.nonce, signature: result.signature, gameId });
+});
+
+router.post('/cancellation-signature-by-id', async (req, res) => {
+  const { gameId } = req.body ?? {};
+
+  if (!gameId || typeof gameId !== 'string' || !gameId.startsWith('0x') || gameId.length !== 66) {
+    res.status(400).json({ error: 'gameId must be a 0x-prefixed bytes32 hex string (66 chars)' });
+    return;
+  }
+
+  try {
+    const result = await signCancellationByGameId(gameId as `0x${string}`);
+    if (!result) {
+      res.status(503).json({ error: 'Signing not available -- signer key not configured' });
+      return;
+    }
+    res.json({ nonce: result.nonce, signature: result.signature, gameId });
+  } catch (err: any) {
+    console.error('[contracts] cancellation-signature-by-id error:', err);
+    res.status(500).json({ error: err.message || 'Signing failed' });
+  }
 });
 
 router.get('/signer', (_req, res) => {

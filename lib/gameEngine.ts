@@ -22,6 +22,12 @@ import {
   GO_SALARY,
   JAIL_BAIL,
   MAX_JAIL_TURNS,
+  MAX_GLOBAL_HOUSES,
+  MAX_GLOBAL_HOTELS,
+  FINAL_ROUNDS_START,
+  FINAL_ROUNDS_END,
+  getRentMultiplier,
+  getGoSalary,
 } from './gameData';
 
 // --- Helpers ---
@@ -131,6 +137,10 @@ export function createGame(playerNames: string[]): GameState {
     pendingRent: null,
     recentMinigames: [],
     debt: null,
+    roundNumber: 1,
+    globalHouses: MAX_GLOBAL_HOUSES,
+    globalHotels: MAX_GLOBAL_HOTELS,
+    finalRounds: false,
   };
 }
 
@@ -171,8 +181,13 @@ export function movePlayer(state: GameState, steps: number): GameState {
   // Passing GO
   if (steps > 0 && newPosition >= 40) {
     newPosition = newPosition % 40;
-    s = updateCurrentPlayer(s, { money: player.money + GO_SALARY });
-    s = addLog(s, `${player.name} passed GO and collected $${GO_SALARY}.`, state.currentPlayerIndex);
+    const salary = getGoSalary(s.roundNumber, s.finalRounds);
+    if (salary > 0) {
+      s = updateCurrentPlayer(s, { money: player.money + salary });
+      s = addLog(s, `${player.name} passed GO and collected $${salary}.`, state.currentPlayerIndex);
+    } else {
+      s = addLog(s, `${player.name} passed GO (no salary — final rounds!).`, state.currentPlayerIndex);
+    }
   }
 
   s = updateCurrentPlayer(s, { position: newPosition });
@@ -257,6 +272,10 @@ export function calculateRent(state: GameState, ownerIndex: number): number {
     const diceTotal = state.dice[0] + state.dice[1];
     rent = count === 1 ? diceTotal * 4 : diceTotal * 10;
   }
+
+  // Apply round-based rent multiplier
+  const multiplier = getRentMultiplier(state.roundNumber, state.finalRounds);
+  rent = Math.floor(rent * multiplier);
 
   return rent;
 }
@@ -593,11 +612,32 @@ export function endTurn(state: GameState): GameState {
 
   const nextPhase: GamePhase = nextPlayer.inJail ? 'in-jail' : 'rolling';
 
+  // Track rounds: increment when turn wraps past player 0
+  let roundNumber = state.roundNumber;
+  let finalRounds = state.finalRounds;
+
+  if (next <= state.currentPlayerIndex) {
+    roundNumber++;
+
+    // Log multiplier changes at thresholds
+    if (roundNumber === 16) {
+      state = addLog(state, `📈 Round 16: Rents increased to 1.25x! GO salary reduced to $150.`);
+    } else if (roundNumber === 26) {
+      state = addLog(state, `📈 Round 26: Rents increased to 1.5x! GO salary reduced to $100.`);
+    } else if (roundNumber === 36) {
+      state = addLog(state, `📈 Round 36: Rents increased to 2x! GO salary reduced to $50.`);
+    } else if (roundNumber === 46) {
+      state = addLog(state, `📈 Round 46: Rents increased to 3x!`);
+    }
+  }
+
   return {
     ...state,
     currentPlayerIndex: next,
     doublesCount: 0,
     phase: nextPhase,
+    roundNumber,
+    finalRounds,
   };
 }
 
@@ -688,17 +728,26 @@ export function declareBankruptcy(
   const player = state.players[playerIndex];
   let s = addLog(state, `${player.name} has gone bankrupt!`, playerIndex);
 
-  // Step 1: Sell all houses/hotels back to the bank at half price
+  // Step 1: Sell all houses/hotels back to the bank at half price & return to supply
   let houseSaleProceeds = 0;
+  let returnedHouses = s.globalHouses;
+  let returnedHotels = s.globalHotels;
   for (const tileIdx of player.properties) {
     const tile = s.tiles[tileIdx];
     const houseCount = player.houses[tileIdx] || 0;
     if (tile.type === 'property' && houseCount > 0) {
       const refund = houseCount * Math.floor(tile.houseCost / 2);
       houseSaleProceeds += refund;
+      // Return buildings to global supply
+      if (houseCount === 5) {
+        returnedHotels++;
+      } else {
+        returnedHouses += houseCount;
+      }
       s = addLog(s, `${player.name}'s ${houseCount === 5 ? 'hotel' : `${houseCount} house(s)`} on ${tile.name} sold to bank for $${refund}.`, playerIndex);
     }
   }
+  s = { ...s, globalHouses: returnedHouses, globalHotels: returnedHotels };
 
   if (creditorIndex !== undefined && creditorIndex >= 0) {
     // --- BANKRUPT TO ANOTHER PLAYER ---

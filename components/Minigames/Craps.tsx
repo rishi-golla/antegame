@@ -7,6 +7,7 @@ import { useAudio } from '@/context/AudioContext';
 
 interface CrapsProps {
   onResult: (tier: MinigameTier) => void;
+  spectator?: boolean;
   baseAmount: number;
   context: MinigameContext;
 }

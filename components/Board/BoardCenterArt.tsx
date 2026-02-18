@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
+import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
 import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
 
 interface BoardCenterArtProps {
@@ -63,7 +64,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       case 'applying-card':
         return 'Applying...';
       case 'turn-end':
-        return state.doublesCount > 0 ? 'Doubles! Roll Again' : 'End Turn';
+        return state.doublesCount > 0 ? 'Doubles! Roll Again' : 'Next Player...';
       case 'game-over':
         return 'Game Over';
       default:
@@ -133,6 +134,26 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         {state.dice[0] + state.dice[1] > 0 && !isRolling && (
           <span className="turnDice">
             [{state.dice[0]}][{state.dice[1]}]
+          </span>
+        )}
+      </div>
+
+      {/* Round & Economy indicator */}
+      <div className="roundIndicator">
+        <span>Round {state.roundNumber}</span>
+        {getRentMultiplier(state.roundNumber, state.finalRounds) > 1 && (
+          <span className="rentMultiplier">
+            {state.finalRounds ? '⚠️ FINAL' : `${getRentMultiplier(state.roundNumber, state.finalRounds)}x rent`}
+          </span>
+        )}
+        {state.finalRounds && (
+          <span className="finalRoundsTimer">
+            {Math.max(0, FINAL_ROUNDS_END - state.roundNumber)} left
+          </span>
+        )}
+        {(state.globalHouses < 10 || state.globalHotels < 4) && (
+          <span className="housingSupply">
+            🏠{state.globalHouses} 🏨{state.globalHotels}
           </span>
         )}
       </div>

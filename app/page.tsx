@@ -22,6 +22,8 @@ import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
 import TurnTimer from '@/components/UI/TurnTimer';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
+import ProfileScreen from '@/components/Auth/ProfileScreen';
+import AudioControls from '@/components/UI/AudioControls';
 import WalletButton from '@/components/Auth/WalletButton';
 import RefundModal from '@/components/Lobby/RefundModal';
 import QuickPlay from '@/components/Lobby/QuickPlay';
@@ -252,17 +254,11 @@ function AuthGate() {
       );
 
     case 'profile':
-      // Placeholder until batch 9.5
       return (
-        <div className="setupScreen">
+        <>
           <WalletButton />
-          <div className="setupCard">
-            <h1 className="setupTitle marqueeTitle">Profile</h1>
-            <p className="setupSubtitle casinoSubtitle">{user.displayName}</p>
-            <p className="connectChain">{user.walletAddress.slice(0, 8)}...</p>
-            <button className="lobbyBackBtn" onClick={() => setScreen('menu')}>Back</button>
-          </div>
-        </div>
+          <ProfileScreen onBack={() => setScreen('menu')} />
+        </>
       );
 
     case 'leaderboard':
@@ -297,7 +293,13 @@ function AuthGate() {
       return <MainMenu onNavigate={setScreen} />;
   } })();
 
-  return <><LobbyMusic screen={screen} />{content}</>;
+  return (
+    <>
+      <AudioControls onHome={screen !== 'menu' ? () => setScreen('menu') : undefined} />
+      <LobbyMusic screen={screen} />
+      {content}
+    </>
+  );
 }
 
 function Home() {
