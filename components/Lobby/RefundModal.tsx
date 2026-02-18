@@ -27,37 +27,43 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
     setError('');
 
     try {
-      // Step 1: Cancel the game on-chain
+      // Step 1: Try to cancel the game on-chain (may already be cancelled)
       setStatus('Cancelling game on-chain...');
-      const cancelHash = await cancelGame(walletClient, refund.roomCode, refund.nonce, refund.signature);
-      await waitForTransactionReceipt(wagmiConfig, { hash: cancelHash as `0x${string}` });
+      try {
+        const cancelHash = await cancelGame(walletClient, refund.roomCode, refund.nonce, refund.signature);
+        await waitForTransactionReceipt(wagmiConfig, { hash: cancelHash as `0x${string}` });
+      } catch (cancelErr: any) {
+        // If user rejected wallet prompt, stop entirely
+        const msg = cancelErr?.shortMessage || cancelErr?.message || '';
+        if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('user rejected')) {
+          setError('Transaction rejected');
+          setLoading(false);
+          return;
+        }
+        // Otherwise assume already cancelled, continue to claim
+        console.log('Cancel may have already been done, proceeding to claim refund...');
+      }
 
       // Step 2: Claim refund
       setStatus('Claiming refund...');
       const refundHash = await claimRefund(walletClient, refund.roomCode);
-      await waitForTransactionReceipt(wagmiConfig, { hash: refundHash as `0x${string}` });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: refundHash as `0x${string}` });
+
+      if (receipt.status === 'reverted') {
+        setError('Refund transaction reverted. May have already been claimed.');
+        setLoading(false);
+        return;
+      }
 
       setStatus('Refund complete!');
       setDone(true);
       setTimeout(onDone, 2000);
     } catch (err: any) {
-      // If cancel reverts (already cancelled), try just claiming refund
-      if (err.message?.includes('revert') || err.message?.includes('already')) {
-        try {
-          setStatus('Game already cancelled. Claiming refund...');
-          const refundHash = await claimRefund(walletClient!, refund.roomCode);
-          await waitForTransactionReceipt(wagmiConfig, { hash: refundHash as `0x${string}` });
-          setStatus('Refund complete!');
-          setDone(true);
-          setTimeout(onDone, 2000);
-          return;
-        } catch (innerErr: any) {
-          setError(innerErr.shortMessage ?? innerErr.message ?? 'Refund failed');
-        }
-      } else if (err.message?.includes('User rejected') || err.message?.includes('denied')) {
-        setError('Transaction cancelled');
+      const msg = err?.shortMessage || err?.message || '';
+      if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('user rejected')) {
+        setError('Transaction rejected');
       } else {
-        setError(err.shortMessage ?? err.message ?? 'Refund failed');
+        setError(msg || 'Refund failed');
       }
     } finally {
       setLoading(false);
