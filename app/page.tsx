@@ -333,7 +333,7 @@ function AuthGate() {
         <div className="setupScreen">
           <WalletButton />
           <div className="setupCard">
-            <h1 className="setupTitle marqueeTitle">Leaderboard</h1>
+            <h1 className="setupTitle">Leaderboard</h1>
             <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
             <button className="lobbyBackBtn" onClick={() => navigate('menu')}>Back</button>
           </div>
