@@ -32,3 +32,4 @@ data/
 *.tsbuildinfo
 next-env.d.ts
 keys.json
+tmp-*/

@@ -15,16 +15,16 @@ const container = {
 };
 
 const minigames = [
-  { name: 'Blackjack', desc: 'Classic 21. Hit or stand against the dealer.', icon: '/assets/minigames/cards/card-table.png' },
-  { name: 'Slots', desc: 'Pull the lever and pray for triple sevens.', icon: '/assets/minigames/slots/slot-machine.png' },
-  { name: 'Wheel of Fortune', desc: 'Spin the wheel. Multipliers from 0.25x to 5x.', icon: '/assets/minigames/wheel/wheel.png' },
-  { name: 'Craps', desc: 'Roll the dice. Hit your number or bust.', icon: '/assets/minigames/dice/dice-cup.png' },
-  { name: 'Coin Flip', desc: 'Heads or tails. Best of three.', icon: '/assets/minigames/coin/coin-heads.png' },
-  { name: 'Horse Race', desc: 'Pick your horse and watch them run.', icon: '/assets/minigames/horses/horse-1.png' },
-  { name: 'Dart Throw', desc: 'Aim for the bullseye. Closer = bigger payout.', icon: '/assets/minigames/darts/dartboard.png' },
-  { name: 'Minesweeper', desc: 'Reveal gems, dodge mines. Cash out anytime.', icon: '/assets/minigames/minesweeper/gem.png' },
-  { name: 'Safe Cracker', desc: 'Crack the combination before time runs out.', icon: '/assets/minigames/safe/safe-closed.png' },
-  { name: 'Higher or Lower', desc: 'Guess if the next card is higher or lower.', icon: '/assets/minigames/cards/deck.png' },
+  { name: 'Blackjack', desc: 'Classic 21. Hit or stand against the dealer. Get closer to 21 without busting.', image: '/assets/landing/minigames/blackjack.webp' },
+  { name: 'Slots', desc: 'Pull the lever and pray for triple sevens. Instant payout or instant regret.', image: '/assets/landing/minigames/slots.webp' },
+  { name: 'Wheel of Fortune', desc: 'Spin the wheel. Multipliers from 0.25x to 5x. One spin decides your fate.', image: '/assets/landing/minigames/wheel.webp' },
+  { name: 'Craps', desc: 'Roll the dice. Hit your number or bust. Classic casino energy.', image: '/assets/landing/minigames/craps.webp' },
+  { name: 'Coin Flip', desc: 'Heads or tails. Best of three. Simple, brutal, effective.', image: '/assets/landing/minigames/coinflip.webp' },
+  { name: 'Horse Race', desc: 'Pick your horse and watch them run. The fastest one pays out.', image: '/assets/landing/minigames/horse.webp' },
+  { name: 'Dart Throw', desc: 'Aim for the bullseye. Closer you land, bigger the payout.', image: '/assets/landing/minigames/darts.webp' },
+  { name: 'Minesweeper', desc: 'Reveal gems, dodge mines. Cash out anytime or push your luck.', image: '/assets/landing/minigames/minesweeper.webp' },
+  { name: 'Safe Cracker', desc: 'Crack the combination before time runs out. Pressure makes diamonds.', image: '/assets/landing/minigames/safecracker.webp' },
+  { name: 'Higher or Lower', desc: 'Guess if the next card is higher or lower. Streak it for big multipliers.', image: '/assets/landing/minigames/highlow.webp' },
 ];
 
 export default function MinigamesPage() {
@@ -54,12 +54,17 @@ export default function MinigamesPage() {
         initial="hidden"
         animate="show"
       >
-        <div className="minigameGrid">
+        <div className="mgGrid">
           {minigames.map((mg, i) => (
-            <motion.div key={i} className="minigameCard" variants={fadeUp} whileHover={{ y: -6, scale: 1.02 }}>
-              <img src={mg.icon} alt={mg.name} className="minigameCardIcon" />
-              <h3 className="minigameCardName">{mg.name}</h3>
-              <p className="minigameCardDesc">{mg.desc}</p>
+            <motion.div key={i} className="mgCard" variants={fadeUp} whileHover={{ y: -6 }}>
+              <div className="mgCardImageWrap">
+                <img src={mg.image} alt={mg.name} className="mgCardImage" loading="lazy" />
+                <div className="mgCardImageOverlay" />
+              </div>
+              <div className="mgCardBody">
+                <h3 className="mgCardName">{mg.name}</h3>
+                <p className="mgCardDesc">{mg.desc}</p>
+              </div>
             </motion.div>
           ))}
         </div>

@@ -8832,6 +8832,73 @@ img[src*="/assets/"] {
   line-height: 1.5;
 }
 
+/* ----- New Minigames Grid ----- */
+
+.mgGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.mgCard {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.3s;
+  cursor: default;
+}
+
+.mgCard:hover {
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+.mgCardImageWrap {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16/10;
+}
+
+.mgCardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.mgCard:hover .mgCardImage {
+  transform: scale(1.05);
+}
+
+.mgCardImageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(6, 3, 10, 0.85) 100%);
+  pointer-events: none;
+}
+
+.mgCardBody {
+  padding: 18px 22px 22px;
+}
+
+.mgCardName {
+  font-family: 'Cinzel', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+
+.mgCardDesc {
+  font-size: 0.88rem;
+  color: rgba(168, 144, 112, 0.7);
+  line-height: 1.55;
+}
+
 /* Subpage responsive */
 
 @media (max-width: 768px) {
@@ -8853,6 +8920,11 @@ img[src*="/assets/"] {
   .minigameCardIcon {
     width: 60px;
     height: 60px;
+  }
+
+  .mgGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
