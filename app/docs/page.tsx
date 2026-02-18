@@ -205,7 +205,7 @@ export default function DocsPage() {
 
       <section className="subpageHero subpageHeroShort">
         <div className="subpageHeroBg">
-          <img src="/assets/landing/hero-bg.webp" alt="" className="heroBgImg" />
+          <img src="/assets/landing/header-docs.webp" alt="" className="heroBgImg" />
         </div>
         <div className="heroOverlay" />
         <motion.div

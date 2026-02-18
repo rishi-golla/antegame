@@ -21,7 +21,7 @@ export default function AboutPage() {
 
       <section className="subpageHero">
         <div className="subpageHeroBg">
-          <img src="/assets/landing/hero-bg.webp" alt="" className="heroBgImg" />
+          <img src="/assets/landing/header-about.webp" alt="" className="heroBgImg" />
         </div>
         <div className="heroOverlay" />
         <motion.div

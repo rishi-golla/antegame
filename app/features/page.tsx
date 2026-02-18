@@ -39,7 +39,7 @@ export default function FeaturesPage() {
 
       <section className="subpageHero">
         <div className="subpageHeroBg">
-          <img src="/assets/landing/hero-bg.webp" alt="" className="heroBgImg" />
+          <img src="/assets/landing/header-features.webp" alt="" className="heroBgImg" />
         </div>
         <div className="heroOverlay" />
         <motion.div
