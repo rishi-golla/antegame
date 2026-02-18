@@ -214,7 +214,8 @@ export default function DocsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h1 className="subpageTitle">Docs</h1>
+          <h1 className="subpageTitle">Documentation</h1>
+          <p className="subpageSubtitle">Rules, mechanics, and technical details.</p>
         </motion.div>
       </section>
 

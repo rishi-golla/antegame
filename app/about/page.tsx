@@ -31,6 +31,7 @@ export default function AboutPage() {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <h1 className="subpageTitle">About</h1>
+          <p className="subpageSubtitle">The game. The rules. The stakes.</p>
         </motion.div>
       </section>
 
@@ -62,7 +63,7 @@ export default function AboutPage() {
           <h2>Fair & Transparent</h2>
           <p>
             Every game is settled on-chain. The smart contract handles escrow, payouts, and refunds.
-            No house edge, no hidden fees. If all players disconnect, funds are automatically refundable.
+            A flat 5% fee keeps the lights on — no hidden charges, no surprises. If all players disconnect, funds are automatically refundable.
           </p>
         </motion.div>
 
