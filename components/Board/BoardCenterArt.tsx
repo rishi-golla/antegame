@@ -30,7 +30,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     };
   }, [state.phase, isAnimating, dispatch]);
 
-  // Auto-advance turn-end after 1 second (no manual "Next Player" click needed)
+  // Auto-advance turn-end (server handles this for multiplayer;
+  // for free-play/local, auto-click after 1s)
   const turnEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (state.phase === 'turn-end') {

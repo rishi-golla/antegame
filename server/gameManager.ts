@@ -22,6 +22,14 @@ type GameAction =
   | 'resolve-card'
   | 'resolve-debt';
 
+/** Auto-advance past turn-end when no doubles */
+export function autoAdvanceTurnEnd(state: GameState): GameState {
+  if (state.phase === 'turn-end' && state.doublesCount === 0) {
+    return endTurn(state);
+  }
+  return state;
+}
+
 export function isCurrentPlayer(room: Room, socketId: string): boolean {
   if (!room.gameState) return false;
   const player = room.players.find((p) => p.id === socketId);
