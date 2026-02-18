@@ -23,14 +23,14 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   const { createRoom } = useSocket();
   const { user, activeChain } = useMultiChain();
   const { data: walletClient } = useWalletClient();
-  const { isConnected: evmConnected } = useAccount();
+  const { isConnected: evmConnected, address: connectedAddress } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
   const currentChainId = useChainId();
   const targetChainId = getChainId();
   const wrongChain = currentChainId !== targetChainId;
   const { data: balance } = useBalance({
-    address: user?.walletAddress as `0x${string}` | undefined,
+    address: connectedAddress,
     chainId: getChainId(),
   });
 
