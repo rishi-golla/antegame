@@ -246,6 +246,7 @@ function AuthGate() {
       return (
         <SocketProvider>
           <WalletButton />
+          <RefundOverlay />
           <QuickPlayFlow onBack={() => setScreen('menu')} />
         </SocketProvider>
       );
