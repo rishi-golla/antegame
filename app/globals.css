@@ -7954,14 +7954,13 @@ img[src*="/assets/"] {
   font-family: 'Cinzel', serif;
   font-size: 6rem;
   font-weight: 900;
-  color: transparent;
-  background: linear-gradient(180deg, #f5e6b8 0%, #d4af37 40%, #a08020 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  text-shadow: none;
+  color: #d4af37;
+  text-shadow:
+    0 0 60px rgba(212, 175, 55, 0.4),
+    0 0 120px rgba(212, 175, 55, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.25em;
   margin-bottom: 16px;
-  filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.4));
 }
 
 .heroTagline {
@@ -8360,11 +8359,11 @@ img[src*="/assets/"] {
   font-family: 'Cinzel', serif;
   font-size: 3.5rem;
   font-weight: 900;
-  color: transparent;
-  background: linear-gradient(180deg, #f5e6b8 0%, #d4af37 40%, #a08020 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.3));
+  color: #d4af37;
+  text-shadow:
+    0 0 60px rgba(212, 175, 55, 0.4),
+    0 0 120px rgba(212, 175, 55, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.8);
   margin-bottom: 12px;
   letter-spacing: 0.15em;
 }
