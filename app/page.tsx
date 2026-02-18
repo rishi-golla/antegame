@@ -21,6 +21,7 @@ import RoomLobby from '@/components/Lobby/RoomLobby';
 import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
 import TurnTimer from '@/components/UI/TurnTimer';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
+import LandingPage from '@/components/Landing/LandingPage';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
 import ProfileScreen from '@/components/Auth/ProfileScreen';
 import AudioControls from '@/components/UI/AudioControls';
@@ -56,28 +57,32 @@ function LobbyMusic({ screen }: { screen: Screen }) {
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
-    <div className="setupScreen">
+    <div className="menuScreen">
       <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
-      <div className="setupCard casinoMenuCard">
-        <h1 className="setupTitle marqueeTitle">Ante</h1>
-        <p className="setupSubtitle casinoSubtitle">Choose how to play</p>
-        <div className="menuButtons">
-          <button className="setupStartBtn neonBtn" onClick={() => onNavigate('quick-play')}>
+      <div className="menuCard">
+        <img src="/assets/misc/ante-logo.webp" alt="Ante" className="menuLogo" />
+        <h1 className="menuTitle">Ante</h1>
+        <p className="menuSubtitle">Choose how to play</p>
+        <div className="menuActions">
+          <button className="menuPrimaryBtn" onClick={() => onNavigate('quick-play')}>
             Quick Play
           </button>
-          <button className="setupStartBtn neonBtn menuBtnAlt" onClick={() => onNavigate('create')}>
+          <button className="menuPrimaryBtn menuSecondaryBtn" onClick={() => onNavigate('create')}>
             Create Room
           </button>
-          <button className="setupStartBtn neonBtn menuBtnAlt" onClick={() => onNavigate('join')}>
+          <button className="menuPrimaryBtn menuSecondaryBtn" onClick={() => onNavigate('join')}>
             Join Room
           </button>
-          <button className="lobbyBackBtn" onClick={() => onNavigate('free-play-setup')}>
+        </div>
+        <div className="menuDivider" />
+        <div className="menuSecondaryActions">
+          <button className="menuGhostBtn" onClick={() => onNavigate('free-play-setup')}>
             Free Play
           </button>
-          <button className="lobbyBackBtn" onClick={() => onNavigate('profile')}>
+          <button className="menuGhostBtn" onClick={() => onNavigate('profile')}>
             Profile
           </button>
-          <button className="lobbyBackBtn" onClick={() => onNavigate('leaderboard')}>
+          <button className="menuGhostBtn" onClick={() => onNavigate('leaderboard')}>
             Leaderboard
           </button>
         </div>
@@ -280,7 +285,7 @@ function AuthGate() {
   }
 
   if (!user) {
-    return <><StopMusic /><ConnectScreen onFreePlay={() => navigate('free-play-setup')} /></>;
+    return <><StopMusic /><LandingPage onFreePlay={() => navigate('free-play-setup')} /></>;
   }
 
   // New user needs profile setup

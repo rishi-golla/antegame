@@ -129,9 +129,24 @@ export default function AssetsModal({ playerIndex, onClose }: AssetsModalProps) 
           </div>
         </div>
 
-        {groups.length === 0 ? (
+        {player.getOutOfJailCards > 0 && (
+          <div className="assetsJailCards">
+            <div className="assetsGroupLabel">
+              <span className="assetsGroupDot" style={{ background: '#ffd700' }} />
+              Special Cards
+            </div>
+            <div className="assetsJailCardItem">
+              <span className="assetsJailCardIcon">🎫</span>
+              <span className="assetsJailCardText">
+                Get Out of Jail Free × {player.getOutOfJailCards}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {groups.length === 0 && player.getOutOfJailCards === 0 ? (
           <p className="assetsEmpty">No properties yet</p>
-        ) : (
+        ) : groups.length === 0 ? null : (
           <div className="assetsGroups">
             {groups.map(({ group, indices }) => (
               <div key={group} className="assetsGroup">

@@ -5685,6 +5685,158 @@ button:active:not(:disabled) {
   animation: titleFloat 3s ease-in-out infinite, neonFlicker 4s ease-in-out infinite !important;
 }
 
+/* ===== MAIN MENU REVAMP ===== */
+.menuScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #0d0608;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(139, 69, 19, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(139, 69, 19, 0.1) 0%, transparent 50%);
+  animation: feltSlideIn 0.4s var(--ease-out) both;
+}
+
+.menuCard {
+  text-align: center;
+  padding: 48px 44px 40px;
+  background:
+    linear-gradient(180deg, rgba(30, 15, 15, 0.95) 0%, rgba(20, 10, 10, 0.98) 100%);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgba(139, 115, 32, 0.3),
+    0 0 60px rgba(212, 175, 55, 0.08),
+    0 24px 80px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(212, 175, 55, 0.15);
+  max-width: 460px;
+  width: 92%;
+  animation: cardFadeIn 0.5s ease both;
+}
+
+.menuLogo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 12px;
+  display: block;
+  filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.3));
+}
+
+.menuTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--gold-bright);
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(212, 175, 55, 0.2);
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+}
+
+.menuSubtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: #a89070;
+  margin-bottom: 32px;
+  letter-spacing: 0.06em;
+}
+
+.menuActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.menuPrimaryBtn {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 16px 28px;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: #1a0f0f;
+  box-shadow:
+    0 4px 16px rgba(212, 175, 55, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.menuPrimaryBtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.menuPrimaryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 24px rgba(212, 175, 55, 0.4),
+    0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.menuPrimaryBtn:active {
+  transform: translateY(1px);
+}
+
+.menuSecondaryBtn {
+  background: linear-gradient(180deg, #3a1828, #2a1018);
+  color: var(--gold-bright);
+  border-color: var(--gold);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(212, 175, 55, 0.1);
+}
+
+.menuSecondaryBtn:hover {
+  background: linear-gradient(180deg, #4a2030, #3a1828);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.5),
+    0 0 16px rgba(212, 175, 55, 0.15);
+}
+
+.menuDivider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+  margin: 20px 0;
+}
+
+.menuSecondaryActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.menuGhostBtn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.menuGhostBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #aaa;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 .casinoMenuCard {
   border: 2px solid var(--gold) !important;
   box-shadow:
@@ -6096,118 +6248,174 @@ img[src*="/assets/"] {
 
 /* ===== CONNECT SCREEN ===== */
 
+/* ===== CONNECT / LANDING SCREEN ===== */
 .connectScreen {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--felt-green);
+  background: #0d0608;
   background-image:
-    radial-gradient(ellipse at 50% 30%, rgba(255,215,0,0.05) 0%, transparent 70%);
+    radial-gradient(ellipse at 50% 0%, rgba(139, 69, 19, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(139, 69, 19, 0.1) 0%, transparent 50%);
 }
 
 .connectCard {
   text-align: center;
-  padding: 48px 40px;
-  background: var(--burgundy);
-  border: 3px solid var(--gold);
-  border-radius: 0;
-  box-shadow: 0 0 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.3);
-  max-width: 420px;
-  width: 90%;
-  image-rendering: pixelated;
+  padding: 56px 48px 48px;
+  background:
+    linear-gradient(180deg, rgba(30, 15, 15, 0.95) 0%, rgba(20, 10, 10, 0.98) 100%);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgba(139, 115, 32, 0.3),
+    0 0 60px rgba(212, 175, 55, 0.08),
+    0 24px 80px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(212, 175, 55, 0.15);
+  max-width: 460px;
+  width: 92%;
+  animation: cardFadeIn 0.5s ease both;
 }
 
-.connectDice {
-  font-size: 3rem;
-  margin-bottom: 12px;
-  animation: diceBounce 1.5s steps(6) infinite;
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes diceBounce {
+.connectLogo {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.3));
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+  50% { transform: translateY(-6px); }
 }
 
 .connectTitle {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 1.2rem;
+  font-family: 'Cinzel', serif;
+  font-size: 2.8rem;
+  font-weight: 800;
   color: var(--gold-bright);
-  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(212, 175, 55, 0.2);
   margin-bottom: 8px;
+  letter-spacing: 0.12em;
 }
 
 .connectTagline {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.55rem;
-  color: #ccc;
-  margin-bottom: 32px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  color: #a89070;
+  margin-bottom: 36px;
   line-height: 1.6;
-}
-
-.connectBtn {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.75rem;
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  color: var(--ink);
-  border: 2px solid var(--gold);
-  padding: 14px 28px;
-  cursor: pointer;
-  transition: transform 0.1s steps(2);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.connectBtn:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 0 16px rgba(255,215,0,0.4);
-}
-
-.connectBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  letter-spacing: 0.04em;
 }
 
 .connectChainPicker {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
   margin-top: 8px;
+}
+
+.connectBtn {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 16px 28px;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
+}
+
+.connectBtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.connectBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.connectBtn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.connectBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .connectBtnBase {
   background: linear-gradient(180deg, #3b82f6, #1d4ed8);
   color: #fff;
-  border-color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow:
+    0 4px 16px rgba(29, 78, 216, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .connectBtnBase:hover:not(:disabled) {
-  box-shadow: 0 0 16px rgba(59,130,246,0.5);
+  box-shadow:
+    0 6px 24px rgba(29, 78, 216, 0.5),
+    0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 .connectBtnSolana {
-  background: linear-gradient(180deg, #9945FF, #7B2FD4);
-  color: #fff;
-  border-color: #9945FF;
+  background: linear-gradient(180deg, #7B2FD4, #5a1fa0);
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(123, 47, 212, 0.4);
+  box-shadow: 0 4px 16px rgba(90, 31, 160, 0.3);
 }
 
-.connectBtnSolana:hover:not(:disabled) {
-  box-shadow: 0 0 16px rgba(153,69,255,0.5);
+.connectBtnFreePlay {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 14px 28px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.connectBtnFreePlay:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #bbb;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .connectError {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.5rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
   color: var(--neon-red);
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .connectChain {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.45rem;
-  color: #888;
-  margin-top: 24px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  color: #555;
+  margin-top: 28px;
+  letter-spacing: 0.05em;
 }
 
 /* ===== WALLET BUTTON ===== */
@@ -7113,6 +7321,32 @@ img[src*="/assets/"] {
   font-style: italic;
   padding: 24px 0;
 }
+
+.assetsJailCards {
+  margin-bottom: 16px;
+}
+
+.assetsJailCardItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.assetsJailCardIcon {
+  font-size: 1.4rem;
+}
+
+.assetsJailCardText {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold-bright);
+}
 .assetsGroups {
   display: flex;
   flex-direction: column;
@@ -7518,4 +7752,726 @@ img[src*="/assets/"] {
   border: 1px solid rgba(212, 175, 55, 0.1);
   border-radius: 8px;
   padding: 8px;
+}
+
+/* ============================= */
+/* ===== LANDING PAGE ========== */
+/* ============================= */
+
+.landingPage {
+  background: #0a0507;
+  color: #e8ddd0;
+  font-family: 'Nunito', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ----- Landing Nav ----- */
+
+.landingNav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 16px 32px;
+  transition: background 0.3s, backdrop-filter 0.3s, padding 0.3s;
+}
+
+.landingNavScrolled {
+  background: rgba(10, 5, 7, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 10px 32px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+.landingNavInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.landingNavLogo {
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.3));
+  transition: transform 0.2s;
+}
+
+.landingNavLogo:hover {
+  transform: scale(1.1);
+}
+
+.landingNavLinks {
+  display: flex;
+  gap: 32px;
+}
+
+.landingNavLink {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #a89070;
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+  padding: 4px 0;
+}
+
+.landingNavLink:hover {
+  color: var(--gold-bright, #d4af37);
+}
+
+.landingNavCTA {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 10px 24px;
+  background: linear-gradient(180deg, #d4af37, #a08020);
+  color: #1a0a08;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+}
+
+.landingNavCTA:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.5);
+}
+
+.landingNavCTA:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.landingNavHamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.landingNavHamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #a89070;
+  border-radius: 2px;
+  transition: transform 0.2s;
+}
+
+/* ----- Hero Section ----- */
+
+.heroSection {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(82, 20, 44, 0.6) 0%, transparent 70%),
+    radial-gradient(ellipse at 20% 80%, rgba(139, 69, 19, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 69, 19, 0.15) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0507 0%, #1a0a14 40%, #0d0608 100%);
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.heroFloaters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.heroFloat {
+  position: absolute;
+  image-rendering: pixelated;
+  opacity: 0.2;
+  animation: heroFloatAnim 6s ease-in-out infinite;
+}
+
+.heroFloatDice1 {
+  width: 64px;
+  top: 15%;
+  left: 8%;
+  animation-delay: 0s;
+}
+
+.heroFloatDice2 {
+  width: 52px;
+  top: 25%;
+  right: 10%;
+  animation-delay: -2s;
+}
+
+.heroFloatCards {
+  width: 72px;
+  bottom: 30%;
+  left: 12%;
+  animation-delay: -4s;
+}
+
+.heroFloatCoin {
+  width: 56px;
+  bottom: 25%;
+  right: 15%;
+  animation-delay: -1s;
+}
+
+@keyframes heroFloatAnim {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-12px) rotate(3deg); }
+  75% { transform: translateY(8px) rotate(-2deg); }
+}
+
+.heroContent {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+  padding: 0 24px;
+  margin-top: -60px;
+}
+
+.heroLogo {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 8px 40px rgba(212, 175, 55, 0.4));
+  animation: heroLogoPulse 4s ease-in-out infinite;
+}
+
+@keyframes heroLogoPulse {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 8px 40px rgba(212, 175, 55, 0.4)); }
+  50% { transform: translateY(-10px); filter: drop-shadow(0 16px 60px rgba(212, 175, 55, 0.6)); }
+}
+
+.heroTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--gold-bright, #d4af37);
+  text-shadow:
+    0 0 40px rgba(212, 175, 55, 0.5),
+    0 0 80px rgba(212, 175, 55, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.2em;
+  margin-bottom: 12px;
+}
+
+.heroTagline {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: #a89070;
+  letter-spacing: 0.08em;
+  margin-bottom: 32px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.heroSocials {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.heroSocialLink {
+  color: #887060;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.heroSocialLink:hover {
+  color: var(--gold-bright, #d4af37);
+  transform: scale(1.15);
+}
+
+/* Hero characters along bottom */
+
+.heroCharacters {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 5%;
+  pointer-events: none;
+}
+
+.heroChar {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.8));
+}
+
+.heroCharLeft {
+  width: 120px;
+  transform: scaleX(1);
+}
+
+.heroCharCenter {
+  width: 140px;
+  margin-bottom: 10px;
+}
+
+.heroCharRight {
+  width: 120px;
+  transform: scaleX(-1);
+}
+
+/* Scroll hint */
+
+.heroScrollHint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #665545;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  font-family: 'Cinzel', serif;
+  animation: scrollHintPulse 2s ease-in-out infinite;
+}
+
+.heroScrollArrow {
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid #665545;
+  border-bottom: 2px solid #665545;
+  transform: rotate(45deg);
+}
+
+@keyframes scrollHintPulse {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+}
+
+/* ----- About Section ----- */
+
+.landingAbout {
+  padding: 120px 24px;
+  background: #0d0608;
+  text-align: center;
+}
+
+.landingAboutInner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.landingDivider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.landingDividerLine {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+}
+
+.landingDividerIcon {
+  font-size: 1.2rem;
+  color: var(--gold-bright, #d4af37);
+  letter-spacing: 0.3em;
+}
+
+.landingAboutTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #f0e6d6;
+  margin-bottom: 24px;
+  letter-spacing: 0.06em;
+}
+
+.landingAboutText {
+  font-size: 1.15rem;
+  color: #a89070;
+  line-height: 1.8;
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+
+.landingAboutCrest {
+  width: 80px;
+  height: 80px;
+  image-rendering: pixelated;
+  opacity: 0.3;
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.2));
+}
+
+/* ----- Features Section ----- */
+
+.landingFeatures {
+  padding: 40px 24px 80px;
+  background: #0a0507;
+}
+
+.featurePanel {
+  max-width: 1100px;
+  margin: 0 auto 100px;
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.featurePanelVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.featurePanelReverse {
+  flex-direction: row-reverse;
+}
+
+.featureImages {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.featureImage {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  background: rgba(26, 15, 15, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  padding: 12px;
+  transition: transform 0.3s;
+}
+
+.featureImage:hover {
+  transform: scale(1.05);
+}
+
+.featureText {
+  flex: 1;
+}
+
+.featureTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #f0e6d6;
+  margin-bottom: 16px;
+  letter-spacing: 0.04em;
+}
+
+.featureDesc {
+  font-size: 1.1rem;
+  color: #a89070;
+  line-height: 1.7;
+}
+
+/* ----- CTA Section ----- */
+
+.landingCTA {
+  padding: 120px 24px;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(82, 20, 44, 0.4) 0%, transparent 70%),
+    #0d0608;
+  text-align: center;
+}
+
+.landingCTAInner {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.landingCTATitle {
+  font-family: 'Cinzel', serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--gold-bright, #d4af37);
+  text-shadow: 0 0 40px rgba(212, 175, 55, 0.3);
+  margin-bottom: 12px;
+  letter-spacing: 0.06em;
+}
+
+.landingCTASubtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: #a89070;
+  margin-bottom: 40px;
+  letter-spacing: 0.04em;
+}
+
+.landingCTAButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.landingCTABtn {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 16px 28px;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.landingCTABtnPrimary {
+  background: linear-gradient(180deg, #d4af37, #a08020);
+  color: #1a0a08;
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+}
+
+.landingCTABtnPrimary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.5);
+}
+
+.landingCTABtnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.landingCTABtnDisabled {
+  background: linear-gradient(180deg, #7B2FD4, #5a1fa0);
+  color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(123, 47, 212, 0.3);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.landingCTABtnGhost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #888;
+}
+
+.landingCTABtnGhost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #bbb;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ----- Landing Footer ----- */
+
+.landingFooter {
+  padding: 60px 32px 0;
+  background: #080405;
+  border-top: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.landingFooterInner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  padding-bottom: 40px;
+}
+
+.landingFooterLogo {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.2));
+}
+
+.landingFooterLinks {
+  display: flex;
+  gap: 60px;
+}
+
+.landingFooterCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landingFooterCol h4 {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f0e6d6;
+  margin-bottom: 4px;
+  letter-spacing: 0.06em;
+}
+
+.landingFooterCol a {
+  font-size: 0.85rem;
+  color: #887060;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.landingFooterCol a:hover {
+  color: var(--gold-bright, #d4af37);
+}
+
+.landingFooterSocials {
+  display: flex;
+  gap: 16px;
+}
+
+.landingFooterSocials a {
+  color: #665545;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.landingFooterSocials a:hover {
+  color: var(--gold-bright, #d4af37);
+  transform: scale(1.15);
+}
+
+.landingFooterBottom {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #554535;
+  letter-spacing: 0.04em;
+}
+
+/* Landing error toast */
+
+.landingError {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(220, 50, 50, 0.9);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  z-index: 200;
+  animation: cardFadeIn 0.3s ease both;
+}
+
+/* ----- Landing Responsive ----- */
+
+@media (max-width: 768px) {
+  .landingNavLinks {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: rgba(10, 5, 7, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 16px 32px;
+    gap: 12px;
+  }
+
+  .landingNavLinksOpen {
+    display: flex;
+  }
+
+  .landingNavHamburger {
+    display: flex;
+  }
+
+  .landingNavCTA {
+    font-size: 0.75rem;
+    padding: 8px 16px;
+  }
+
+  .heroTitle {
+    font-size: 3rem;
+  }
+
+  .heroTagline {
+    font-size: 1rem;
+  }
+
+  .heroLogo {
+    width: 120px;
+    height: 120px;
+  }
+
+  .heroCharLeft,
+  .heroCharRight {
+    width: 80px;
+  }
+
+  .heroCharCenter {
+    width: 100px;
+  }
+
+  .featurePanel,
+  .featurePanelReverse {
+    flex-direction: column;
+    gap: 32px;
+    margin-bottom: 60px;
+  }
+
+  .featureTitle {
+    font-size: 1.6rem;
+  }
+
+  .landingAboutTitle {
+    font-size: 2rem;
+  }
+
+  .landingCTATitle {
+    font-size: 2rem;
+  }
+
+  .landingFooterInner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .landingFooterLinks {
+    gap: 40px;
+  }
+
+  .landingFooterBottom {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
 }
