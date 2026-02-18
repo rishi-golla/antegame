@@ -17,7 +17,7 @@ const container = {
 const minigames = [
   { name: 'Blackjack', desc: 'Classic 21. Hit or stand against the dealer.', icon: '/assets/minigames/cards/card-table.png' },
   { name: 'Slots', desc: 'Pull the lever and pray for triple sevens.', icon: '/assets/minigames/slots/slot-machine.png' },
-  { name: 'Wheel of Fortune', desc: 'Spin the wheel — multipliers from 0.25x to 5x.', icon: '/assets/minigames/wheel/wheel.png' },
+  { name: 'Wheel of Fortune', desc: 'Spin the wheel. Multipliers from 0.25x to 5x.', icon: '/assets/minigames/wheel/wheel.png' },
   { name: 'Craps', desc: 'Roll the dice. Hit your number or bust.', icon: '/assets/minigames/dice/dice-cup.png' },
   { name: 'Coin Flip', desc: 'Heads or tails. Best of three.', icon: '/assets/minigames/coin/coin-heads.png' },
   { name: 'Horse Race', desc: 'Pick your horse and watch them run.', icon: '/assets/minigames/horses/horse-1.png' },

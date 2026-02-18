@@ -32,7 +32,7 @@ export default function AboutSection() {
         </motion.h2>
         <motion.p className="landingAboutText" variants={fadeUp}>
           Ante is a multiplayer crypto board game on Base. Stake ETH, roll dice,
-          land on properties, and play casino minigames to win &mdash; or lose &mdash; it all.
+          land on properties, and play casino minigames to win or lose it all.
           The pot goes to the last player standing.
         </motion.p>
         <motion.img

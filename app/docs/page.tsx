@@ -25,7 +25,7 @@ const sections: DocSection[] = [
         <h3>Quick Start</h3>
         <ol>
           <li>Connect your wallet (MetaMask, Coinbase, WalletConnect)</li>
-          <li>Set up your profile — pick a name and character</li>
+          <li>Set up your profile. Pick a name and character</li>
           <li>Create a room, join with a code, or hit Quick Play</li>
           <li>Stake your ETH and roll the dice</li>
         </ol>
@@ -38,18 +38,18 @@ const sections: DocSection[] = [
     content: (
       <>
         <p>
-          The board has 40 tiles arranged in a square, just like classic Monopoly — but every property
+          The board has 40 tiles arranged in a square, just like classic Monopoly, but every property
           is a casino venue.
         </p>
         <h3>Tile Types</h3>
         <ul>
-          <li><strong>Properties</strong> — 8 color sets (Brown, Light Blue, Pink, Orange, Red, Yellow, Green, Dark Blue). Buy them, build houses, charge rent.</li>
-          <li><strong>Railroads</strong> — 4 railroad tiles. Rent scales with how many you own.</li>
-          <li><strong>Utilities</strong> — Electric Company &amp; Water Works. Rent = dice roll multiplier.</li>
-          <li><strong>Risk (Chance)</strong> — Draw a card. Could be good, could be bad. Sometimes triggers a minigame.</li>
-          <li><strong>Blind Chest (Community Chest)</strong> — Mystery cards with rewards or penalties. Can trigger minigames.</li>
-          <li><strong>Tax</strong> — Pay a fixed tax to the pot.</li>
-          <li><strong>Corners</strong> — GO (collect salary), Jail, Free Parking, Go to Jail.</li>
+          <li><strong>Properties</strong>: 8 color sets (Brown, Light Blue, Pink, Orange, Red, Yellow, Green, Dark Blue). Buy them, build houses, charge rent.</li>
+          <li><strong>Railroads</strong>: 4 railroad tiles. Rent scales with how many you own.</li>
+          <li><strong>Utilities</strong>: Electric Company &amp; Water Works. Rent = dice roll multiplier.</li>
+          <li><strong>Risk (Chance)</strong>: Draw a card. Could be good, could be bad. Sometimes triggers a minigame.</li>
+          <li><strong>Blind Chest (Community Chest)</strong>: Mystery cards with rewards or penalties. Can trigger minigames.</li>
+          <li><strong>Tax</strong>: Pay a fixed tax to the pot.</li>
+          <li><strong>Corners</strong>: GO (collect salary), Jail, Free Parking, Go to Jail.</li>
         </ul>
         <h3>Building</h3>
         <p>
@@ -66,7 +66,7 @@ const sections: DocSection[] = [
       <>
         <p>
           When you land on Risk or Blind Chest, you may trigger a minigame. The result affects your
-          in-game balance — win big or lose your stake.
+          in-game balance. Win big or lose your stake.
         </p>
         <h3>All 10 Minigames</h3>
         <table className="docsTable">
@@ -106,7 +106,7 @@ const sections: DocSection[] = [
         <ol>
           <li>Click another player in the player list</li>
           <li>Select properties and/or cash to offer and request</li>
-          <li>Send the offer — the other player can accept, reject, or counter</li>
+          <li>Send the offer. The other player can accept, reject, or counter</li>
         </ol>
         <p>
           Counter-offers bounce back and forth until both sides agree or someone cancels.
@@ -125,16 +125,16 @@ const sections: DocSection[] = [
         </p>
         <h3>How It Works</h3>
         <ol>
-          <li><strong>Game Creation</strong> — A game is registered on-chain with a unique ID and stake amount.</li>
-          <li><strong>Joining</strong> — Each player sends their stake to the MonopolyGame contract. Funds are held in escrow.</li>
-          <li><strong>Playing</strong> — Game logic runs on the server in real-time. The blockchain isn&apos;t involved during gameplay.</li>
-          <li><strong>Settlement</strong> — When the game ends, the server signs a settlement message. The winner calls the contract to claim the pot.</li>
-          <li><strong>Refunds</strong> — If all players disconnect or the game is cancelled, each player can claim a refund via the FeeVault contract.</li>
+          <li><strong>Game Creation</strong>: A game is registered on-chain with a unique ID and stake amount.</li>
+          <li><strong>Joining</strong>: Each player sends their stake to the MonopolyGame contract. Funds are held in escrow.</li>
+          <li><strong>Playing</strong>: Game logic runs on the server in real-time. The blockchain isn&apos;t involved during gameplay.</li>
+          <li><strong>Settlement</strong>: When the game ends, the server signs a settlement message. The winner calls the contract to claim the pot.</li>
+          <li><strong>Refunds</strong>: If all players disconnect or the game is cancelled, each player can claim a refund via the FeeVault contract.</li>
         </ol>
         <h3>Contracts</h3>
         <ul>
-          <li><strong>MonopolyGame.sol</strong> — Escrow, game registration, settlement</li>
-          <li><strong>FeeVault.sol</strong> — Fee collection and refund management</li>
+          <li><strong>MonopolyGame.sol</strong>: Escrow, game registration, settlement</li>
+          <li><strong>FeeVault.sol</strong>: Fee collection and refund management</li>
         </ul>
       </>
     ),
@@ -146,10 +146,10 @@ const sections: DocSection[] = [
       <>
         <h3>Room Types</h3>
         <ul>
-          <li><strong>Create Room</strong> — Set a stake amount and player count. Share the room code with friends.</li>
-          <li><strong>Join Room</strong> — Enter a room code to join a friend&apos;s game.</li>
-          <li><strong>Quick Play</strong> — Auto-matchmaking. Choose a stake tier and get paired with other players.</li>
-          <li><strong>Free Play</strong> — No wallet needed. Play locally against bots with fake money.</li>
+          <li><strong>Create Room</strong>: Set a stake amount and player count. Share the room code with friends.</li>
+          <li><strong>Join Room</strong>: Enter a room code to join a friend&apos;s game.</li>
+          <li><strong>Quick Play</strong>: Auto-matchmaking. Choose a stake tier and get paired with other players.</li>
+          <li><strong>Free Play</strong>: No wallet needed. Play locally against bots with fake money.</li>
         </ul>
         <h3>In the Lobby</h3>
         <p>
@@ -165,8 +165,8 @@ const sections: DocSection[] = [
     content: (
       <>
         <div className="docsFaq">
-          <h3>Is there a house edge?</h3>
-          <p>No. Ante is player-vs-player. The only fee is a small percentage that goes to the FeeVault for platform maintenance.</p>
+          <h3>Is there a fee?</h3>
+          <p>Yes. There is a flat 5% fee on each game pot that goes to the FeeVault for platform maintenance. Ante is player-vs-player with no house edge on outcomes.</p>
         </div>
         <div className="docsFaq">
           <h3>What happens if I disconnect?</h3>
@@ -182,7 +182,7 @@ const sections: DocSection[] = [
         </div>
         <div className="docsFaq">
           <h3>Can I play for free?</h3>
-          <p>Yes — Free Play mode lets you play locally with bots using fake money. No wallet required.</p>
+          <p>Yes. Free Play mode lets you play locally with bots using fake money. No wallet required.</p>
         </div>
       </>
     ),

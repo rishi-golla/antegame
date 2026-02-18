@@ -29,7 +29,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 }
 
 const stats = [
-  { label: 'House Edge', value: 5, suffix: '%' },
+  { label: 'Fee', value: 5, suffix: '%' },
   { label: 'Minigames', value: 10, suffix: '' },
   { label: 'On-Chain', value: 100, suffix: '%' },
   { label: 'Middlemen', value: 0, suffix: '' },

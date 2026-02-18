@@ -44,8 +44,8 @@ export default function AboutPage() {
         <motion.div className="subpageBlock" variants={fadeUp}>
           <h2>What is Ante?</h2>
           <p>
-            Ante is a multiplayer crypto board game built on Base. Think Monopoly meets poker night
-            — but every dollar is real ETH, every property is a casino, and every roll of the dice
+            Ante is a multiplayer crypto board game built on Base. Think Monopoly meets poker night,
+            but every dollar is real ETH, every property is a casino, and every roll of the dice
             could make or break you.
           </p>
         </motion.div>
@@ -63,18 +63,11 @@ export default function AboutPage() {
           <h2>Fair & Transparent</h2>
           <p>
             Every game is settled on-chain. The smart contract handles escrow, payouts, and refunds.
-            A flat 5% fee keeps the lights on — no hidden charges, no surprises. If all players disconnect, funds are automatically refundable.
+            A flat 5% fee keeps the lights on. No hidden charges, no surprises. If all players disconnect, funds are automatically refundable.
           </p>
         </motion.div>
 
-        <motion.div className="subpageBlock" variants={fadeUp}>
-          <img
-            src="/assets/landing/crest-emblem.webp"
-            alt="Ante Crest"
-            className="subpageBlockImage"
-            style={{ maxWidth: '200px', margin: '0 auto', display: 'block' }}
-          />
-        </motion.div>
+        {/* crest removed */}
       </motion.section>
 
       <LandingFooter />

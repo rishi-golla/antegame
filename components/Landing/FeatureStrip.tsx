@@ -11,13 +11,13 @@ const features = [
   },
   {
     title: 'No Trust Required',
-    desc: 'Escrow holds the pot. Smart contract settles. You never hand your ETH to anyone — code does the math.',
+    desc: 'Escrow holds the pot. Smart contract settles. You never hand your ETH to anyone. Code does the math.',
     image: '/assets/landing/feature-onchain.webp',
     href: '/features',
   },
   {
     title: 'Built for Degen Hours',
-    desc: 'Quick games. Private rooms. Trash talk in chat. This isn\'t a farm-and-wait game — you play, you win, you leave.',
+    desc: 'Quick games. Private rooms. Trash talk in chat. This is not a farm-and-wait game. You play, you win, you leave.',
     image: '/assets/landing/feature-multiplayer-room.webp',
     href: '/features',
   },

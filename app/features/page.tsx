@@ -17,12 +17,12 @@ const container = {
 const features = [
   {
     title: 'The Board',
-    text: '40 casino-themed properties across 8 color sets. Every tile is a different casino venue — from dive bars to high-roller penthouses. Buy, build houses, and bankrupt your opponents.',
+    text: '40 casino-themed properties across 8 color sets. Every tile is a different casino venue, from dive bars to high-roller penthouses. Buy, build houses, and bankrupt your opponents.',
     image: '/assets/landing/feature-board.webp',
   },
   {
     title: 'On-Chain Escrow',
-    text: 'All game funds are held in a smart contract on Base. When the game ends, the contract settles payouts automatically. No trust required — just math.',
+    text: 'All game funds are held in a smart contract on Base. When the game ends, the contract settles payouts automatically. No trust required. Just math.',
     image: '/assets/landing/feature-onchain.webp',
   },
   {
