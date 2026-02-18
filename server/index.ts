@@ -139,6 +139,35 @@ nextApp.prepare().then(() => {
     }
   }
 
+  /**
+   * Send game state to only the two players involved in a trade.
+   * Everyone else gets state with activeTradeOffer stripped.
+   */
+  function broadcastGameStateTradePrivate(code: string) {
+    const room = rm.getRoom(code);
+    if (!room?.gameState) return;
+    const offer = room.gameState.activeTradeOffer;
+    const involvedIndices = offer ? [offer.fromPlayer, offer.toPlayer] : [];
+
+    for (const player of room.players) {
+      const sock = io.sockets.sockets.get(player.id);
+      if (!sock) continue;
+      if (involvedIndices.includes(player.playerIndex)) {
+        // Trade participants see the full state
+        sock.emit('game:state', room.gameState);
+      } else {
+        // Everyone else sees state without the trade offer
+        sock.emit('game:state', { ...room.gameState, activeTradeOffer: null, phase: room.gameState.previousPhase ?? room.gameState.phase });
+      }
+    }
+    // Still manage turn timer
+    if (room.gameState.phase === 'game-over') {
+      clearTurnTimer(code);
+    } else {
+      startTurnTimer(code);
+    }
+  }
+
   function broadcastGameState(code: string) {
     const room = rm.getRoom(code);
     if (!room?.gameState) return;
@@ -544,7 +573,7 @@ nextApp.prepare().then(() => {
       try {
         room.gameState = proposeTrade(room.gameState, data.offer);
         room.lastActivity = Date.now();
-        broadcastGameState(code);
+        broadcastGameStateTradePrivate(code);
       } catch (e: any) {
         socket.emit('room:error', e.message ?? 'Trade proposal failed');
       }
@@ -565,9 +594,27 @@ nextApp.prepare().then(() => {
         return;
       }
       try {
+        const offer = room.gameState.activeTradeOffer!;
+        const fromName = room.gameState.players[offer.fromPlayer].name;
+        const toName = room.gameState.players[offer.toPlayer].name;
         room.gameState = acceptTrade(room.gameState);
         room.lastActivity = Date.now();
         broadcastGameState(code);
+        // Announce the completed trade to all players
+        const parts: string[] = [];
+        if (offer.offerMoney > 0 || offer.offerProperties.length > 0) {
+          const items: string[] = [];
+          if (offer.offerMoney > 0) items.push(`$${offer.offerMoney}`);
+          offer.offerProperties.forEach((idx: number) => { items.push(room.gameState!.tiles[idx]?.name ?? `Tile ${idx}`); });
+          parts.push(`${fromName} gave ${items.join(', ')}`);
+        }
+        if (offer.requestMoney > 0 || offer.requestProperties.length > 0) {
+          const items: string[] = [];
+          if (offer.requestMoney > 0) items.push(`$${offer.requestMoney}`);
+          offer.requestProperties.forEach((idx: number) => { items.push(room.gameState!.tiles[idx]?.name ?? `Tile ${idx}`); });
+          parts.push(`${toName} gave ${items.join(', ')}`);
+        }
+        systemMessage(code, `Trade completed! ${parts.join(' | ')}`);
         console.log('[trade:accept] success');
         cb?.({ ok: true });
       } catch (e: any) {
@@ -593,7 +640,7 @@ nextApp.prepare().then(() => {
       try {
         room.gameState = rejectTrade(room.gameState);
         room.lastActivity = Date.now();
-        broadcastGameState(code);
+        broadcastGameStateTradePrivate(code);
         cb?.({ ok: true });
       } catch (e: any) {
         cb?.({ ok: false, error: e.message });
@@ -615,7 +662,7 @@ nextApp.prepare().then(() => {
       }
       room.gameState = cancelTrade(room.gameState);
       room.lastActivity = Date.now();
-      broadcastGameState(code);
+      broadcastGameStateTradePrivate(code);
     });
 
     (socket as any).on('game:counter-trade', (data: { offer: any }) => {
@@ -633,7 +680,7 @@ nextApp.prepare().then(() => {
       try {
         room.gameState = counterTrade(room.gameState, data.offer);
         room.lastActivity = Date.now();
-        broadcastGameState(code);
+        broadcastGameStateTradePrivate(code);
       } catch (e: any) {
         socket.emit('room:error', e.message ?? 'Counter-offer failed');
       }
