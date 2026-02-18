@@ -30,7 +30,9 @@
     "socket.io-client": "^4.8.3",
     "tweetnacl": "^1.0.3",
     "viem": "^2.46.1",
-    "wagmi": "^2.12.31"
+    "wagmi": "^2.12.31",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
@@ -58,9 +60,7 @@
     "jsdom": "^28.0.0",
     "solidity-coverage": "^0.8.17",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
     "typechain": "^8.3.2",
-    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }
 }
