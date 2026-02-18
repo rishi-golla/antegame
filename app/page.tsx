@@ -31,6 +31,12 @@ type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'cr
 
 const MENU_MUSIC_SCREENS: Screen[] = ['menu', 'quick-play', 'profile', 'leaderboard'];
 
+function StopMusic() {
+  const { stopMusic } = useAudio();
+  useEffect(() => { stopMusic(); }, [stopMusic]);
+  return null;
+}
+
 function LobbyMusic({ screen }: { screen: Screen }) {
   const { playMusic, stopMusic } = useAudio();
 
@@ -205,7 +211,7 @@ function AuthGate() {
   }
 
   if (!user) {
-    return <ConnectScreen onFreePlay={() => setScreen('free-play-setup')} />;
+    return <><StopMusic /><ConnectScreen onFreePlay={() => setScreen('free-play-setup')} /></>;
   }
 
   // New user needs profile setup
