@@ -16,12 +16,11 @@ interface RefundModalProps {
   onDone: () => void;
 }
 
-/** Check if this wallet has already claimed their refund */
-async function hasAlreadyClaimed(roomCode: string, playerAddress: string): Promise<boolean> {
+/** Check if this wallet has a refund available (game must be cancelled AND simulation must pass) */
+async function canClaimRefund(roomCode: string, playerAddress: string): Promise<boolean> {
   try {
     const client = createPublicClient({ chain: getChain(), transport: http(getRpcUrl()) });
     const gameId = keccak256(encodePacked(['string'], [roomCode]));
-    // Simulate claimRefund — if it reverts, already claimed
     await client.simulateContract({
       address: getAddresses().monopolyGame,
       abi: MONOPOLY_GAME_ABI,
@@ -29,9 +28,9 @@ async function hasAlreadyClaimed(roomCode: string, playerAddress: string): Promi
       args: [gameId],
       account: playerAddress as `0x${string}`,
     });
-    return false; // simulation passed, refund still available
+    return true; // simulation passed, refund available
   } catch {
-    return true; // reverts = already claimed or not eligible
+    return false; // reverts = already claimed or not eligible
   }
 }
 
@@ -52,16 +51,8 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
     setError('');
 
     try {
-      // Step 0: Check if already claimed
-      setStatus('Checking refund status...');
-      const alreadyClaimed = await hasAlreadyClaimed(refund.roomCode, address);
-      if (alreadyClaimed) {
-        setStatus('');
-        setDone(true);
-        return;
-      }
-
       // Step 1: Check on-chain state — only cancel if not already cancelled
+      setStatus('Checking game state...');
       const gameState = await getOnChainGameState(refund.roomCode);
 
       if (gameState !== OnChainGameState.CANCELLED) {
@@ -91,7 +82,16 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
         }
       }
 
-      // Step 2: Claim refund
+      // Step 2: Check if refund is still available (may have already been claimed)
+      setStatus('Checking refund status...');
+      const refundAvailable = await canClaimRefund(refund.roomCode, address);
+      if (!refundAvailable) {
+        setStatus('');
+        setDone(true); // Already claimed
+        return;
+      }
+
+      // Step 3: Claim refund
       setStatus('Claiming refund...');
       const refundHash = await claimRefund(walletClient, refund.roomCode);
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: refundHash as `0x${string}` });
