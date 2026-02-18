@@ -102,7 +102,13 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
       )}
 
       {owner && (
-        <div className="tileOwnerDot" style={{ background: owner.color }} />
+        <div className="tileOwnerBadge" style={{ '--owner-color': owner.color } as React.CSSProperties}>
+          {owner.sprite ? (
+            <img src={owner.sprite} alt={owner.name} className="tileOwnerSprite" draggable={false} />
+          ) : (
+            <span className="tileOwnerInitial" style={{ background: owner.color }}>{owner.name[0]}</span>
+          )}
+        </div>
       )}
 
       {houses > 0 && (
