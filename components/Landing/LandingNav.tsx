@@ -35,7 +35,8 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
       <div className="landingNavInner">
         <motion.a
           href="/"
-          whileHover={{ scale: 1.1, rotate: 5 }}
+          className="landingNavBrand"
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           <img
