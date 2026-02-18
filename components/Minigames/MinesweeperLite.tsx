@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface MinesweeperLiteProps {
   onResult: (tier: MinigameTier) => void;
@@ -22,6 +23,7 @@ const GRID_SIZE = 9;
 const MINE_COUNT = 3;
 
 export default function MinesweeperLite({ onResult, baseAmount, context }: MinesweeperLiteProps) {
+  const { play } = useAudio();
   const [grid, setGrid] = useState<Cell[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
@@ -49,11 +51,13 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
 
   const clickCell = (cellId: number) => {
     if (gameEnded || grid[cellId].state !== 'hidden') return;
+    play('minigames/mine-click');
     setGameStarted(true);
     const newGrid = [...grid];
     const clickedCell = newGrid[cellId];
 
     if (clickedCell.hasMine) {
+      play('minigames/mine-boom');
       clickedCell.state = 'mine';
       setGrid(newGrid);
       setGameEnded(true);
@@ -63,6 +67,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context }: Mines
         setTimeout(() => calculateResult(safeCount), 1000);
       }
     } else {
+      play('minigames/mine-safe');
       clickedCell.state = 'revealed';
       clickedCell.safeRevealed = true;
       const newSafeCount = safeCount + 1;

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface HigherLowerProps {
   onResult: (tier: MinigameTier) => void;
@@ -40,6 +41,7 @@ const createDeck = (): Card[] => {
 };
 
 export default function HigherLower({ onResult, baseAmount, context }: HigherLowerProps) {
+  const { play } = useAudio();
   const [deck] = useState<Card[]>(() => createDeck());
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [nextCard, setNextCard] = useState<Card | null>(null);
@@ -59,6 +61,7 @@ export default function HigherLower({ onResult, baseAmount, context }: HigherLow
 
   const makeGuess = (isHigher: boolean) => {
     if (!currentCard || !nextCard || showResult) return;
+    play('minigames/card-flip');
     const isCorrect = isHigher ? (nextCard.value > currentCard.value) : (nextCard.value < currentCard.value);
     const actuallyCorrect = nextCard.value !== currentCard.value && isCorrect;
     const newGuesses = [...allGuesses, actuallyCorrect];

@@ -56,6 +56,7 @@ export interface ClientToServerEvents {
   'game:draw-card': () => void;
   'game:apply-card': () => void;
   'game:resolve-card': () => void;
+  'game:resolve-debt': () => void;
   'game:jail-escape': (data: { method: 'bail' | 'card' | 'roll' }) => void;
   'room:reconnect': (data: { code: string; name: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
   'game:bankruptcy': () => void;
@@ -89,6 +90,7 @@ export interface ServerToClientEvents {
   'game:settlement:signature': (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => void;
   'game:cancellation:signature': (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => void;
   'game:refund': (data: { walletAddress: string; txSignature: string; amountLamports: number }) => void;
+  'turn:timer': (data: { remaining: number; total: number }) => void;
 }
 
 export interface RoomClientState {

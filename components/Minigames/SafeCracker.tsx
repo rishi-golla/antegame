@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface SafeCrackerProps {
   onResult: (tier: MinigameTier) => void;
@@ -16,6 +17,7 @@ interface GuessResult {
 }
 
 export default function SafeCracker({ onResult, baseAmount, context }: SafeCrackerProps) {
+  const { play } = useAudio();
   const [combination, setCombination] = useState<number[]>([]);
   const [currentGuess, setCurrentGuess] = useState<number[]>([0, 0, 0]);
   const [attempts, setAttempts] = useState<GuessResult[]>([]);
@@ -33,6 +35,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
 
   const adjustDial = (dialIndex: number, direction: 1 | -1) => {
     if (gameEnded) return;
+    play('minigames/safe-dial');
     setCurrentGuess(prev => {
       const n = [...prev];
       n[dialIndex] = (n[dialIndex] + direction + 10) % 10;
@@ -68,6 +71,7 @@ export default function SafeCracker({ onResult, baseAmount, context }: SafeCrack
     setAttempts(newAttempts);
 
     if (correctPosition === 3) {
+      play('minigames/safe-crack');
       setCracked(true); setGameEnded(true);
       setTimeout(() => onResult(currentAttempt === 1 ? 'win' : currentAttempt === 2 ? 'close-win' : 'close-loss'), 1500);
       return;

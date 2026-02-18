@@ -107,6 +107,43 @@ export function rejectTrade(state: GameState): GameState {
   };
 }
 
+export function cancelTrade(state: GameState): GameState {
+  return {
+    ...state,
+    activeTradeOffer: null,
+  };
+}
+
+const MAX_COUNTERS = 5;
+
+export function counterTrade(state: GameState, newOffer: TradeOffer): GameState {
+  const existing = state.activeTradeOffer;
+  if (!existing) throw new Error('No active trade to counter');
+
+  const count = (existing.counterCount ?? 0) + 1;
+  if (count > MAX_COUNTERS) throw new Error('Maximum counter-offers reached');
+
+  // Validate the new offer (same as proposeTrade validation)
+  const from = state.players[newOffer.fromPlayer];
+  const to = state.players[newOffer.toPlayer];
+
+  for (const idx of newOffer.offerProperties) {
+    if (!from.properties.includes(idx)) throw new Error('Proposer does not own offered property');
+    if (hasHousesInGroup(state, newOffer.fromPlayer, idx)) throw new Error('Must sell all houses in color group before trading');
+  }
+  for (const idx of newOffer.requestProperties) {
+    if (!to.properties.includes(idx)) throw new Error('Recipient does not own requested property');
+    if (hasHousesInGroup(state, newOffer.toPlayer, idx)) throw new Error('Recipient must sell all houses in color group before trading');
+  }
+  if (newOffer.offerMoney > from.money) throw new Error('Cannot afford offered money');
+  if (newOffer.requestMoney > to.money) throw new Error('Recipient cannot afford requested money');
+
+  return {
+    ...state,
+    activeTradeOffer: { ...newOffer, counterCount: count },
+  };
+}
+
 function hasHousesInGroup(state: GameState, playerIndex: number, tileIndex: number): boolean {
   const tile = state.tiles[tileIndex];
   if (tile.type !== 'property') return false;

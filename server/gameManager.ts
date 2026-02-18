@@ -9,6 +9,7 @@ import {
   applyDrawnCard,
   resolveCard,
   attemptJailEscape,
+  resolveDebt,
 } from '@/lib/gameEngine';
 
 type GameAction =
@@ -18,7 +19,8 @@ type GameAction =
   | 'end-turn'
   | 'draw-card'
   | 'apply-card'
-  | 'resolve-card';
+  | 'resolve-card'
+  | 'resolve-debt';
 
 export function isCurrentPlayer(room: Room, socketId: string): boolean {
   if (!room.gameState) return false;
@@ -64,6 +66,9 @@ export function applyGameAction(
         break;
       case 'resolve-card':
         newState = resolveCard(room.gameState);
+        break;
+      case 'resolve-debt':
+        newState = resolveDebt(room.gameState);
         break;
       default:
         return { ok: false, error: 'Unknown action' };

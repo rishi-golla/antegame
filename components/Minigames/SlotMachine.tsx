@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
+import { useAudio } from '@/context/AudioContext';
 
 interface SlotMachineProps {
   onResult: (tier: MinigameTier) => void;
@@ -22,6 +23,7 @@ const SYMBOL_IMAGES: Record<SlotSymbol, string> = {
 };
 
 export default function SlotMachine({ onResult, baseAmount, context }: SlotMachineProps) {
+  const { play } = useAudio();
   const [reels, setReels] = useState<SlotSymbol[]>(['cherry', 'cherry', 'cherry']);
   const [spinning, setSpinning] = useState([false, false, false]);
   const [stopped, setStopped] = useState([false, false, false]);
@@ -51,6 +53,7 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
     setGameStarted(true);
     setLeverPulled(true);
     setSpinning([true, true, true]);
+    play('minigames/slot-spin');
 
     reelRefs.forEach((ref) => {
       if (ref.current) {
@@ -82,6 +85,7 @@ export default function SlotMachine({ onResult, baseAmount, context }: SlotMachi
     }
 
     const finalSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    play('minigames/slot-stop');
     setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
 
     setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });

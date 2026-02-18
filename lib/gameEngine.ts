@@ -130,6 +130,7 @@ export function createGame(playerNames: string[]): GameState {
     minigamesEnabled: true,
     pendingRent: null,
     recentMinigames: [],
+    debt: null,
   };
 }
 
@@ -194,13 +195,14 @@ export function resolveLanding(state: GameState): GameState {
       return { ...state, phase: 'turn-end' };
     }
     case 'tax': {
+      if (player.money < tile.amount) {
+        const s = addLog(state, `${player.name} owes $${tile.amount} in tax.`, state.currentPlayerIndex);
+        return enterDebtOrBankrupt(s, tile.amount, null);
+      }
       const updated = updateCurrentPlayer(state, {
         money: player.money - tile.amount,
       });
       const s = addLog(updated, `${player.name} paid $${tile.amount} in tax.`, state.currentPlayerIndex);
-      if (s.players[state.currentPlayerIndex].money < 0) {
-        return declareBankruptcy(s, state.currentPlayerIndex);
-      }
       return { ...s, phase: 'turn-end' };
     }
     case 'chance':
@@ -278,6 +280,11 @@ export function payRentNormally(state: GameState, rent?: number, ownerIndex?: nu
   // Use pending rent if available
   const actualRent = rent ?? state.pendingRent?.amount ?? 0;
   const actualOwner = ownerIndex ?? state.pendingRent?.toPlayer ?? -1;
+
+  // Check if player can afford it — if not, enter debt phase
+  if (player.money < actualRent) {
+    return enterDebtOrBankrupt(state, actualRent, actualOwner >= 0 ? actualOwner : null);
+  }
   
   let s = updateCurrentPlayer(state, { money: player.money - actualRent });
   if (actualOwner >= 0) {
@@ -292,14 +299,7 @@ export function payRentNormally(state: GameState, rent?: number, ownerIndex?: nu
   }
 
   // Clear pending rent
-  s = { ...s, pendingRent: null };
-
-  // Auto-bankrupt if money went negative
-  if (s.players[state.currentPlayerIndex].money < 0) {
-    return declareBankruptcy(s, state.currentPlayerIndex, actualOwner >= 0 ? actualOwner : undefined);
-  }
-
-  return { ...s, phase: 'turn-end' };
+  return { ...s, pendingRent: null, phase: 'turn-end' };
 }
 
 export function buyProperty(state: GameState): GameState {
@@ -395,13 +395,20 @@ export function applyCardEffect(state: GameState, card: Card): GameState {
       return { ...s, phase: 'turn-end' };
     }
     case 'pay': {
-      let s = updateCurrentPlayer(state, { money: player.money - effect.amount! });
+      const amt = effect.amount!;
+      if (player.money < amt) {
+        return enterDebtOrBankrupt(state, amt, null);
+      }
+      let s = updateCurrentPlayer(state, { money: player.money - amt });
       return { ...s, phase: 'turn-end' };
     }
     case 'pay-each-player': {
       const amount = effect.amount!;
       const activePlayers = state.players.filter((p) => !p.bankrupt && p.id !== player.id);
       const totalPay = amount * activePlayers.length;
+      if (player.money < totalPay) {
+        return enterDebtOrBankrupt(state, totalPay, null);
+      }
       let s = updateCurrentPlayer(state, { money: player.money - totalPay });
       for (const other of activePlayers) {
         s = updatePlayer(s, other.id, { money: s.players[other.id].money + amount });
@@ -450,6 +457,10 @@ export function applyCardEffect(state: GameState, card: Card): GameState {
         } else {
           totalCost += count * effect.perHouse!;
         }
+      }
+      if (player.money < totalCost) {
+        let s = addLog(state, `${player.name} owes $${totalCost} for repairs.`, state.currentPlayerIndex);
+        return enterDebtOrBankrupt(s, totalCost, null);
       }
       let s = updateCurrentPlayer(state, { money: player.money - totalCost });
       s = addLog(s, `${player.name} paid $${totalCost} for repairs.`, state.currentPlayerIndex);
@@ -556,6 +567,30 @@ export function endTurn(state: GameState): GameState {
   }
 
   const nextPlayer = state.players[next];
+
+  // Check if next player has $0 — force liquidation or bankruptcy
+  if (nextPlayer.money <= 0) {
+    const nextState = {
+      ...state,
+      currentPlayerIndex: next,
+      doublesCount: 0,
+      phase: 'rolling' as GamePhase,
+    };
+    const netWorth = getNetWorth(nextState, next);
+    if (netWorth <= 0) {
+      // No money, no assets — instant bankruptcy (owed to bank)
+      return declareBankruptcy(nextState, next);
+    } else {
+      // Has assets but no cash — must sell/mortgage before they can play
+      const s = addLog(nextState, `${nextPlayer.name} is broke! Must sell or mortgage assets to continue.`, next);
+      return {
+        ...s,
+        phase: 'in-debt',
+        debt: { amount: 1, creditor: null }, // owes bank — must get above $0
+      };
+    }
+  }
+
   const nextPhase: GamePhase = nextPlayer.inJail ? 'in-jail' : 'rolling';
 
   return {
@@ -570,6 +605,81 @@ export function checkBankruptcy(state: GameState, playerIndex: number): boolean 
   return state.players[playerIndex].money < 0;
 }
 
+/**
+ * Instead of going negative, enter 'in-debt' phase where the player must
+ * sell houses / mortgage properties to raise funds. If their net worth
+ * can't cover the debt, they must declare bankruptcy.
+ */
+export function enterDebtOrBankrupt(
+  state: GameState,
+  amountOwed: number,
+  creditor: number | null,
+): GameState {
+  const player = currentPlayer(state);
+  
+  // Can afford it outright — no debt needed
+  if (player.money >= amountOwed) {
+    return state;
+  }
+
+  // Check if player has any assets they can liquidate
+  const netWorth = getNetWorth(state, state.currentPlayerIndex);
+  
+  if (netWorth < amountOwed) {
+    // Can't possibly pay even by selling everything — bankrupt immediately
+    // declareBankruptcy handles all asset/cash transfers to creditor
+    return declareBankruptcy(state, state.currentPlayerIndex, creditor ?? undefined);
+  }
+
+  // Player has enough assets — enter debt phase to let them sell/mortgage
+  let s = addLog(state, `${player.name} needs to raise $${amountOwed - player.money} — sell houses or mortgage properties!`, state.currentPlayerIndex);
+  return {
+    ...s,
+    phase: 'in-debt',
+    debt: { amount: amountOwed, creditor },
+  };
+}
+
+/**
+ * Called when a player in debt has raised enough money (or wants to confirm payment).
+ * If they have enough money, pay the debt and continue. Otherwise stay in debt.
+ */
+export function resolveDebt(state: GameState): GameState {
+  if (state.phase !== 'in-debt' || !state.debt) return state;
+  
+  const player = currentPlayer(state);
+  const { amount, creditor } = state.debt;
+
+  // Special case: broke at turn start (amount=1, creditor=null)
+  // Player just needs money > 0 to continue, no payment required
+  if (amount === 1 && creditor === null) {
+    if (player.money <= 0) {
+      return addLog(state, `${player.name} still has no money — keep selling or mortgage!`, state.currentPlayerIndex);
+    }
+    let s = addLog(state, `${player.name} raised $${player.money} and can continue.`, state.currentPlayerIndex);
+    const nextPhase: GamePhase = player.inJail ? 'in-jail' : 'rolling';
+    return { ...s, phase: nextPhase, debt: null, pendingRent: null };
+  }
+
+  if (player.money < amount) {
+    // Still can't afford it
+    return addLog(state, `${player.name} still needs $${amount - player.money} more.`, state.currentPlayerIndex);
+  }
+
+  // Pay the debt
+  let s = updateCurrentPlayer(state, { money: player.money - amount });
+  if (creditor !== null && creditor >= 0) {
+    s = updatePlayer(s, creditor, {
+      money: s.players[creditor].money + amount,
+    });
+    s = addLog(s, `${player.name} paid $${amount} to ${s.players[creditor].name}.`, state.currentPlayerIndex);
+  } else {
+    s = addLog(s, `${player.name} paid $${amount}.`, state.currentPlayerIndex);
+  }
+
+  return { ...s, phase: 'turn-end', debt: null, pendingRent: null };
+}
+
 export function declareBankruptcy(
   state: GameState,
   playerIndex: number,
@@ -578,15 +688,87 @@ export function declareBankruptcy(
   const player = state.players[playerIndex];
   let s = addLog(state, `${player.name} has gone bankrupt!`, playerIndex);
 
-  // Transfer properties to creditor or release to bank
-  if (creditorIndex !== undefined) {
-    const creditor = s.players[creditorIndex];
-    s = updatePlayer(s, creditorIndex, {
-      properties: [...creditor.properties, ...player.properties],
-    });
+  // Step 1: Sell all houses/hotels back to the bank at half price
+  let houseSaleProceeds = 0;
+  for (const tileIdx of player.properties) {
+    const tile = s.tiles[tileIdx];
+    const houseCount = player.houses[tileIdx] || 0;
+    if (tile.type === 'property' && houseCount > 0) {
+      const refund = houseCount * Math.floor(tile.houseCost / 2);
+      houseSaleProceeds += refund;
+      s = addLog(s, `${player.name}'s ${houseCount === 5 ? 'hotel' : `${houseCount} house(s)`} on ${tile.name} sold to bank for $${refund}.`, playerIndex);
+    }
   }
 
-  // Mark bankrupt: clear all assets, zero money
+  if (creditorIndex !== undefined && creditorIndex >= 0) {
+    // --- BANKRUPT TO ANOTHER PLAYER ---
+    // House sale proceeds go to the creditor
+    const creditor = s.players[creditorIndex];
+    let creditorMoney = creditor.money + houseSaleProceeds;
+    // Bankrupt player's remaining cash also goes to creditor
+    creditorMoney += Math.max(0, player.money);
+
+    // Transfer all properties (bare, no houses) to creditor
+    const transferredProps = [...creditor.properties, ...player.properties];
+
+    // Creditor must pay 10% interest on any mortgaged properties received
+    // If they can't afford it, the property stays mortgaged (they can unmortgage later)
+    let interestTotal = 0;
+    for (const tileIdx of player.mortgaged) {
+      const tile = s.tiles[tileIdx];
+      if ('mortgageValue' in tile) {
+        const interest = Math.ceil((tile as any).mortgageValue * 0.1);
+        interestTotal += interest;
+      }
+    }
+    if (interestTotal > 0) {
+      if (creditorMoney >= interestTotal) {
+        creditorMoney -= interestTotal;
+        s = addLog(s, `${creditor.name} paid $${interestTotal} interest on received mortgaged properties.`, creditorIndex);
+      } else {
+        s = addLog(s, `${creditor.name} cannot afford $${interestTotal} mortgage interest — properties remain mortgaged.`, creditorIndex);
+      }
+    }
+
+    // Transfer mortgaged status to creditor
+    const creditorMortgaged = [...creditor.mortgaged, ...player.mortgaged];
+
+    // Transfer Get Out of Jail Free cards
+    const creditorJailCards = creditor.getOutOfJailCards + player.getOutOfJailCards;
+    if (player.getOutOfJailCards > 0) {
+      s = addLog(s, `${creditor.name} received ${player.getOutOfJailCards} Get Out of Jail Free card(s).`, creditorIndex);
+    }
+
+    s = updatePlayer(s, creditorIndex, {
+      money: creditorMoney,
+      properties: transferredProps,
+      mortgaged: creditorMortgaged,
+      getOutOfJailCards: creditorJailCards,
+    });
+
+    s = addLog(s, `All of ${player.name}'s assets transferred to ${s.players[creditorIndex].name}.`, playerIndex);
+  } else {
+    // --- BANKRUPT TO THE BANK ---
+    // Return Get Out of Jail Free cards to their respective decks
+    // (We track count only, so just put generic cards back into discard piles)
+    let cardsReturned = player.getOutOfJailCards;
+    if (cardsReturned > 0) {
+      // Return to community chest discard first, then chance
+      const ccJailCard = s.communityChestDiscard.find(c => c.effect.kind === 'get-out-of-jail')
+        || s.communityChestDeck.find(c => c.effect.kind === 'get-out-of-jail');
+      const chJailCard = s.chanceDiscard.find(c => c.effect.kind === 'get-out-of-jail')
+        || s.chanceDeck.find(c => c.effect.kind === 'get-out-of-jail');
+
+      // We just need to note cards were returned; the deck system handles it
+      // since getOutOfJailCards is zeroed below
+      s = addLog(s, `${player.name}'s Get Out of Jail Free card(s) returned to their decks.`, playerIndex);
+    }
+
+    // All properties released back to the bank (unowned) — no auction in digital version
+    s = addLog(s, `${player.name}'s properties returned to the bank.`, playerIndex);
+  }
+
+  // Step 2: Mark bankrupt — clear all assets
   s = updatePlayer(s, playerIndex, {
     bankrupt: true,
     money: 0,
@@ -597,7 +779,7 @@ export function declareBankruptcy(
     inJail: false,
   });
 
-  // Check if game is over
+  // Step 3: Check if game is over
   const activePlayers = s.players.filter((p) => !p.bankrupt);
   if (activePlayers.length <= 1) {
     const winner = activePlayers[0]?.id ?? null;

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useAudio } from '@/context/AudioContext';
 import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
 
 interface BoardCenterArtProps {
@@ -11,6 +12,7 @@ interface BoardCenterArtProps {
 
 export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterArtProps) {
   const { state, dispatch } = useGame();
+  const { play } = useAudio();
 
   // Auto-resolve card effect after overlay dismisses
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,14 +33,17 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     if (disabled) return;
 
     if (state.phase === 'in-jail') {
+      play('sfx/dice-shake');
       dispatch({ type: 'JAIL_ESCAPE', method: 'roll' });
     } else if (state.phase === 'rolling') {
+      play('sfx/dice-shake');
       dispatch({ type: 'ROLL' });
     } else if (state.phase === 'drawing-card' && !state.drawnCard) {
       dispatch({ type: 'DRAW_CARD' });
     } else if (state.phase === 'drawing-card' && state.drawnCard) {
       dispatch({ type: 'APPLY_CARD' });
     } else if (state.phase === 'turn-end') {
+      play('sfx/turn-start');
       dispatch({ type: 'END_TURN' });
     }
   };
@@ -86,6 +91,11 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       }
       case 'minigame': {
         return state.activeMinigame ? `Playing ${state.activeMinigame.id}...` : 'Loading minigame...';
+      }
+      case 'in-debt': {
+        const owed = state.debt?.amount ?? 0;
+        const shortBy = owed - player.money;
+        return `Need $${shortBy} more — sell or mortgage!`;
       }
       case 'drawing-card':
         return state.drawnCard ? state.drawnCard.text : 'Press To Draw';
@@ -156,33 +166,35 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       {/* Buy/Gamble/Decline buttons */}
       {state.phase === 'buying' && !isRolling ? (
         <div className="buyDeclineRow">
-          <button className="rollButton buyButton" onClick={() => dispatch({ type: 'BUY' })} disabled={isAnimating}>
-            Buy
-          </button>
+          {player.money >= (state.tiles[player.position] as any).price && (
+            <button className="rollButton buyButton" onClick={() => { play('sfx/buy-property'); dispatch({ type: 'BUY' }); }} disabled={isAnimating}>
+              Buy ${(state.tiles[player.position] as any).price}
+            </button>
+          )}
           {state.minigamesEnabled && (
             <button 
               className="rollButton gambleBtn" 
-              onClick={() => dispatch({ type: 'GAMBLE', context: 'buying' })} 
-              disabled={isAnimating || (player.money < (state.tiles[player.position] as any).price * 1.5)}
+              onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'buying' }); }} 
+              disabled={isAnimating}
             >
               Gamble
             </button>
           )}
-          <button className="rollButton declineButton" onClick={() => dispatch({ type: 'DECLINE' })} disabled={isAnimating}>
+          <button className="rollButton declineButton" onClick={() => { play('sfx/decline-property'); dispatch({ type: 'DECLINE' }); }} disabled={isAnimating}>
             Pass
           </button>
         </div>
       ) : state.phase === 'paying-rent' && !isRolling ? (
         <div className="payRentPhase">
           <div className="buyDeclineRow">
-            <button className="rollButton buyButton" onClick={() => dispatch({ type: 'PAY_RENT' })} disabled={isAnimating}>
+            <button className="rollButton buyButton" onClick={() => { play('sfx/pay-rent'); dispatch({ type: 'PAY_RENT' }); }} disabled={isAnimating}>
               Pay ${state.pendingRent?.amount || 0}
             </button>
             {state.minigamesEnabled && state.pendingRent && (
               <button 
                 className="rollButton gambleBtn" 
-                onClick={() => dispatch({ type: 'GAMBLE', context: 'rent' })} 
-                disabled={isAnimating || (player.money < state.pendingRent.amount * 1.5)}
+                onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'rent' }); }} 
+                disabled={isAnimating}
               >
                 Gamble
               </button>
@@ -201,6 +213,30 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         </button>
       )}
       <p className="rollHint">{getHint()}</p>
+
+      {/* Debt resolution - must sell/mortgage to raise funds */}
+      {state.phase === 'in-debt' && !isRolling && !isAnimating && (
+        <div className="debtActions" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          <p style={{ color: '#ff4444', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
+            You owe ${state.debt?.amount ?? 0} — You have ${player.money}
+          </p>
+          <button
+            className="rollButton buyButton"
+            onClick={() => { play('sfx/collect-money'); dispatch({ type: 'RESOLVE_DEBT' }); }}
+            disabled={player.money < (state.debt?.amount ?? 0)}
+            style={player.money >= (state.debt?.amount ?? 0) ? { background: '#22c55e' } : {}}
+          >
+            {player.money >= (state.debt?.amount ?? 0) ? 'Pay Debt' : 'Sell/Mortgage Properties ↓'}
+          </button>
+          <button
+            className="jailBtn"
+            onClick={() => { play('sfx/bankruptcy'); dispatch({ type: 'BANKRUPTCY' }); }}
+            style={{ color: '#ff4444', fontSize: '0.7rem' }}
+          >
+            Declare Bankruptcy
+          </button>
+        </div>
+      )}
 
       {/* Jail escape options */}
       {state.phase === 'in-jail' && !isRolling && !isAnimating && (

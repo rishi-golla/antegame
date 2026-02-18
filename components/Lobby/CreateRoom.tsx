@@ -4,11 +4,15 @@ import { useState } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { useWalletClient, useBalance } from 'wagmi';
+import { useWalletClient, useBalance, useSwitchChain, useChainId, useAccount } from 'wagmi';
 import { createGameOnChain, formatEther, parseEther } from '@/lib/contracts/monopolyGame';
 import { getChainId } from '@/lib/contracts/addresses';
+import { waitForTransactionReceipt } from 'wagmi/actions';
+import { wagmiConfig } from '@/context/EVMWalletContext';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 
-const BUY_IN_OPTIONS = ['0.001', '0.005', '0.01', '0.025', '0.05'];
+const BUY_IN_OPTIONS = ['0.001', '0.01', '0.05', '0.25', '0.5'];
+const TX_RECEIPT_TIMEOUT = 60_000; // 60 seconds
 
 interface CreateRoomProps {
   onCreated: () => void;
@@ -19,6 +23,12 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   const { createRoom } = useSocket();
   const { user, activeChain } = useMultiChain();
   const { data: walletClient } = useWalletClient();
+  const { isConnected: evmConnected } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { openConnectModal } = useConnectModal();
+  const currentChainId = useChainId();
+  const targetChainId = getChainId();
+  const wrongChain = currentChainId !== targetChainId;
   const { data: balance } = useBalance({
     address: user?.walletAddress as `0x${string}` | undefined,
     chainId: getChainId(),
@@ -40,6 +50,9 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
   const canAfford = balanceEth >= parseFloat(buyIn);
 
+  // Base chain users MUST have a wallet connected — no exceptions
+  const walletReady = !isBase || (evmConnected && walletClient);
+
   const handleCreate = async () => {
     const playerName = name.trim() || user?.displayName || 'Player';
     setLoading(true);
@@ -47,7 +60,27 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
     setStatus('');
 
     try {
-      if (isBase && walletClient) {
+      if (isBase) {
+        // Wallet MUST be connected for Base chain
+        if (!walletClient || !evmConnected) {
+          setError('Wallet not connected. Please reconnect your wallet.');
+          openConnectModal?.();
+          setLoading(false);
+          return;
+        }
+
+        // Auto-switch to correct chain if needed
+        if (wrongChain) {
+          setStatus('Switching network...');
+          try {
+            await switchChainAsync({ chainId: targetChainId });
+          } catch {
+            setError(`Please switch your wallet to Base (chain ${targetChainId})`);
+            setLoading(false);
+            return;
+          }
+        }
+
         // Step 1: Create room on server first to get the room code
         setStatus('Creating room...');
         const result = await createRoom(playerName, char.color, maxPlayers, {
@@ -60,29 +93,49 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
           return;
         }
 
-        // Step 2: Create game on-chain using the room code as gameId seed
+        // Step 2: Create game on-chain — send deposit with the tx
         setStatus('Waiting for wallet approval...');
         let txHash: string;
         try {
           txHash = await createGameOnChain(walletClient, result.code, maxPlayers, buyIn);
         } catch (err: any) {
-          // On-chain tx failed — leave the server room so it gets cleaned up
+          // On-chain tx failed or user rejected — leave the server room
           const { getSocket } = await import('@/lib/socket');
           getSocket().emit('room:leave');
           throw err;
         }
 
-        // Step 3: Notify server that on-chain deposit succeeded
-        setStatus('Confirming deposit...');
+        // Step 3: Wait for on-chain confirmation with timeout
+        setStatus('Confirming on-chain...');
+        try {
+          const receipt = await Promise.race([
+            waitForTransactionReceipt(wagmiConfig, { hash: txHash as `0x${string}` }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('Transaction confirmation timed out. Check your wallet for status.')), TX_RECEIPT_TIMEOUT)
+            ),
+          ]);
+          if (receipt.status === 'reverted') {
+            const { getSocket } = await import('@/lib/socket');
+            getSocket().emit('room:leave');
+            throw new Error('Transaction reverted on-chain');
+          }
+        } catch (err: any) {
+          // If receipt fails, leave the server room
+          const { getSocket } = await import('@/lib/socket');
+          getSocket().emit('room:leave');
+          throw err;
+        }
+
+        // Step 4: Notify server that on-chain deposit is CONFIRMED
+        setStatus('Deposit confirmed! Entering room...');
         const { getSocket } = await import('@/lib/socket');
         await new Promise<void>((resolve) => {
-          getSocket().emit('room:base-deposit' as any, { txHash: txHash }, () => resolve());
+          getSocket().emit('room:base-deposit' as any, { txHash }, () => resolve());
         });
 
-        setStatus('Transaction confirmed!');
         onCreated();
       } else {
-        // Non-Base flow (Solana or no wallet)
+        // Non-Base flow (Solana or free play)
         const result = await createRoom(playerName, char.color, maxPlayers);
         if (result.ok) {
           onCreated();
@@ -178,13 +231,26 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
           </div>
         )}
 
+        {isBase && !walletReady && (
+          <p className="lobbyError" style={{ color: '#d4a843' }}>
+            Wallet not connected.{' '}
+            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => openConnectModal?.()}>
+              Reconnect wallet
+            </span>
+          </p>
+        )}
+        {isBase && walletReady && wrongChain && (
+          <p className="lobbyError" style={{ color: '#d4a843' }}>
+            Wrong network — will auto-switch to Base when you create the room.
+          </p>
+        )}
         {error && <p className="lobbyError">{error}</p>}
         {status && <p className="lobbyError" style={{ color: '#d4a843' }}>{status}</p>}
 
         <button
           className="setupStartBtn"
           onClick={handleCreate}
-          disabled={loading || (isBase && !canAfford)}
+          disabled={loading || (isBase && (!walletReady || !canAfford))}
         >
           {loading ? status || 'Creating...' : isBase ? `Create Room (${buyIn} ETH)` : 'Create Room'}
         </button>

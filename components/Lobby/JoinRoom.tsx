@@ -4,9 +4,14 @@ import { useState } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { useWalletClient, useBalance } from 'wagmi';
+import { useWalletClient, useBalance, useAccount } from 'wagmi';
 import { joinGameOnChain, getGameOnChain, formatEther } from '@/lib/contracts/monopolyGame';
 import { getChainId } from '@/lib/contracts/addresses';
+import { waitForTransactionReceipt } from 'wagmi/actions';
+import { wagmiConfig } from '@/context/EVMWalletContext';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+
+const TX_RECEIPT_TIMEOUT = 60_000; // 60 seconds
 
 interface JoinRoomProps {
   onJoined: () => void;
@@ -17,6 +22,8 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
   const { joinRoom } = useSocket();
   const { user, activeChain } = useMultiChain();
   const { data: walletClient } = useWalletClient();
+  const { isConnected: evmConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
   const { data: balance } = useBalance({
     address: user?.walletAddress as `0x${string}` | undefined,
     chainId: getChainId(),
@@ -36,6 +43,9 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
   const isBase = activeChain === 'base';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
 
+  // Base chain users MUST have a wallet connected
+  const walletReady = !isBase || (evmConnected && walletClient);
+
   const handleJoin = async () => {
     const playerName = name.trim() || user?.displayName || 'Player';
     if (!code.trim() || code.trim().length !== 6) {
@@ -49,42 +59,97 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
     try {
       const roomCode = code.trim().toUpperCase();
 
-      if (isBase && walletClient) {
+      if (isBase) {
+        // Wallet MUST be connected for Base chain — no exceptions
+        if (!walletClient || !evmConnected) {
+          setError('Wallet not connected. Please reconnect your wallet.');
+          openConnectModal?.();
+          setLoading(false);
+          return;
+        }
+
+        // Step 0: Validate color/room on server BEFORE depositing
+        setStatus('Validating...');
+        const { getSocket } = await import('@/lib/socket');
+        const validation = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
+          getSocket().emit('room:validate-join' as any, { code: roomCode, color: char.color }, resolve);
+        });
+        if (!validation.ok) {
+          setError(validation.error ?? 'Cannot join room');
+          setLoading(false);
+          return;
+        }
+
         // Step 1: Check game on-chain and get buy-in
         setStatus('Checking game...');
         const game = await getGameOnChain(roomCode);
-        if (game && game.buyIn > BigInt(0)) {
-          const buyInEth = formatEther(game.buyIn);
-          setBuyInDisplay(buyInEth);
+        if (!game || game.buyIn === BigInt(0)) {
+          setError('No on-chain game found for this room. The host may not have deposited yet.');
+          setLoading(false);
+          return;
+        }
 
+        const buyInEth = formatEther(game.buyIn);
+        setBuyInDisplay(buyInEth);
+
+        // Check if player already deposited on-chain (e.g. retry after non-color error)
+        const alreadyDeposited = game.players.some(
+          (addr) => addr.toLowerCase() === user?.walletAddress?.toLowerCase()
+        );
+
+        let txHash: string | undefined;
+
+        if (alreadyDeposited) {
+          setStatus('Deposit already confirmed on-chain. Joining room...');
+        } else {
           if (balanceEth < parseFloat(buyInEth)) {
-            setError(`Insufficient balance. Need ${buyInEth} ETH`);
+            setError(`Insufficient balance. Need ${buyInEth} ETH, have ${balanceEth.toFixed(4)} ETH`);
             setLoading(false);
             return;
           }
 
-          // Step 2: Join on-chain
-          setStatus('Waiting for wallet approval...');
-          await joinGameOnChain(walletClient, roomCode, buyInEth);
-          setStatus('Transaction confirmed. Joining room...');
+          // Step 2: Join on-chain — send deposit
+          setStatus(`Waiting for wallet approval (${buyInEth} ETH)...`);
+          try {
+            txHash = await joinGameOnChain(walletClient, roomCode, buyInEth);
+          } catch (err: any) {
+            throw err;
+          }
+
+          // Step 3: Wait for on-chain confirmation with timeout
+          setStatus('Confirming on-chain...');
+          const receipt = await Promise.race([
+            waitForTransactionReceipt(wagmiConfig, { hash: txHash as `0x${string}` }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('Transaction confirmation timed out. Check your wallet for status.')), TX_RECEIPT_TIMEOUT)
+            ),
+          ]);
+          if (receipt.status === 'reverted') {
+            throw new Error('Transaction reverted on-chain. You were not charged.');
+          }
+
+          setStatus('Deposit confirmed! Joining room...');
         }
 
-        // Step 3: Join room on server with wallet info
+        // Step 4: On-chain deposit CONFIRMED — now join the server room
         const result = await joinRoom(roomCode, playerName, char.color, {
           walletAddress: user?.walletAddress,
         });
-        if (result.ok) {
-          // Step 4: Notify server of on-chain deposit
-          const { getSocket } = await import('@/lib/socket');
-          await new Promise<void>((resolve) => {
-            getSocket().emit('room:base-deposit' as any, { txHash: '' }, () => resolve());
-          });
-          onJoined();
-        } else {
+        if (!result.ok) {
           setError(result.error ?? 'Failed to join room');
+          setLoading(false);
+          return;
         }
+
+        // Step 5: Notify server of confirmed deposit
+        const { getSocket: getSocket2 } = await import('@/lib/socket');
+        await new Promise<void>((resolve) => {
+          getSocket2().emit('room:base-deposit' as any, { txHash }, () => resolve());
+        });
+
+        onJoined();
       } else {
-        // Non-Base flow
+        // Non-Base flow (Solana or free play)
         const result = await joinRoom(roomCode, playerName, char.color);
         if (result.ok) {
           onJoined();
@@ -159,10 +224,18 @@ export default function JoinRoom({ onJoined, onBack }: JoinRoomProps) {
           </p>
         )}
 
+        {isBase && !walletReady && (
+          <p className="lobbyError" style={{ color: '#d4a843' }}>
+            Wallet not connected.{' '}
+            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => openConnectModal?.()}>
+              Reconnect wallet
+            </span>
+          </p>
+        )}
         {error && <p className="lobbyError">{error}</p>}
         {status && <p className="lobbyError" style={{ color: '#d4a843' }}>{status}</p>}
 
-        <button className="setupStartBtn" onClick={handleJoin} disabled={loading}>
+        <button className="setupStartBtn" onClick={handleJoin} disabled={loading || (isBase && !walletReady)}>
           {loading ? status || 'Joining...' : 'Join Room'}
         </button>
         <button className="lobbyBackBtn" onClick={onBack}>Back</button>
