@@ -6804,10 +6804,10 @@ img[src*="/assets/"] {
   background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
   border: 2px solid #b8860d;
   border-radius: 12px;
-  padding: 20px 24px;
-  max-width: 640px;
+  padding: 14px 18px;
+  max-width: 380px;
   width: 90vw;
-  max-height: 80vh;
+  max-height: 70vh;
   overflow-y: auto;
   position: relative;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(184, 134, 13, 0.2);
@@ -6830,15 +6830,15 @@ img[src*="/assets/"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(184, 134, 13, 0.3);
   text-align: center;
 }
 .assetsPlayerBadge {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -6862,13 +6862,13 @@ img[src*="/assets/"] {
 }
 .assetsPlayerName {
   font-family: 'Cinzel', serif;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   color: #f0e6d3;
   margin: 0;
 }
 .assetsStats {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #b8860d;
   margin: 2px 0 0 0;
 }
