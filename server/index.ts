@@ -202,7 +202,7 @@ nextApp.prepare().then(() => {
     });
 
     // Room: Pre-validate join (check color/capacity before on-chain deposit)
-    socket.on('room:validate-join', (data: { code: string; color: string }, cb: (res: { ok: boolean; error?: string }) => void) => {
+    (socket as any).on('room:validate-join', (data: { code: string; color: string }, cb: (res: { ok: boolean; error?: string }) => void) => {
       const code = data.code.toUpperCase();
       const room = rm.getRoom(code);
       if (!room) { cb({ ok: false, error: 'Room not found' }); return; }
@@ -451,7 +451,7 @@ nextApp.prepare().then(() => {
       }
     });
 
-    socket.on('game:accept-trade', (data: any, cb?: (res: any) => void) => {
+    (socket as any).on('game:accept-trade', (data: any, cb?: (res: any) => void) => {
       console.log('[server] game:accept-trade received from', socket.id);
       const code = rm.findRoomBySocket(socket.id);
       if (!code) { console.log('[trade] no room found'); cb?.({ ok: false, error: 'No room' }); return; }
@@ -478,7 +478,7 @@ nextApp.prepare().then(() => {
       }
     });
 
-    socket.on('game:reject-trade', (data: any, cb?: (res: any) => void) => {
+    (socket as any).on('game:reject-trade', (data: any, cb?: (res: any) => void) => {
       console.log('[server] game:reject-trade received from', socket.id);
       const code = rm.findRoomBySocket(socket.id);
       if (!code) { cb?.({ ok: false, error: 'No room' }); return; }
@@ -502,7 +502,7 @@ nextApp.prepare().then(() => {
       }
     });
 
-    socket.on('game:cancel-trade', () => {
+    (socket as any).on('game:cancel-trade', () => {
       const code = rm.findRoomBySocket(socket.id);
       if (!code) return;
       const room = rm.getRoom(code);
@@ -519,7 +519,7 @@ nextApp.prepare().then(() => {
       broadcastGameState(code);
     });
 
-    socket.on('game:counter-trade', (data: { offer: any }) => {
+    (socket as any).on('game:counter-trade', (data: { offer: any }) => {
       const code = rm.findRoomBySocket(socket.id);
       if (!code) return;
       const room = rm.getRoom(code);
