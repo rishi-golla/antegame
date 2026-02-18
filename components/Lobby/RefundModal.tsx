@@ -76,14 +76,9 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
         {status && <p style={{ textAlign: 'center', color: '#d4a843', fontSize: '0.85rem', marginBottom: 12 }}>{status}</p>}
 
         {!done && (
-          <>
-            <button className="setupStartBtn" onClick={handleRefund} disabled={loading}>
-              {loading ? status || 'Processing...' : 'Claim Refund'}
-            </button>
-            <button className="lobbyBackBtn" onClick={onDone} disabled={loading} style={{ marginTop: 8 }}>
-              Skip (claim later)
-            </button>
-          </>
+          <button className="setupStartBtn" onClick={handleRefund} disabled={loading}>
+            {loading ? status || 'Processing...' : 'Claim Refund'}
+          </button>
         )}
         {done && (
           <p style={{ textAlign: 'center', color: '#4caf50', fontWeight: 700 }}>✅ Refund sent to your wallet</p>
