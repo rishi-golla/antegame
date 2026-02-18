@@ -12,6 +12,7 @@ const navLinks = [
   { label: 'About', href: '/about' },
   { label: 'Features', href: '/features' },
   { label: 'Minigames', href: '/minigames' },
+  { label: 'Docs', href: '/docs' },
 ];
 
 export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
