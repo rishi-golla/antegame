@@ -71,22 +71,22 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
           setFlipResults(prev => {
             const newResults = [...prev, flipResult];
             setTimeout(() => {
-              // Clear guess BEFORE flipping=false to prevent the auto-flip effect re-triggering
-              setGuess(null);
-              setFlipping(false);
-              setCurrentFlip(cf => {
-                if (cf === 3) {
-                  setGameEnded(true);
-                  const correctCount = newResults.filter(r => r.correct).length;
-                  setTimeout(() => {
-                    if (correctCount === 3) onResult('win');
-                    else if (correctCount === 2) onResult('close-win');
-                    else if (correctCount === 1) onResult('close-loss');
-                    else onResult('loss');
-                  }, 1000);
-                }
-                return cf + 1;
-              });
+              if (newResults.length >= 3) {
+                setGameEnded(true);
+                setFlipping(false);
+                const correctCount = newResults.filter(r => r.correct).length;
+                setTimeout(() => {
+                  if (correctCount === 3) onResult('win');
+                  else if (correctCount === 2) onResult('close-win');
+                  else if (correctCount === 1) onResult('close-loss');
+                  else onResult('loss');
+                }, 1000);
+              } else {
+                // Clear guess BEFORE flipping=false to prevent the auto-flip effect re-triggering
+                setGuess(null);
+                setFlipping(false);
+                setCurrentFlip(newResults.length + 1);
+              }
             }, 500);
             return newResults;
           });
