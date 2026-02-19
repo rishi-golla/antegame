@@ -9,7 +9,19 @@ import { useAuth } from '@/context/AuthContext';
 import { useEVMAuth } from '@/context/EVMAuthContext';
 import { useMultiChain, type Chain } from '@/context/MultiChainContext';
 
-export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void }) {
+import LandingNav from './LandingNav';
+import HeroSection from './HeroSection';
+import HowItWorks from './HowItWorks';
+import FeatureStrip from './FeatureStrip';
+import StatsStrip from './StatsStrip';
+import CTASection from './CTASection';
+import LandingFooter from './LandingFooter';
+
+interface LandingPageProps {
+  onFreePlay?: () => void;
+}
+
+export default function LandingPage({ onFreePlay }: LandingPageProps) {
   const { connectAndSign: solanaSign } = useAuth();
   const { connectAndSign: evmSign } = useEVMAuth();
   const { setActiveChain } = useMultiChain();
@@ -21,7 +33,6 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
 
-  // Auto-sign after Solana wallet connects
   useEffect(() => {
     if (solConnected && publicKey && pendingChain === 'solana') {
       setPendingChain(null);
@@ -33,7 +44,6 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
     }
   }, [solConnected, publicKey, pendingChain, solanaSign, setActiveChain]);
 
-  // Auto-sign after EVM wallet connects (only when user explicitly chose Base)
   useEffect(() => {
     if (evmConnected && evmAddress && pendingChain === 'base') {
       setPendingChain(null);
@@ -45,23 +55,8 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
     }
   }, [evmConnected, evmAddress, pendingChain, evmSign, setActiveChain]);
 
-  const handleSolana = () => {
-    setError('');
-    if (solConnected && publicKey) {
-      setConnecting(true);
-      setActiveChain('solana');
-      solanaSign()
-        .catch((e: any) => setError(e.message || 'Verification failed'))
-        .finally(() => setConnecting(false));
-    } else {
-      setPendingChain('solana');
-      setSolanaModalVisible(true);
-    }
-  };
-
   const handleBase = async () => {
     setError('');
-    // If wallet is already connected (e.g. after hard refresh), just sign directly
     if (evmConnected && evmAddress) {
       setConnecting(true);
       setActiveChain('base');
@@ -75,36 +70,15 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   };
 
   return (
-    <div className="connectScreen">
-      <div className="connectCard">
-        <img src="/assets/misc/ante-logo.webp" alt="Ante" className="connectLogo" />
-        <h1 className="connectTitle">ANTE</h1>
-        <p className="connectTagline">Stake crypto. Roll dice. Win the pot.</p>
-
-        <div className="connectChainPicker">
-          <button
-            className="connectBtn connectBtnBase"
-            onClick={handleBase}
-            disabled={connecting}
-          >
-            {connecting && pendingChain === 'base' ? 'Connecting...' : 'Connect with Base'}
-          </button>
-          <button
-            className="connectBtn connectBtnSolana"
-            disabled
-          >
-            Connect with Solana (Coming Soon)
-          </button>
-        </div>
-
-        {error && <p className="connectError">{error}</p>}
-        {onFreePlay && (
-          <button className="connectBtnFreePlay" onClick={onFreePlay}>
-            Play for Free
-          </button>
-        )}
-        <p className="connectChain">Base (ETH) &bull; Solana (SOL)</p>
-      </div>
+    <div className="landingPage">
+      <LandingNav onConnect={handleBase} connecting={connecting} />
+      <HeroSection onConnect={handleBase} onFreePlay={onFreePlay} connecting={connecting} />
+      <StatsStrip />
+      <HowItWorks />
+      <FeatureStrip />
+      <CTASection onConnect={handleBase} onFreePlay={onFreePlay} connecting={connecting} />
+      <LandingFooter />
+      {error && <div className="landingError">{error}</div>}
     </div>
   );
 }

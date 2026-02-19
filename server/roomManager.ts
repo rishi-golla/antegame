@@ -19,7 +19,7 @@ export class RoomManager {
     name: string,
     color: string,
     maxPlayers: number,
-    opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }
+    opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }
   ): { ok: boolean; code?: string; error?: string } {
     // Generate unique code
     let code = generateCode();
@@ -35,6 +35,7 @@ export class RoomManager {
       id: socketId,
       name,
       color,
+      characterId: opts?.characterId,
       ready: false,
       connected: true,
       disconnectedAt: null,
@@ -71,7 +72,7 @@ export class RoomManager {
     socketId: string,
     name: string,
     color: string,
-    opts?: { walletAddress?: string; onChainTxHash?: string }
+    opts?: { walletAddress?: string; onChainTxHash?: string; characterId?: string }
   ): { ok: boolean; error?: string } {
     const room = this.rooms.get(code);
     if (!room) return { ok: false, error: 'Room not found' };
@@ -88,6 +89,7 @@ export class RoomManager {
       id: socketId,
       name,
       color,
+      characterId: opts?.characterId,
       ready: false,
       connected: true,
       disconnectedAt: null,
@@ -157,9 +159,10 @@ export class RoomManager {
     const names = room.players.map((p) => p.name);
     const gameState = createGame(names);
 
-    // Apply player colors from lobby
+    // Apply player colors and character IDs from lobby
     gameState.players.forEach((gp, i) => {
       gp.color = room.players[i].color;
+      gp.characterId = room.players[i].characterId;
     });
 
     room.gameState = gameState;
