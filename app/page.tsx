@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useBalance, useAccount } from 'wagmi';
 import { useAudio } from '@/context/AudioContext';
 import { GameProvider } from '@/context/GameContext';
 import { WalletContextProvider } from '@/context/WalletContext';
@@ -56,13 +57,26 @@ function LobbyMusic({ screen }: { screen: Screen }) {
 }
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
+  const { user } = useMultiChain();
+  const { address } = useAccount();
+  const { data: balanceData } = useBalance({ address });
+
+  const balanceStr = useMemo(() => {
+    if (!balanceData) return null;
+    const val = parseFloat(balanceData.formatted);
+    return val > 0 ? val.toFixed(4) : null;
+  }, [balanceData]);
+
   return (
     <div className="menuScreen">
       <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
 
+      {/* Background image */}
+      <div className="menuBgImage" />
+
       {/* Floating particles */}
       <div className="menuParticles">
-        {Array.from({ length: 20 }).map((_, i) => (
+        {Array.from({ length: 25 }).map((_, i) => (
           <div key={i} className="menuParticle" style={{
             left: `${Math.random() * 100}%`,
             animationDelay: `${Math.random() * 8}s`,
@@ -75,16 +89,22 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
       </div>
 
       <div className="menuLobby">
-        {/* Branding */}
+        {/* Branding — use mascot instead of logo */}
         <div className="menuBranding">
-          <img src="/assets/misc/ante-logo.webp" alt="Ante" className="menuLogo" />
+          <img src="/assets/sprites/card-shark.webp" alt="Ante" className="menuMascot" />
           <h1 className="menuTitle">Ante</h1>
           <p className="menuSubtitle">Stake crypto. Roll dice. Win the pot.</p>
+          {balanceStr && (
+            <div className="menuStatusRow">
+              <span className="menuBalance">💰 {balanceStr} ETH</span>
+            </div>
+          )}
         </div>
 
         {/* Main action cards */}
         <div className="menuActionCards">
           <button className="menuActionCard menuActionCardPrimary" onClick={() => onNavigate('quick-play')}>
+            <div className="menuCardShine" />
             <img src="/assets/menu-icons/quick-play.webp" alt="" className="menuActionImg" />
             <div className="menuActionInfo">
               <h3 className="menuActionName">Quick Play</h3>
