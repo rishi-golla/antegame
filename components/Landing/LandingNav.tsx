@@ -30,7 +30,7 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
       className={`landingNav ${scrolled ? 'landingNavScrolled' : ''}`}
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+      transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' as const }}
     >
       <div className="landingNavInner">
         <motion.a

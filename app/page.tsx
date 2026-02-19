@@ -59,30 +59,66 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   return (
     <div className="menuScreen">
       <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
-      <div className="menuCard">
-        <img src="/assets/misc/ante-logo.webp" alt="Ante" className="menuLogo" />
-        <h1 className="menuTitle">Ante</h1>
-        <p className="menuSubtitle">Choose how to play</p>
-        <div className="menuActions">
-          <button className="menuPrimaryBtn" onClick={() => onNavigate('quick-play')}>
-            Quick Play
+
+      {/* Floating particles */}
+      <div className="menuParticles">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i} className="menuParticle" style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 8}s`,
+            animationDuration: `${6 + Math.random() * 8}s`,
+            opacity: 0.15 + Math.random() * 0.25,
+            width: `${2 + Math.random() * 3}px`,
+            height: `${2 + Math.random() * 3}px`,
+          }} />
+        ))}
+      </div>
+
+      <div className="menuLobby">
+        {/* Branding */}
+        <div className="menuBranding">
+          <img src="/assets/misc/ante-logo.webp" alt="Ante" className="menuLogo" />
+          <h1 className="menuTitle">Ante</h1>
+          <p className="menuSubtitle">Stake crypto. Roll dice. Win the pot.</p>
+        </div>
+
+        {/* Main action cards */}
+        <div className="menuActionCards">
+          <button className="menuActionCard menuActionCardPrimary" onClick={() => onNavigate('quick-play')}>
+            <img src="/assets/menu-icons/quick-play.webp" alt="" className="menuActionImg" />
+            <div className="menuActionInfo">
+              <h3 className="menuActionName">Quick Play</h3>
+              <p className="menuActionDesc">Jump into a game instantly. Auto-matched by stake tier.</p>
+            </div>
           </button>
-          <button className="menuPrimaryBtn menuSecondaryBtn" onClick={() => onNavigate('create')}>
-            Create Room
+          <button className="menuActionCard" onClick={() => onNavigate('create')}>
+            <img src="/assets/menu-icons/create-room.webp" alt="" className="menuActionImg" />
+            <div className="menuActionInfo">
+              <h3 className="menuActionName">Create Room</h3>
+              <p className="menuActionDesc">Set the stakes and invite your friends.</p>
+            </div>
           </button>
-          <button className="menuPrimaryBtn menuSecondaryBtn" onClick={() => onNavigate('join')}>
-            Join Room
+          <button className="menuActionCard" onClick={() => onNavigate('join')}>
+            <img src="/assets/menu-icons/join-room.webp" alt="" className="menuActionImg" />
+            <div className="menuActionInfo">
+              <h3 className="menuActionName">Join Room</h3>
+              <p className="menuActionDesc">Enter a room code to join a private game.</p>
+            </div>
           </button>
         </div>
-        <div className="menuDivider" />
-        <div className="menuSecondaryActions">
+
+        {/* Secondary row */}
+        <div className="menuSecondaryRow">
           <button className="menuGhostBtn" onClick={() => onNavigate('free-play-setup')}>
+            <img src="/assets/menu-icons/free-play.webp" alt="" className="menuGhostImg" />
             Free Play
           </button>
           <button className="menuGhostBtn" onClick={() => onNavigate('profile')}>
+            <img src="/assets/menu-icons/profile.webp" alt="" className="menuGhostImg" />
             Profile
           </button>
           <button className="menuGhostBtn" onClick={() => onNavigate('leaderboard')}>
+            <img src="/assets/menu-icons/leaderboard.webp" alt="" className="menuGhostImg" />
             Leaderboard
           </button>
         </div>

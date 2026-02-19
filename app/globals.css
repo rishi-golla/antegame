@@ -5711,6 +5711,7 @@ button:active:not(:disabled) {
 }
 
 /* ===== MAIN MENU REVAMP ===== */
+/* ---- Menu Screen (Lobby) ---- */
 .menuScreen {
   display: flex;
   align-items: center;
@@ -5718,148 +5719,239 @@ button:active:not(:disabled) {
   min-height: 100vh;
   background: #0d0608;
   background-image:
-    radial-gradient(ellipse at 50% 0%, rgba(139, 69, 19, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 50% 100%, rgba(139, 69, 19, 0.1) 0%, transparent 50%);
-  animation: feltSlideIn 0.4s var(--ease-out) both;
+    radial-gradient(ellipse at 50% 0%, rgba(139, 69, 19, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(100, 40, 60, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 80%, rgba(100, 40, 60, 0.1) 0%, transparent 40%);
+  overflow: hidden;
+  position: relative;
 }
 
-.menuCard {
-  text-align: center;
-  padding: 48px 44px 40px;
-  background:
-    linear-gradient(180deg, rgba(30, 15, 15, 0.95) 0%, rgba(20, 10, 10, 0.98) 100%);
-  border: 2px solid var(--gold);
-  border-radius: 12px;
-  box-shadow:
-    0 0 0 1px rgba(139, 115, 32, 0.3),
-    0 0 60px rgba(212, 175, 55, 0.08),
-    0 24px 80px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 rgba(212, 175, 55, 0.15);
-  max-width: 460px;
+/* Floating particles */
+.menuParticles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.menuParticle {
+  position: absolute;
+  bottom: -10px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: particleFloat linear infinite;
+}
+@keyframes particleFloat {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+}
+
+/* Lobby container */
+.menuLobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  max-width: 900px;
   width: 92%;
+  padding: 60px 0 40px;
+  position: relative;
+  z-index: 1;
   animation: cardFadeIn 0.5s ease both;
 }
 
-.menuLogo {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 12px;
-  display: block;
-  filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.3));
+/* Branding */
+.menuBranding {
+  text-align: center;
+  width: 100%;
 }
-
+.menuLogo {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 4px 24px rgba(212, 175, 55, 0.35));
+  animation: logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%, 100% { filter: drop-shadow(0 4px 24px rgba(212, 175, 55, 0.35)); }
+  50% { filter: drop-shadow(0 4px 32px rgba(212, 175, 55, 0.55)); }
+}
 .menuTitle {
   font-family: 'Cinzel', serif;
-  font-size: 2.4rem;
+  font-size: 3rem;
   font-weight: 800;
   color: var(--gold-bright);
   text-shadow:
     0 2px 4px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(212, 175, 55, 0.2);
-  margin-bottom: 6px;
-  letter-spacing: 0.1em;
+    0 0 40px rgba(212, 175, 55, 0.25);
+  margin-bottom: 8px;
+  letter-spacing: 0.12em;
 }
-
 .menuSubtitle {
   font-family: 'Cinzel', serif;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #a89070;
-  margin-bottom: 32px;
   letter-spacing: 0.06em;
 }
 
-.menuActions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* Action cards grid */
+.menuActionCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
   width: 100%;
 }
-
-.menuPrimaryBtn {
-  font-family: 'Cinzel', serif;
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 16px 28px;
-  border: 2px solid var(--gold);
-  border-radius: 8px;
+.menuActionCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 32px 20px 28px;
+  background: #1a0f12;
+  background-image: linear-gradient(180deg, #1e1215 0%, #12080c 100%);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.03em;
+  transition: all 0.25s ease;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  color: #1a0f0f;
   box-shadow:
-    0 4px 16px rgba(212, 175, 55, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(212, 175, 55, 0.06);
 }
-
-.menuPrimaryBtn::before {
+.menuActionCard::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.04) 0%, transparent 70%);
   pointer-events: none;
+  transition: opacity 0.25s ease;
+  opacity: 0;
 }
-
-.menuPrimaryBtn:hover {
+.menuActionCard:hover::before {
+  opacity: 1;
+}
+.menuActionCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(212, 175, 55, 0.35);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(212, 175, 55, 0.08),
+    inset 0 1px 0 rgba(212, 175, 55, 0.12);
+}
+.menuActionCard:active {
   transform: translateY(-2px);
-  box-shadow:
-    0 6px 24px rgba(212, 175, 55, 0.4),
-    0 0 20px rgba(212, 175, 55, 0.2);
 }
 
-.menuPrimaryBtn:active {
-  transform: translateY(1px);
-}
-
-.menuSecondaryBtn {
-  background: linear-gradient(180deg, #3a1828, #2a1018);
-  color: var(--gold-bright);
+/* Primary card (Quick Play) */
+.menuActionCardPrimary {
   border-color: var(--gold);
+  background: #221a0f;
+  background-image: linear-gradient(180deg, #322010 0%, #1e0f08 100%);
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 4px 24px rgba(212, 175, 55, 0.15),
+    0 0 0 1px rgba(139, 115, 32, 0.2),
     inset 0 1px 0 rgba(212, 175, 55, 0.1);
 }
-
-.menuSecondaryBtn:hover {
-  background: linear-gradient(180deg, #4a2030, #3a1828);
+.menuActionCardPrimary:hover {
+  border-color: var(--gold-bright);
   box-shadow:
-    0 6px 24px rgba(0, 0, 0, 0.5),
-    0 0 16px rgba(212, 175, 55, 0.15);
+    0 12px 40px rgba(212, 175, 55, 0.2),
+    0 0 30px rgba(212, 175, 55, 0.1),
+    inset 0 1px 0 rgba(212, 175, 55, 0.15);
 }
 
-.menuDivider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
-  margin: 20px 0;
+.menuActionImg {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.2));
+}
+.menuActionCardPrimary .menuActionImg {
+  width: 72px;
+  height: 72px;
+  filter: drop-shadow(0 2px 12px rgba(212, 175, 55, 0.35));
+}
+.menuGhostImg {
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  opacity: 0.7;
 }
 
-.menuSecondaryActions {
+.menuActionInfo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 100%;
+  gap: 6px;
+}
+.menuActionName {
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gold-bright);
+  letter-spacing: 0.04em;
+}
+.menuActionCardPrimary .menuActionName {
+  font-size: 1.15rem;
+}
+.menuActionDesc {
+  font-size: 0.78rem;
+  color: #8a7a6a;
+  line-height: 1.5;
 }
 
+/* Secondary row */
+.menuSecondaryRow {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 .menuGhostBtn {
   font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 12px 28px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  color: #777;
+  color: #666;
   cursor: pointer;
   transition: all 0.2s ease;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
 .menuGhostBtn:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #aaa;
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+.menuGhostIcon {
+  font-size: 0.9rem;
+}
+
+/* Mobile: stack action cards */
+@media (max-width: 700px) {
+  .menuActionCards {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .menuSecondaryRow {
+    flex-direction: column;
+    align-items: center;
+  }
+  .menuTitle {
+    font-size: 2.4rem;
+  }
 }
 
 .casinoMenuCard {

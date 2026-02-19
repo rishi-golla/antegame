@@ -12,7 +12,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
           className="heroBgImg"
           initial={{ scale: 1.15 }}
           animate={{ scale: 1 }}
-          transition={{ duration: 2.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 2.5, ease: [0.25, 0.46, 0.45, 0.94] as [number,number,number,number] }}
         />
       </div>
       <div className="heroOverlay" />
@@ -33,7 +33,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
               duration: 4 + i * 0.5,
               repeat: Infinity,
               delay: i * 0.8,
-              ease: 'easeInOut',
+              ease: 'easeInOut' as const,
             }}
           />
         ))}
@@ -53,7 +53,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
           className="heroTitle"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 1, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number,number,number,number] }}
         >
           ANTE
         </motion.h1>
@@ -120,7 +120,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
         <motion.div
           className="heroScrollArrow"
           animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' as const }}
         />
       </motion.div>
     </section>

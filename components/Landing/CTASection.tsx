@@ -21,7 +21,7 @@ export default function CTASection({ onConnect, onFreePlay, connecting }: CTASec
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
-        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] as [number,number,number,number] }}
       >
         <p className="ctaLabel">Ready?</p>
         <h2 className="ctaTitle">Ante Up</h2>
