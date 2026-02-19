@@ -103,8 +103,7 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 
         {/* Main action cards */}
         <div className="menuActionCards">
-          <button className="menuActionCard menuActionCardPrimary" onClick={() => onNavigate('quick-play')}>
-            <div className="menuCardShine" />
+          <button className="menuActionCard" onClick={() => onNavigate('quick-play')}>
             <img src="/assets/menu-icons/quick-play.webp" alt="" className="menuActionImg" />
             <div className="menuActionInfo">
               <h3 className="menuActionName">Quick Play</h3>
