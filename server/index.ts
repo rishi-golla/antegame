@@ -280,6 +280,7 @@ nextApp.prepare().then(() => {
         walletAddress: data.walletAddress,
         buyInEth: data.buyInEth,
         onChainTxHash: data.onChainTxHash,
+        characterId: data.characterId,
       });
       if (result.ok && result.code) {
         socket.join(result.code);
@@ -295,6 +296,7 @@ nextApp.prepare().then(() => {
       const result = rm.joinRoom(code, socket.id, data.name, data.color, {
         walletAddress: data.walletAddress,
         onChainTxHash: data.onChainTxHash,
+        characterId: data.characterId,
       });
       if (result.ok) {
         socket.join(code);

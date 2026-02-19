@@ -4,6 +4,7 @@ export interface ServerPlayer {
   id: string; // socket id
   name: string;
   color: string;
+  characterId?: string;
   ready: boolean;
   connected: boolean;
   disconnectedAt: number | null;
@@ -44,8 +45,8 @@ export interface ChatMessage {
 
 // Client -> Server events
 export interface ClientToServerEvents {
-  'room:create': (data: { name: string; color: string; maxPlayers: number; walletAddress?: string; buyInEth?: string; onChainTxHash?: string }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
-  'room:join': (data: { code: string; name: string; color: string; walletAddress?: string; onChainTxHash?: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
+  'room:create': (data: { name: string; color: string; characterId?: string; maxPlayers: number; walletAddress?: string; buyInEth?: string; onChainTxHash?: string }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
+  'room:join': (data: { code: string; name: string; color: string; characterId?: string; walletAddress?: string; onChainTxHash?: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
   'room:leave': () => void;
   'room:ready': () => void;
   'room:start': (cb: (res: { ok: boolean; error?: string }) => void) => void;

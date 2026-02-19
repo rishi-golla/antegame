@@ -10,6 +10,7 @@ import type {
   MinigameContext,
   MinigameState,
 } from '@/types/game';
+import { getBuffModifier, applyDiscount, applyBoost } from './buffs';
 import {
   TILES,
   CHANCE_CARDS,
@@ -181,12 +182,17 @@ export function movePlayer(state: GameState, steps: number): GameState {
   // Passing GO
   if (steps > 0 && newPosition >= 40) {
     newPosition = newPosition % 40;
-    const salary = getGoSalary(s.roundNumber, s.finalRounds);
+    let salary = getGoSalary(s.roundNumber, s.finalRounds);
+    // Singer buff: Crowd Favorite — collect more when passing GO
+    const salaryBoost = getBuffModifier(player, 'salary-boost');
+    if (salaryBoost > 0 && salary > 0) {
+      salary = applyBoost(salary, salaryBoost);
+    }
     if (salary > 0) {
       s = updateCurrentPlayer(s, { money: player.money + salary });
       s = addLog(s, `${player.name} passed GO and collected $${salary}.`, state.currentPlayerIndex);
     } else {
-      s = addLog(s, `${player.name} passed GO (no salary — final rounds!).`, state.currentPlayerIndex);
+      s = addLog(s, `${player.name} passed GO (no salary, final rounds!).`, state.currentPlayerIndex);
     }
   }
 
@@ -210,14 +216,20 @@ export function resolveLanding(state: GameState): GameState {
       return { ...state, phase: 'turn-end' };
     }
     case 'tax': {
-      if (player.money < tile.amount) {
-        const s = addLog(state, `${player.name} owes $${tile.amount} in tax.`, state.currentPlayerIndex);
-        return enterDebtOrBankrupt(s, tile.amount, null);
+      // Bartender buff: On the House — reduced tax
+      let taxAmount = tile.amount;
+      const taxDiscount = getBuffModifier(player, 'tax-discount');
+      if (taxDiscount > 0) {
+        taxAmount = applyDiscount(taxAmount, taxDiscount);
+      }
+      if (player.money < taxAmount) {
+        const s = addLog(state, `${player.name} owes $${taxAmount} in tax.`, state.currentPlayerIndex);
+        return enterDebtOrBankrupt(s, taxAmount, null);
       }
       const updated = updateCurrentPlayer(state, {
-        money: player.money - tile.amount,
+        money: player.money - taxAmount,
       });
-      const s = addLog(updated, `${player.name} paid $${tile.amount} in tax.`, state.currentPlayerIndex);
+      const s = addLog(updated, `${player.name} paid $${taxAmount} in tax.`, state.currentPlayerIndex);
       return { ...s, phase: 'turn-end' };
     }
     case 'chance':
@@ -265,7 +277,11 @@ export function calculateRent(state: GameState, ownerIndex: number): number {
       rent = tile.rent[0]; // base rent
     }
   } else if (tile.type === 'railroad') {
-    const count = countOwnedRailroads(state, ownerIndex);
+    let count = countOwnedRailroads(state, ownerIndex);
+    // Tourist buff: Lucky Traveler — +1 railroad rent tier
+    if (getBuffModifier(state.players[ownerIndex], 'railroad-bonus') > 0) {
+      count = Math.min(count + 1, 4);
+    }
     rent = RAILROAD_RENTS[count - 1];
   } else if (tile.type === 'utility') {
     const count = countOwnedUtilities(state, ownerIndex);
@@ -276,6 +292,19 @@ export function calculateRent(state: GameState, ownerIndex: number): number {
   // Apply round-based rent multiplier
   const multiplier = getRentMultiplier(state.roundNumber, state.finalRounds);
   rent = Math.floor(rent * multiplier);
+
+  // Dealer buff: House Advantage — owner collects more rent
+  const owner = state.players[ownerIndex];
+  const rentBoost = getBuffModifier(owner, 'rent-collect-boost');
+  if (rentBoost > 0) {
+    rent = applyBoost(rent, rentBoost);
+  }
+
+  // Mobster buff: Protection Racket — payer pays less rent
+  const rentDiscount = getBuffModifier(player, 'rent-pay-discount');
+  if (rentDiscount > 0) {
+    rent = applyDiscount(rent, rentDiscount);
+  }
 
   return rent;
 }
@@ -329,7 +358,19 @@ export function buyProperty(state: GameState): GameState {
     return state;
   }
 
-  const price = tile.price;
+  let price = tile.price;
+
+  // Tourist buff: Lucky Traveler — railroads are free
+  if (tile.type === 'railroad' && getBuffModifier(player, 'railroad-bonus') > 0) {
+    price = 0;
+  }
+
+  // High Roller buff: Big Spender — properties cost less
+  const buyDiscount = getBuffModifier(player, 'buy-discount');
+  if (buyDiscount > 0 && price > 0) {
+    price = applyDiscount(price, buyDiscount);
+  }
+
   if (player.money < price) {
     let s = addLog(state, `${player.name} cannot afford ${tile.name} ($${price}).`, state.currentPlayerIndex);
     return { ...s, phase: 'turn-end' };
@@ -919,6 +960,10 @@ export function resolveMinigame(state: GameState, tier: MinigameTier): GameState
   const multiplier = multipliers[tier];
   const actualAmount = Math.floor(baseAmount * multiplier);
   
+  // Card Shark buff: Stacked Deck — better minigame payouts
+  // Reduces penalty multipliers, increases win benefits
+  const minigameBoost = getBuffModifier(player, 'minigame-boost');
+
   if (context === 'buying') {
     const tile = s.tiles[tileIndex];
     if (tier === 'win') {
@@ -939,25 +984,32 @@ export function resolveMinigame(state: GameState, tier: MinigameTier): GameState
         s = addLog(s, `${player.name} almost won! Got ${tile.name} for $${actualAmount} (50% off)!`, state.currentPlayerIndex);
       }
     } else {
-      // No property, pay penalty
-      s = updateCurrentPlayer(s, { money: player.money - actualAmount });
+      // No property, pay penalty (Card Shark pays less on losses)
+      let penalty = actualAmount;
+      if (minigameBoost > 0) {
+        penalty = applyDiscount(penalty, minigameBoost);
+      }
+      s = updateCurrentPlayer(s, { money: player.money - penalty });
       const tierMsg = tier === 'close-loss' ? 'almost lost' : tier === 'loss' ? 'lost' : 'failed catastrophically';
-      s = addLog(s, `${player.name} ${tierMsg} and paid $${actualAmount} penalty!`, state.currentPlayerIndex);
+      s = addLog(s, `${player.name} ${tierMsg} and paid $${penalty} penalty!`, state.currentPlayerIndex);
     }
   } else if (context === 'rent') {
     if (state.pendingRent) {
       const { toPlayer } = state.pendingRent;
       if (tier === 'win') {
-        // Pay no rent
         s = addLog(s, `${player.name} won the minigame! No rent to pay!`, state.currentPlayerIndex);
       } else {
-        // Pay modified rent
-        s = updateCurrentPlayer(s, { money: player.money - actualAmount });
+        // Card Shark pays less rent on losses
+        let rentToPay = actualAmount;
+        if (minigameBoost > 0 && (tier === 'close-loss' || tier === 'loss' || tier === 'catastrophic')) {
+          rentToPay = applyDiscount(rentToPay, minigameBoost);
+        }
+        s = updateCurrentPlayer(s, { money: player.money - rentToPay });
         s = updatePlayer(s, toPlayer, {
-          money: s.players[toPlayer].money + actualAmount,
+          money: s.players[toPlayer].money + rentToPay,
         });
         const tierMsg = tier === 'close-win' ? 'almost won' : tier === 'close-loss' ? 'almost lost' : tier === 'loss' ? 'lost' : 'failed catastrophically';
-        s = addLog(s, `${player.name} ${tierMsg} and paid $${actualAmount} rent to ${s.players[toPlayer].name}!`, state.currentPlayerIndex);
+        s = addLog(s, `${player.name} ${tierMsg} and paid $${rentToPay} rent to ${s.players[toPlayer].name}!`, state.currentPlayerIndex);
       }
     }
     s = { ...s, pendingRent: null };

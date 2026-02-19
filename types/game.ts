@@ -115,6 +115,7 @@ export interface Player {
   name: string;
   color: string;
   sprite?: string;
+  characterId?: string;
   money: number;
   position: number;
   properties: number[];
