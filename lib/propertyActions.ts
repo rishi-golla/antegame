@@ -1,5 +1,6 @@
 import type { GameState, PropertyTile } from '@/types/game';
 import { COLOR_GROUPS } from './gameData';
+import { getBuffModifier, applyDiscount } from './buffs';
 
 function getPropertyTile(state: GameState, tileIndex: number): PropertyTile {
   const tile = state.tiles[tileIndex];
@@ -68,7 +69,14 @@ export function buildHouse(state: GameState, playerIndex: number, tileIndex: num
     throw new Error('Must build evenly across color group');
   }
 
-  if (player.money < tile.houseCost) {
+  // VIP buff: Penthouse Suite — houses cost less
+  let cost = tile.houseCost;
+  const buildDiscount = getBuffModifier(player, 'build-discount');
+  if (buildDiscount > 0) {
+    cost = applyDiscount(cost, buildDiscount);
+  }
+
+  if (player.money < cost) {
     throw new Error('Not enough money');
   }
 
@@ -89,7 +97,7 @@ export function buildHouse(state: GameState, playerIndex: number, tileIndex: num
     if (i !== playerIndex) return p;
     return {
       ...p,
-      money: p.money - tile.houseCost,
+      money: p.money - cost,
       houses: { ...p.houses, [tileIndex]: currentHouses + 1 },
     };
   });

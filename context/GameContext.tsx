@@ -116,9 +116,10 @@ interface GameProviderProps {
   playerNames?: string[];
   playerSprites?: string[];
   playerColors?: string[];
+  playerCharacterIds?: string[];
 }
 
-function createGameWithSprites(args: { names: string[]; sprites: string[]; colors: string[] }) {
+function createGameWithSprites(args: { names: string[]; sprites: string[]; colors: string[]; characterIds: string[] }) {
   const state = createGame(args.names);
   return {
     ...state,
@@ -126,6 +127,7 @@ function createGameWithSprites(args: { names: string[]; sprites: string[]; color
       ...p,
       sprite: args.sprites[i] || undefined,
       color: args.colors[i] || p.color,
+      characterId: args.characterIds[i] || undefined,
     })),
   };
 }
@@ -135,10 +137,11 @@ export function GameProvider({
   playerNames = ['Ava', 'Kai', 'Maya', 'Leo'],
   playerSprites = [],
   playerColors = [],
+  playerCharacterIds = [],
 }: GameProviderProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
-    { names: playerNames, sprites: playerSprites, colors: playerColors },
+    { names: playerNames, sprites: playerSprites, colors: playerColors, characterIds: playerCharacterIds },
     createGameWithSprites,
   );
 
