@@ -48,13 +48,11 @@ export default function FeatureStrip() {
 
         <div className="fsGrid fsGrid3">
           {features.map((f, i) => (
-            <motion.a
+            <motion.div
               key={i}
-              href={f.href}
               className="fsCard"
               variants={item}
-              whileHover={{ y: -10 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              style={{ cursor: 'default' }}
             >
               <div className="fsCardImageWrap">
                 <img src={f.image} alt={f.title} className="fsCardImage" />
@@ -63,9 +61,8 @@ export default function FeatureStrip() {
               <div className="fsCardBody">
                 <h3 className="fsCardTitle">{f.title}</h3>
                 <p className="fsCardDesc">{f.desc}</p>
-                <span className="fsCardArrow">&rarr;</span>
               </div>
-            </motion.a>
+            </motion.div>
           ))}
         </div>
       </motion.div>

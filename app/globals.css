@@ -1,6 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Nunito:wght@400;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* Custom Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a2030 #1a0f0f;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a0f0f;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a2030;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6b2a45;
+}
+
 :root {
   /* Layout */
   --layout-pad: 12px;
