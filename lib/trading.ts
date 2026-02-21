@@ -92,12 +92,39 @@ export function acceptTrade(state: GameState): GameState {
     return t;
   });
 
-  return {
+  let s: GameState = {
     ...state,
     players: newPlayers,
     tiles: newTiles,
     activeTradeOffer: null,
   };
+
+  // Check if either player went bankrupt from the trade
+  // (giving away all money + properties leaving them at 0 or below)
+  for (const idx of [fromIdx, toIdx]) {
+    const p = s.players[idx];
+    if (p.money <= 0 && p.properties.length === 0 && !p.bankrupt) {
+      // Import-free inline bankruptcy: mark bankrupt, check game over
+      s = {
+        ...s,
+        players: s.players.map((pl, i) =>
+          i === idx
+            ? { ...pl, bankrupt: true, money: 0, properties: [], houses: {}, mortgaged: [], getOutOfJailCards: 0, inJail: false }
+            : pl
+        ),
+      };
+      const activePlayers = s.players.filter(pl => !pl.bankrupt);
+      if (activePlayers.length <= 1) {
+        const winner = activePlayers[0]?.id ?? null;
+        s = { ...s, phase: 'game-over' as const, winner };
+      } else if (idx === s.currentPlayerIndex) {
+        // Current player went bankrupt via trade — end their turn
+        s = { ...s, phase: 'turn-end' as const, activeMinigame: null, pendingRent: null };
+      }
+    }
+  }
+
+  return s;
 }
 
 export function rejectTrade(state: GameState): GameState {
