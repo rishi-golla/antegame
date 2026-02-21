@@ -31,6 +31,7 @@ import ReferralButton from '@/components/Auth/ReferralButton';
 import RefundModal from '@/components/Lobby/RefundModal';
 import QuickPlay from '@/components/Lobby/QuickPlay';
 import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
+import TurnSummary from '@/components/UI/TurnSummary';
 
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
@@ -72,7 +73,16 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
       <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
 
       {/* Background image */}
-      <div className="menuBgImage" />
+      <img src="/assets/landing/menu-bg.webp" alt="" style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        opacity: 0.2,
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
 
       {/* Floating particles */}
       <div className="menuParticles">
@@ -162,6 +172,7 @@ function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
       <TradeOfferView myPlayerIndex={null} />
+      <TurnSummary />
       <GameOver onPlayAgain={onPlayAgain} />
     </>
   );
@@ -187,6 +198,7 @@ function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; 
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
       <TradeOfferView myPlayerIndex={myPlayerIndex} />
+      <TurnSummary />
       <GameOver onPlayAgain={onPlayAgain} roomCode={roomCode} />
     </MultiplayerGameProvider>
   );
@@ -218,6 +230,7 @@ function QuickPlayFlow({ onBack }: { onBack: () => void }) {
             <SidePanel />
           </main>
           <TradeOfferView myPlayerIndex={myPlayerIndex} />
+          <TurnSummary />
           <GameOver onPlayAgain={onBack} roomCode={roomState?.code} />
         </MultiplayerGameProvider>
       );

@@ -84,24 +84,47 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
     <div className="gameOverOverlay casinoBackdrop jackpotOverlay">
       <div className="gameOverCard jackpotCard">
         <div className="jackpotLights" />
-        <div className="gameOverCrown">&#x1F451;</div>
-        <div className="jackpotLabel">JACKPOT</div>
-        <h1 className="gameOverTitle jackpotWinner">{winner.name} Wins!</h1>
+        
+        {/* Winner crown - SVG instead of emoji */}
+        <svg className="gameOverCrownSvg" width="64" height="48" viewBox="0 0 64 48" fill="none">
+          <path d="M8 40L2 12L16 24L32 4L48 24L62 12L56 40H8Z" fill="url(#crownGold)" stroke="#B8860B" strokeWidth="2"/>
+          <circle cx="16" cy="40" r="3" fill="#FF4444"/>
+          <circle cx="32" cy="40" r="3" fill="#44FF44"/>
+          <circle cx="48" cy="40" r="3" fill="#4444FF"/>
+          <circle cx="32" cy="8" r="3" fill="#FFD700"/>
+          <defs>
+            <linearGradient id="crownGold" x1="32" y1="4" x2="32" y2="40">
+              <stop offset="0%" stopColor="#FFD700"/>
+              <stop offset="50%" stopColor="#D4AF37"/>
+              <stop offset="100%" stopColor="#B8860B"/>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <div className="jackpotLabel">WINNER</div>
+        <h1 className="gameOverTitle jackpotWinner">{winner.name}</h1>
+        <p className="gameOverWinnerWorth">${getNetWorth(state, winner.id).toLocaleString()}</p>
         <p className="gameOverSub">Final Standings</p>
 
         <div className="gameOverRankings">
-          {rankings.map((player, i) => (
-            <div key={player.id} className={`gameOverRank ${player.bankrupt ? 'bankrupt' : ''}`}>
-              <span className="gameOverPos">#{i + 1}</span>
-              <div className="gameOverAvatar" style={{ background: player.color }}>
-                {player.name[0]}
+          {rankings.map((player, i) => {
+            const worth = getNetWorth(state, player.id);
+            const isWinnerRank = player.id === winner.id;
+            return (
+              <div key={player.id} className={`gameOverRank ${player.bankrupt ? 'bankrupt' : ''} ${isWinnerRank ? 'winnerRank' : ''}`}>
+                <span className="gameOverPos">#{i + 1}</span>
+                <div className="gameOverAvatar" style={{ background: player.color }}>
+                  {player.sprite ? (
+                    <img src={player.sprite} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as const }} />
+                  ) : player.name[0]}
+                </div>
+                <span className="gameOverName">{player.name}</span>
+                <span className={`gameOverWorth ${player.bankrupt ? 'worthBankrupt' : ''}`}>
+                  {player.bankrupt ? 'Bankrupt' : `$${worth.toLocaleString()}`}
+                </span>
               </div>
-              <span className="gameOverName">{player.name}</span>
-              <span className="gameOverWorth">
-                {player.bankrupt ? 'Bankrupt' : `$${getNetWorth(state, player.id).toLocaleString()}`}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Settlement for Base chain games */}
@@ -136,7 +159,7 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
         )}
 
         {isBase && !isWinner && (
-          <p style={{ marginTop: 16, fontSize: '0.75rem', opacity: 0.6, textAlign: 'center' }}>
+          <p className="gameOverFootnote">
             Better luck next time. Your buy-in has been claimed by the winner.
           </p>
         )}
@@ -148,9 +171,7 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
           </button>
         )}
         {isBase && isWinner && !claimed && (
-          <p style={{ marginTop: 8, fontSize: '0.65rem', opacity: 0.5, textAlign: 'center' }}>
-            Claim your winnings before leaving
-          </p>
+          <p className="gameOverFootnote">Claim your winnings before leaving</p>
         )}
       </div>
     </div>

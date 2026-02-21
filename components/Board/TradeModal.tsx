@@ -68,7 +68,7 @@ function TradePropCard({
         <span className="tradePropCardPrice">${value}</span>
         {houses > 0 && (
           <span className="tradePropCardHouses">
-            {houses === 5 ? '🏨' : '🏠'.repeat(houses)}
+            {houses === 5 ? '★' : '▪'.repeat(houses)}
           </span>
         )}
         {isMortgaged && <span className="tradePropCardMortgage">MORTGAGED</span>}
@@ -125,14 +125,14 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
   return (
     <div className="tradeOverlay casinoBackdrop" onClick={onClose}>
       <div className="tradeCard pokerFelt tradeCardRevamp" onClick={(e) => e.stopPropagation()}>
-        <h2 className="tradeTitle">⚖️ Propose Trade</h2>
+        <h2 className="tradeTitle">Propose Trade</h2>
 
         <div className="tradeColumns">
           {/* LEFT: Your offer */}
           <div className="tradeColumn">
             <div className="tradeColumnHeader">
               <img src={meChar.sprite} alt={me.name} className="tradePlayerSprite" />
-              <h3 style={{ color: me.color }}>{me.name} Offers</h3>
+              <h3>{me.name} Offers</h3>
             </div>
             <div className="tradePropsGrid">
               {me.properties.length === 0 && <p className="tradeEmpty">No properties</p>}
@@ -148,7 +148,7 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
               ))}
             </div>
             <div className="tradeMoneyRow">
-              <label>💰</label>
+              <span className="tradeMoneyLabel">Cash</span>
               <input
                 type="range"
                 min={0}
@@ -171,7 +171,7 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
           <div className="tradeColumn">
             <div className="tradeColumnHeader">
               <img src={themChar.sprite} alt={them.name} className="tradePlayerSprite" />
-              <h3 style={{ color: them.color }}>{them.name} Offers</h3>
+              <h3>{them.name} Offers</h3>
             </div>
             <div className="tradePropsGrid">
               {them.properties.length === 0 && <p className="tradeEmpty">No properties</p>}
@@ -187,7 +187,7 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
               ))}
             </div>
             <div className="tradeMoneyRow">
-              <label>💰</label>
+              <span className="tradeMoneyLabel">Cash</span>
               <input
                 type="range"
                 min={0}
@@ -211,7 +211,7 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
 
         <div className="tradeActions">
           <button className="tradePropose" onClick={handlePropose} disabled={!hasContent}>
-            📤 Propose Trade
+            Propose Trade
           </button>
           <button className="tradeCancel" onClick={onClose}>Cancel</button>
         </div>
@@ -270,13 +270,13 @@ function CounterOfferModal({
   return (
     <div className="tradeOverlay casinoBackdrop" style={{ zIndex: 210 }} onClick={onClose}>
       <div className="tradeCard pokerFelt tradeCardRevamp" onClick={(e) => e.stopPropagation()}>
-        <h2 className="tradeTitle">🔄 Counter-Offer #{(originalOffer.counterCount ?? 0) + 1}</h2>
+        <h2 className="tradeTitle">Counter-Offer #{(originalOffer.counterCount ?? 0) + 1}</h2>
 
         <div className="tradeColumns">
           <div className="tradeColumn">
             <div className="tradeColumnHeader">
               <img src={meChar.sprite} alt={me.name} className="tradePlayerSprite" />
-              <h3 style={{ color: me.color }}>{me.name} Offers</h3>
+              <h3>{me.name} Offers</h3>
             </div>
             <div className="tradePropsGrid">
               {me.properties.length === 0 && <p className="tradeEmpty">No properties</p>}
@@ -286,7 +286,7 @@ function CounterOfferModal({
               ))}
             </div>
             <div className="tradeMoneyRow">
-              <label>💰</label>
+              <span className="tradeMoneyLabel">Cash</span>
               <input type="range" min={0} max={me.money} step={10} value={offerMoney}
                 onChange={(e) => setOfferMoney(parseInt(e.target.value))} className="tradeMoneySlider" />
               <span className="tradeMoneyAmount">${offerMoney}</span>
@@ -298,7 +298,7 @@ function CounterOfferModal({
           <div className="tradeColumn">
             <div className="tradeColumnHeader">
               <img src={themChar.sprite} alt={them.name} className="tradePlayerSprite" />
-              <h3 style={{ color: them.color }}>{them.name} Offers</h3>
+              <h3>{them.name} Offers</h3>
             </div>
             <div className="tradePropsGrid">
               {them.properties.length === 0 && <p className="tradeEmpty">No properties</p>}
@@ -308,7 +308,7 @@ function CounterOfferModal({
               ))}
             </div>
             <div className="tradeMoneyRow">
-              <label>💰</label>
+              <span className="tradeMoneyLabel">Cash</span>
               <input type="range" min={0} max={them.money} step={10} value={requestMoney}
                 onChange={(e) => setRequestMoney(parseInt(e.target.value))} className="tradeMoneySlider" />
               <span className="tradeMoneyAmount">${requestMoney}</span>
@@ -324,7 +324,7 @@ function CounterOfferModal({
 
         <div className="tradeActions">
           <button className="tradePropose" onClick={handleCounter} disabled={!hasContent}>
-            🔄 Send Counter
+            Send Counter
           </button>
           <button className="tradeCancel" onClick={onClose}>Back</button>
         </div>
@@ -359,7 +359,7 @@ export function TradeOfferView({ myPlayerIndex }: { myPlayerIndex: number | null
       <div className="tradeOverlay casinoBackdrop">
         <div className="tradeCard pokerFelt tradeOfferCardRevamp" onClick={(e) => e.stopPropagation()}>
           <h2 className="tradeTitle">
-            {counterNum > 0 ? `🔄 Counter-Offer #${counterNum}` : '⚖️ Trade Offer'}
+            {counterNum > 0 ? `Counter-Offer #${counterNum}` : 'Trade Offer'}
           </h2>
           <p className="tradeFromTo">
             <img src={fromChar.sprite} alt={from.name} className="tradePlayerSpriteSmall" />
@@ -378,7 +378,7 @@ export function TradeOfferView({ myPlayerIndex }: { myPlayerIndex: number | null
                     onToggle={() => {}} isMortgaged={from.mortgaged.includes(idx)} />
                 ))}
               </div>
-              {offer.offerMoney > 0 && <p className="tradeOfferMoney">💰 ${offer.offerMoney}</p>}
+              {offer.offerMoney > 0 && <p className="tradeOfferMoney">${offer.offerMoney}</p>}
               {offer.offerProperties.length === 0 && offer.offerMoney === 0 && <p className="tradeEmpty">Nothing</p>}
             </div>
 
@@ -392,7 +392,7 @@ export function TradeOfferView({ myPlayerIndex }: { myPlayerIndex: number | null
                     onToggle={() => {}} isMortgaged={to.mortgaged.includes(idx)} />
                 ))}
               </div>
-              {offer.requestMoney > 0 && <p className="tradeOfferMoney">💰 ${offer.requestMoney}</p>}
+              {offer.requestMoney > 0 && <p className="tradeOfferMoney">${offer.requestMoney}</p>}
               {offer.requestProperties.length === 0 && offer.requestMoney === 0 && <p className="tradeEmpty">Nothing</p>}
             </div>
           </div>
@@ -401,15 +401,15 @@ export function TradeOfferView({ myPlayerIndex }: { myPlayerIndex: number | null
             {isRecipient ? (
               <>
                 <button className="tradeAccept" onClick={() => { play('sfx/trade-accept'); dispatch({ type: 'ACCEPT_TRADE' }); }}>
-                  ✅ Accept
+                  Accept
                 </button>
                 {counterNum < 5 && (
                   <button className="tradeCounter" onClick={() => setShowCounter(true)}>
-                    🔄 Counter
+                    Counter
                   </button>
                 )}
                 <button className="tradeReject" onClick={() => { play('sfx/trade-reject'); dispatch({ type: 'REJECT_TRADE' }); }}>
-                  ❌ Reject
+                  Reject
                 </button>
               </>
             ) : isProposer ? (

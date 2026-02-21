@@ -43,6 +43,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const { isMyTurn } = useMultiplayerTurn();
 
   const minigame = state.activeMinigame;
+  const currentPlayerName = state.players[state.currentPlayerIndex]?.name || 'Player';
 
   useEffect(() => {
     if (minigame?.status === 'intro') {
@@ -53,7 +54,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [minigame?.status]);
+  }, [minigame?.status, playMusic]);
 
   if (!minigame) return null;
 
@@ -63,6 +64,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     setResultLocked(true);
     setResultTier(tier);
     setShowResult(true);
+    
     if (tier === 'win') play('minigames/tier-win');
     else if (tier === 'close-win') play('minigames/tier-close-win');
     else if (tier === 'close-loss') play('minigames/tier-close-loss');
@@ -142,15 +144,17 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const spectator = !isMyTurn;
 
   return (
-    <div className="minigameOverlay pixelOverlay">
-      {spectator && (
-        <div className="spectatorBanner">
-          👁️ Watching {state.players[state.currentPlayerIndex]?.name || 'Player'}
+    <>
+      <div className="minigameOverlay pixelOverlay">
+        {spectator && (
+          <div className="spectatorBanner">
+            👁️ Watching {currentPlayerName}
+          </div>
+        )}
+        <div className={spectator ? 'spectatorView' : ''}>
+          {renderMinigame()}
         </div>
-      )}
-      <div className={spectator ? 'spectatorView' : ''}>
-        {renderMinigame()}
       </div>
-    </div>
+    </>
   );
 }

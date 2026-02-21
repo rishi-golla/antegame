@@ -218,20 +218,36 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
             <div className="cardOverlayCorner cardCornerBL" />
             <div className="cardOverlayCorner cardCornerBR" />
             <div className="cardOverlayDeckLabel">
-              {state.drawnCard.deckType === 'chance' ? '⚡ RISK' : '📦 BLIND CHEST'}
+              {state.drawnCard.deckType === 'chance' ? '⚡ RISK' : '✦ BLIND CHEST'}
             </div>
             <div className="cardOverlayDivider" />
+            <div className="cardOverlayIcon">
+              {state.drawnCard.effect.kind === 'collect' && '💰'}
+              {state.drawnCard.effect.kind === 'pay' && '🔥'}
+              {state.drawnCard.effect.kind === 'move-to' && '🚀'}
+              {state.drawnCard.effect.kind === 'move-relative' && '↩️'}
+              {state.drawnCard.effect.kind === 'go-to-jail' && '⛓️'}
+              {state.drawnCard.effect.kind === 'get-out-of-jail' && '🗝️'}
+              {state.drawnCard.effect.kind === 'collect-from-each' && '🎂'}
+              {state.drawnCard.effect.kind === 'pay-each-player' && '💸'}
+              {state.drawnCard.effect.kind === 'repairs' && '🔧'}
+              {state.drawnCard.effect.kind === 'nearest-railroad' && '🚂'}
+              {state.drawnCard.effect.kind === 'nearest-utility' && '⚡'}
+            </div>
             <p className="cardOverlayText">{state.drawnCard.text}</p>
             <div className="cardOverlayDivider" />
             <div className="cardOverlayFooter">
               {state.drawnCard.effect.kind === 'collect' && `+$${state.drawnCard.effect.amount}`}
               {state.drawnCard.effect.kind === 'pay' && `-$${state.drawnCard.effect.amount}`}
               {state.drawnCard.effect.kind === 'move-to' && 'MOVE'}
+              {state.drawnCard.effect.kind === 'move-relative' && 'MOVE'}
               {state.drawnCard.effect.kind === 'go-to-jail' && 'JAIL'}
               {state.drawnCard.effect.kind === 'get-out-of-jail' && 'FREE'}
               {state.drawnCard.effect.kind === 'collect-from-each' && `+$${state.drawnCard.effect.amount} EACH`}
               {state.drawnCard.effect.kind === 'pay-each-player' && `-$${state.drawnCard.effect.amount} EACH`}
               {state.drawnCard.effect.kind === 'repairs' && 'REPAIRS'}
+              {state.drawnCard.effect.kind === 'nearest-railroad' && 'MOVE'}
+              {state.drawnCard.effect.kind === 'nearest-utility' && 'MOVE'}
             </div>
           </div>
         </div>

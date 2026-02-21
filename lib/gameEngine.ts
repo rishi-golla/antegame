@@ -877,7 +877,8 @@ export function declareBankruptcy(
     return { ...s, phase: 'game-over', winner };
   }
 
-  return s;
+  // Ensure phase advances so turn can end (bankruptcy can happen mid-minigame)
+  return { ...s, phase: 'turn-end', activeMinigame: null, pendingRent: null };
 }
 
 export function getNetWorth(state: GameState, playerIndex: number): number {

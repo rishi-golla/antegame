@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
+import { useMood } from '@/hooks/useMood';
 import Tile from './Tile';
 import type { BoardTile } from './Tile';
 import DicePips from './DicePips';
 import BoardCenterArt from './BoardCenterArt';
 import PropertyPopup from './PropertyPopup';
 import MoneyFloat, { useMoneyFloats } from './MoneyFloat';
+import RentAnimation from './RentAnimation';
+import ScreenEffects from '@/components/UI/ScreenEffects';
 import { TILES } from '@/lib/gameData';
+// import { particles } from '@/lib/particles';
 
 function buildBoardTiles(): BoardTile[] {
   const tiles: BoardTile[] = [];
@@ -40,7 +44,8 @@ const boardTiles = buildBoardTiles();
 
 export default function Board() {
   const { state } = useGame();
-  const { play } = useAudio();
+  const { play, playMusic, playAmbient, setMusicIntensity, playMoneySound, playDistantCelebration } = useAudio();
+  const { setMood } = useMood();
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayPositions, setDisplayPositions] = useState<number[]>([]);
   const [displayDice, setDisplayDice] = useState<[number, number]>([1, 1]);
@@ -50,23 +55,91 @@ export default function Board() {
   const [activeTile, setActiveTile] = useState(0);
   const [boardSize, setBoardSize] = useState(0);
   const [popupTile, setPopupTile] = useState<number | null>(null);
+  const [recentPurchases, setRecentPurchases] = useState<Set<number>>(new Set());
+  const [hotProperties, setHotProperties] = useState<Record<number, number>>({}); // tileIndex -> landing count
+  const [nearMissAlert, setNearMissAlert] = useState<{ type: 'good' | 'bad'; tile: number; message: string } | null>(null);
+  const [declineWarning, setDeclineWarning] = useState<{ tileIndex: number; rent: number } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const prevDiceRef = useRef<[number, number] | null>(null);
   const prevPhaseRef = useRef(state.phase);
   const prevPositionsRef = useRef<number[]>([]);
+  const prevPropertiesRef = useRef<number[][]>([]);
+  const prevLandedTileRef = useRef<number | null>(null);
   const { floats, addFloat } = useMoneyFloats();
 
   // Stable position key for tracking changes
   const positionKey = state.players.map((p) => p.position).join(',');
+  
+  // Track hot properties (landing frequency)
+  useEffect(() => {
+    const currentPositions = state.players.map((p) => p.position);
+    if (prevPositionsRef.current.length > 0) {
+      // Check for players who changed position (landed on new tiles)
+      for (let i = 0; i < currentPositions.length; i++) {
+        const prev = prevPositionsRef.current[i];
+        const curr = currentPositions[i];
+        if (prev !== undefined && prev !== curr && !state.players[i].bankrupt) {
+          // Player landed on a new tile - increment hot property counter
+          setHotProperties(prevHot => ({
+            ...prevHot,
+            [curr]: (prevHot[curr] || 0) + 1
+          }));
 
-  // Initialize display positions
+          // Near-miss: only for HIGH-VALUE scenarios
+          const playerMoney = state.players[i].money;
+          const almostTile1 = (curr + 39) % 40;
+          const almostTile2 = (curr + 1) % 40;
+          
+          for (const almostIndex of [almostTile1, almostTile2]) {
+            const almostTileData = TILES[almostIndex];
+            
+            // Near miss: almost sent to jail (always dramatic)
+            if (almostTileData.type === 'corner' && almostTileData.cornerKind === 'go-to-jail') {
+              setNearMissAlert({ type: 'bad', tile: almostIndex, message: 'Dodged Go To Jail!' });
+              play('sfx/dice-roll', { volume: 0.3, pitch: 0.7 });
+              setTimeout(() => setNearMissAlert(null), 1800);
+              break;
+            }
+            
+            // Near miss: almost landed on opponent's EXPENSIVE property (rent > $300)
+            const owner = state.players.find(p => p.properties.includes(almostIndex) && !p.mortgaged.includes(almostIndex));
+            if (owner && owner.id !== i && almostTileData.type === 'property') {
+              const houses = owner.houses[almostIndex] || 0;
+              const rent = almostTileData.rent[houses > 0 ? houses : 0];
+              if (rent >= 300) {
+                setNearMissAlert({ type: 'bad', tile: almostIndex, message: `Dodged $${rent} rent!` });
+                play('sfx/dice-roll', { volume: 0.3, pitch: 0.7 });
+                setTimeout(() => setNearMissAlert(null), 1800);
+                break;
+              }
+            }
+            
+            // Near miss: almost hit dark-blue or green unowned property (high value only)
+            if (almostTileData.type === 'property' && !state.players.some(p => p.properties.includes(almostIndex))) {
+              const group = almostTileData.colorGroup;
+              if ((group === 'dark-blue' || group === 'green') && playerMoney >= almostTileData.price) {
+                setNearMissAlert({ type: 'good', tile: almostIndex, message: `Missed ${almostTileData.name}!` });
+                setTimeout(() => setNearMissAlert(null), 1800);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }, [positionKey, state.players]);
+
+  // Initialize display positions and start ambient
   useEffect(() => {
     if (displayPositions.length === 0 && state.players.length > 0) {
       const positions = state.players.map((p) => p.position);
       setDisplayPositions(positions);
       prevPositionsRef.current = positions;
+      // Start ambient sounds and BGM when entering the game board
+      playAmbient();
+      playMusic('music/bgm-game');
     }
-  }, [state.players.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.players.length, playAmbient, playMusic]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Animate token movement step-by-step
   useEffect(() => {
@@ -118,12 +191,14 @@ export default function Board() {
           if (!cancelled) {
             setIsAnimating(false);
             setActiveTile(curr);
+            play('sfx/token-land', { volume: 0.3 });
           }
           return;
         }
 
         const nextPos = steps[stepIdx];
-        if (nextPos === 0) play('sfx/pass-go');
+        if (nextPos === 0) play('sfx/pass-go', { volume: 0.5 });
+        play('sfx/token-step', { volume: 0.12, pitch: 0.9 + Math.random() * 0.2 });
         setDisplayPositions((dp) => {
           const next = [...dp];
           next[playerIdx] = nextPos;
@@ -139,7 +214,7 @@ export default function Board() {
     return () => { cancelled = true; };
   }, [positionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track money changes for floats
+  // Track money changes for floats and sounds
   const prevMoneyRef = useRef<number[]>([]);
   const moneyKey = state.players.map((p) => p.money).join(',');
   const isFirstRender = useRef(true);
@@ -155,11 +230,108 @@ export default function Board() {
         const diff = currentMoney[i] - prevMoneyRef.current[i];
         if (diff !== 0 && !player.bankrupt) {
           addFloat(diff, player.color);
+          // Play money sound for current player, distant celebration for others
+          if (i === state.currentPlayerIndex) {
+            if (diff > 0) {
+              playMoneySound(diff);
+            }
+          } else if (diff > 0) {
+            // Other player gained money - play distant celebration
+            playDistantCelebration();
+          }
         }
       });
     }
     prevMoneyRef.current = currentMoney;
-  }, [moneyKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [moneyKey, state.currentPlayerIndex, playMoneySound, playDistantCelebration, addFloat]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Music intensity and mood detection
+  useEffect(() => {
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    if (!currentPlayer) return;
+
+    let intensity: 'calm' | 'normal' | 'tense' | 'hype' = 'normal';
+    let mood: 'winning' | 'losing' | 'danger' | 'neutral' | 'hype' = 'neutral';
+
+    // Detect game state for intensity
+    if (state.phase === 'minigame') {
+      intensity = 'hype';
+      mood = 'hype';
+    } else if (currentPlayer.money < 50) {
+      intensity = 'tense';
+      mood = 'danger';
+    } else if (currentPlayer.money < 100) {
+      intensity = 'tense';
+      mood = 'losing';
+    } else if (state.phase === 'waiting' || state.phase === 'game-over') {
+      intensity = 'calm';
+    } else if (currentPlayer.money > 2000) {
+      mood = 'winning';
+    }
+
+    setMusicIntensity(intensity);
+    setMood(mood);
+  }, [state.phase, state.currentPlayerIndex, state.players, setMusicIntensity, setMood]);
+
+  // Track property purchases for celebration animation
+  useEffect(() => {
+    const currentProperties = state.players.map(p => p.properties);
+    const isFirstRender = prevPropertiesRef.current.length === 0;
+
+    if (isFirstRender) {
+      prevPropertiesRef.current = currentProperties;
+      return;
+    }
+
+    // Find newly purchased properties
+    const newPurchases = new Set<number>();
+    state.players.forEach((player, i) => {
+      const prevPlayerProps = prevPropertiesRef.current[i] || [];
+      const currentPlayerProps = player.properties;
+      
+      currentPlayerProps.forEach(propIndex => {
+        if (!prevPlayerProps.includes(propIndex)) {
+          newPurchases.add(propIndex);
+        }
+      });
+    });
+
+    if (newPurchases.size > 0) {
+      setRecentPurchases(newPurchases);
+      
+      // Clear animations after 800ms
+      setTimeout(() => {
+        setRecentPurchases(new Set());
+      }, 800);
+    }
+
+    prevPropertiesRef.current = currentProperties;
+  }, [state.players]);
+
+  // Phase 3: Track property declines for loss aversion warnings
+  useEffect(() => {
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    
+    // Phase transition from 'buying' to something else = property decision was made
+    if (prevPhaseRef.current === 'buying' && state.phase !== 'buying' && currentPlayer) {
+      const landedTile = currentPlayer.position;
+      const tileData = TILES[landedTile];
+      
+      // Check if property was declined — only warn for properties $200+ (worth caring about)
+      if (tileData.type === 'property' && !currentPlayer.properties.includes(landedTile) && tileData.price >= 200) {
+        const baseRent = tileData.rent[0];
+        setDeclineWarning({ tileIndex: landedTile, rent: baseRent });
+        play('sfx/decline-property', { volume: 0.5 });
+        setTimeout(() => setDeclineWarning(null), 2000);
+      }
+    }
+    
+    if (state.phase === 'buying') {
+      prevLandedTileRef.current = currentPlayer?.position || null;
+    }
+    
+    prevPhaseRef.current = state.phase;
+  }, [state.phase, state.currentPlayerIndex, state.players, play]);
 
   useEffect(() => {
     if (!frameRef.current) return;
@@ -177,7 +349,7 @@ export default function Board() {
   const animateRoll = useCallback((finalDice: [number, number]) => {
     setIsDiceFocus(true);
     setRollPhase('charge');
-    play('sfx/dice-shake');
+    play('sfx/dice-shake', { volume: 0.4 });
 
     const jitter = setInterval(() => {
       setDisplayDice([Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)]);
@@ -187,7 +359,7 @@ export default function Board() {
     setTimeout(() => {
       setImpactPulse(true);
       setRollPhase('impact');
-      play('sfx/dice-roll');
+      play('sfx/dice-roll', { volume: 0.5 });
       setTimeout(() => setImpactPulse(false), 180);
     }, 520);
 
@@ -225,6 +397,9 @@ export default function Board() {
 
   return (
     <section className="boardWrap">
+      {/* Global screen effects overlay */}
+      <ScreenEffects />
+      
       <div ref={frameRef} className={`boardFrame ${isDiceFocus ? 'focused' : ''}`}>
         <div className="boardGrid" style={boardSize ? { width: `${boardSize}px`, height: `${boardSize}px` } : undefined}>
           {boardTiles.map((tile) => (
@@ -235,11 +410,43 @@ export default function Board() {
               players={displayPlayers}
               currentPlayerIndex={state.currentPlayerIndex}
               onTileClick={(idx) => setPopupTile(idx)}
+              isJustPurchased={recentPurchases.has(tile.index)}
+              hotLevel={hotProperties[tile.index] || 0}
+              isNearMiss={nearMissAlert?.tile === tile.index}
+              isDeclineFlash={declineWarning?.tileIndex === tile.index}
             />
           ))}
           <BoardCenterArt isRolling={isDiceFocus} isAnimating={isAnimating} />
           <MoneyFloat floats={floats} />
+          <RentAnimation boardSize={boardSize} />
         </div>
+
+        {/* Phase 3: Near-Miss Alert Overlay */}
+        {nearMissAlert && (
+          <div className={`near-miss-overlay near-miss-${nearMissAlert.type}`}>
+            <div className="near-miss-content">
+              <div className="near-miss-title">
+                {nearMissAlert.type === 'good' ? '😱 CLOSE CALL!' : '😅 JUST MISSED!'}
+              </div>
+              <div className="near-miss-message">{nearMissAlert.message}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Phase 3: Property Decline Warning */}
+        {declineWarning && (
+          <div className="decline-warning-overlay">
+            <div className="decline-warning-content">
+              <div className="decline-warning-icon">⚠️</div>
+              <div className="decline-warning-title">WARNING!</div>
+              <div className="decline-warning-message">
+                Next player who lands here<br />
+                pays <span className="decline-rent-amount">${declineWarning.rent}</span> rent!
+              </div>
+              <div className="decline-warning-subtitle">You just missed your chance to own this!</div>
+            </div>
+          </div>
+        )}
 
         {isDiceFocus && (
           <div className={`diceFocusLayer phase-${rollPhase} ${impactPulse ? 'impact' : ''}`}>

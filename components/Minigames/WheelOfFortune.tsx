@@ -164,7 +164,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
                   x={tx} y={ty}
                   textAnchor="middle" dominantBaseline="middle"
                   fill="#fff" fontSize="9" fontWeight="bold"
-                  fontFamily="'Press Start 2P', monospace"
+                  fontFamily="'Cinzel', serif"
                   transform={`rotate(${textRotation}, ${tx}, ${ty})`}
                   style={{ textShadow: '1px 1px 0 #000' } as any}
                 >
@@ -202,8 +202,8 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
             transform: 'translateX(-50%)',
             textAlign: 'center',
           }}>
-            <div style={{ color: '#aaa', fontSize: '0.6rem', fontFamily: "'Press Start 2P', monospace" }}>RESULT:</div>
-            <div style={{ color: result.color, fontSize: '0.9rem', fontFamily: "'Press Start 2P', monospace", fontWeight: 'bold' }}>{result.label}</div>
+            <div style={{ color: '#aaa', fontSize: '0.6rem', fontFamily: "'Cinzel', serif" }}>RESULT:</div>
+            <div style={{ color: result.color, fontSize: '0.9rem', fontFamily: "'Cinzel', serif", fontWeight: 'bold' }}>{result.label}</div>
           </div>
         )}
       </div>

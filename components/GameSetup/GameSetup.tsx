@@ -135,6 +135,8 @@ export default function GameSetup({ onStart }: GameSetupProps) {
               >
                 <img src={char.sprite} alt={char.name} className="characterCardSprite" draggable={false} />
                 <span className="characterCardName">{char.name}</span>
+                <span className="characterCardBuff">{char.buff.name}</span>
+                <span className="characterCardBuffDesc">{char.buff.description}</span>
               </div>
             );
           })}

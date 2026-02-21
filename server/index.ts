@@ -734,6 +734,10 @@ nextApp.prepare().then(() => {
         if (room.gameState.phase === 'game-over') {
           room.phase = 'finished';
           broadcastRoomState(code);
+          clearTurnTimer(code);
+        } else {
+          // Restart turn timer for next phase/player
+          startTurnTimer(code);
         }
       } catch (e: any) {
         socket.emit('room:error', e.message ?? 'Minigame result failed');

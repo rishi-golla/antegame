@@ -82,13 +82,13 @@ export default function AssetsModal({ playerIndex, onClose }: AssetsModalProps) 
 
         {inDebt && (
           <div className="debtHeader">
-            <div className="debtHeaderTitle">⚠️ RAISE FUNDS</div>
+            <div className="debtHeaderTitle">RAISE FUNDS</div>
             <div className="debtHeaderStats">
               Need: ${debtAmount.toLocaleString()} | Have: ${player.money.toLocaleString()} | Shortfall: ${shortfall.toLocaleString()}
             </div>
             {canPayDebt && (
               <button className="debtPayBtn" onClick={() => { play('sfx/collect-money'); dispatch({ type: 'RESOLVE_DEBT' }); }}>
-                ✅ Pay Debt (${debtAmount.toLocaleString()})
+                Pay Debt (${debtAmount.toLocaleString()})
               </button>
             )}
           </div>
@@ -124,7 +124,8 @@ export default function AssetsModal({ playerIndex, onClose }: AssetsModalProps) 
           <div className="assetsHeaderInfo">
             <h2 className="assetsPlayerName">{player.name}</h2>
             <p className="assetsStats">
-              Cash: ${player.money.toLocaleString()} &nbsp;|&nbsp; Net Worth: ${worth.toLocaleString()}
+              Cash: ${player.money.toLocaleString()}<br />
+              Net Worth: ${worth.toLocaleString()}
             </p>
           </div>
         </div>
@@ -136,7 +137,7 @@ export default function AssetsModal({ playerIndex, onClose }: AssetsModalProps) 
               Special Cards
             </div>
             <div className="assetsJailCardItem">
-              <span className="assetsJailCardIcon">🎫</span>
+              <span className="assetsJailCardIcon">✦</span>
               <span className="assetsJailCardText">
                 Get Out of Jail Free × {player.getOutOfJailCards}
               </span>

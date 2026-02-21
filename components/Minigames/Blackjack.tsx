@@ -44,110 +44,148 @@ const calculateHandValue = (hand: Card[]): number => {
 
 export default function Blackjack({ onResult, baseAmount, context, spectator = false }: BlackjackProps) {
   const { play } = useAudio();
-  const [deck, setDeck] = useState<Card[]>([]);
-  const [playerHand, setPlayerHand] = useState<Card[]>([]);
-  const [dealerHand, setDealerHand] = useState<Card[]>([]);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [playerTurn, setPlayerTurn] = useState(true);
-  const [gameEnded, setGameEnded] = useState(false);
-  const [dealerHidden, setDealerHidden] = useState(true);
+
+  // All game state in refs to avoid race conditions
   const deckRef = useRef<Card[]>([]);
+  const playerHandRef = useRef<Card[]>([]);
+  const dealerHandRef = useRef<Card[]>([]);
+  const playerTurnRef = useRef(true);
+  const gameEndedRef = useRef(false);
+  const initRef = useRef(false);
+
+  // Render state (only for display)
+  const [, forceRender] = useState(0);
+  const rerender = () => forceRender(n => n + 1);
+
+  const [dealerHidden, setDealerHidden] = useState(true);
+
+  const resolveGame = useCallback(() => {
+    if (gameEndedRef.current) return;
+    gameEndedRef.current = true;
+
+    const pv = calculateHandValue(playerHandRef.current);
+    const dv = calculateHandValue(dealerHandRef.current);
+
+    let tier: MinigameTier;
+    if (pv > 21) {
+      tier = 'catastrophic';
+    } else if (pv === 21 && playerHandRef.current.length === 2) {
+      tier = 'win'; // natural blackjack
+    } else if (dv > 21) {
+      tier = 'close-win';
+    } else if (pv > dv) {
+      tier = 'close-win';
+    } else if (pv === dv) {
+      tier = 'close-loss';
+    } else {
+      tier = 'loss';
+    }
+
+    rerender();
+    onResult(tier);
+  }, [onResult]);
+
+  const doDealerPlay = useCallback(() => {
+    playerTurnRef.current = false;
+    setDealerHidden(false);
+    play('minigames/card-flip');
+    rerender();
+
+    setTimeout(() => {
+      // Dealer draws to 17+
+      while (calculateHandValue(dealerHandRef.current) < 17 && deckRef.current.length > 0) {
+        dealerHandRef.current = [...dealerHandRef.current, deckRef.current[0]];
+        deckRef.current = deckRef.current.slice(1);
+      }
+      rerender();
+
+      setTimeout(() => resolveGame(), 1000);
+    }, 1000);
+  }, [play, resolveGame]);
+
+  const doHit = useCallback(() => {
+    if (gameEndedRef.current || !playerTurnRef.current) return;
+
+    const card = deckRef.current[0];
+    if (!card) return;
+    deckRef.current = deckRef.current.slice(1);
+    playerHandRef.current = [...playerHandRef.current, card];
+    play('minigames/blackjack-hit');
+    rerender();
+
+    const hv = calculateHandValue(playerHandRef.current);
+    if (hv > 21) {
+      // Bust — reveal dealer, resolve
+      setDealerHidden(false);
+      gameEndedRef.current = true;
+      rerender();
+      setTimeout(() => onResult('catastrophic'), 1000);
+    } else if (hv === 21) {
+      // Auto-stand on 21
+      setTimeout(() => doDealerPlay(), 500);
+    }
+    // Otherwise: player keeps their turn, buttons stay visible
+  }, [play, doDealerPlay, onResult]);
 
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'init') {
       const d = data.deck as Card[];
       deckRef.current = d.slice(4);
-      setDeck(d.slice(4));
-      setPlayerHand([d[0], d[1]]);
-      setDealerHand([d[2], d[3]]);
-      setGameStarted(true);
+      playerHandRef.current = [d[0], d[1]];
+      dealerHandRef.current = [d[2], d[3]];
+      initRef.current = true;
+      rerender();
     } else if (data.type === 'hit') {
       doHit();
     } else if (data.type === 'stand') {
-      doStand();
+      doDealerPlay();
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [doHit, doDealerPlay]);
 
   const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
+  // Init deal
   useEffect(() => {
-    if (!spectator) {
-      const d = createDeck();
-      deckRef.current = d.slice(4);
-      setDeck(d.slice(4));
-      const ph = [d[0], d[1]];
-      const dh = [d[2], d[3]];
-      setPlayerHand(ph);
-      setDealerHand(dh);
-      setGameStarted(true);
-      emitAction({ type: 'init', deck: d });
-      if (calculateHandValue(ph) === 21) {
-        setTimeout(() => doStand(), 1000);
-      }
+    if (initRef.current || spectator) return;
+    initRef.current = true;
+
+    const d = createDeck();
+    deckRef.current = d.slice(4);
+    playerHandRef.current = [d[0], d[1]];
+    dealerHandRef.current = [d[2], d[3]];
+    rerender();
+
+    emitAction({ type: 'init', deck: d });
+
+    // Natural blackjack → auto stand
+    if (calculateHandValue(playerHandRef.current) === 21) {
+      setTimeout(() => doDealerPlay(), 1000);
     }
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 30000);
-    return () => clearTimeout(timer);
+
+    return () => {};
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const doHit = () => {
-    setPlayerHand(prev => {
-      const card = deckRef.current[0];
-      if (!card) return prev;
-      deckRef.current = deckRef.current.slice(1);
-      setDeck(deckRef.current);
-      const newHand = [...prev, card];
-      play('minigames/blackjack-hit');
-      const hv = calculateHandValue(newHand);
-      if (hv > 21) {
-        setGameEnded(true); setDealerHidden(false);
-        setTimeout(() => onResult('catastrophic'), 1000);
-      } else if (hv === 21) {
-        setTimeout(() => doStand(), 500);
+  // Safety timeout (60s, generous)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!gameEndedRef.current) {
+        gameEndedRef.current = true;
+        onResult('catastrophic');
       }
-      return newHand;
-    });
-  };
-
-  const doStand = () => {
-    setPlayerTurn(false);
-    setDealerHidden(false);
-    play('minigames/card-flip');
-    setTimeout(() => {
-      setDealerHand(dh => {
-        let currentDealerHand = [...dh];
-        while (calculateHandValue(currentDealerHand) < 17 && deckRef.current.length > 0) {
-          currentDealerHand.push(deckRef.current[0]);
-          deckRef.current = deckRef.current.slice(1);
-        }
-        setDeck(deckRef.current);
-        setTimeout(() => {
-          setPlayerHand(ph => {
-            const pv = calculateHandValue(ph);
-            const dv = calculateHandValue(currentDealerHand);
-            setGameEnded(true);
-            if (pv === 21 && ph.length === 2) onResult('win');
-            else if (dv > 21) onResult('close-win');
-            else if (pv > dv) onResult('close-win');
-            else if (pv === dv) onResult('close-loss');
-            else onResult('loss');
-            return ph;
-          });
-        }, 1000);
-        return currentDealerHand;
-      });
-    }, 1000);
-  };
+    }, 60000);
+    return () => clearTimeout(timer);
+  }, [onResult]);
 
   const hit = () => {
-    if (!playerTurn || gameEnded || spectator) return;
+    if (!playerTurnRef.current || gameEndedRef.current || spectator) return;
     emitAction({ type: 'hit' });
     doHit();
   };
 
   const stand = () => {
-    if (!playerTurn || gameEnded || spectator) return;
+    if (!playerTurnRef.current || gameEndedRef.current || spectator) return;
     emitAction({ type: 'stand' });
-    doStand();
+    doDealerPlay();
   };
 
   const getCardColor = (suit: Suit): string => (suit === '♥' || suit === '♦') ? 'var(--neon-red)' : '#1f2937';
@@ -169,8 +207,11 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
     );
   };
 
-  const playerValue = calculateHandValue(playerHand);
-  const dealerValue = calculateHandValue(dealerHand);
+  const playerValue = calculateHandValue(playerHandRef.current);
+  const dealerValue = calculateHandValue(dealerHandRef.current);
+  const gameEnded = gameEndedRef.current;
+  const playerTurn = playerTurnRef.current;
+  const showControls = playerTurn && !gameEnded && playerValue < 21 && playerHandRef.current.length >= 2;
 
   return (
     <div className="blackjack pixelMinigame">
@@ -183,23 +224,23 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
           <div className="handSection dealer">
             <div className="handLabel">DEALER {!dealerHidden || gameEnded ? `(${dealerValue})` : '(??)'}</div>
             <div className="cardHand">
-              {dealerHand.map((card, index) => renderCard(card, index === 1 && dealerHidden && !gameEnded, 'dealerCard'))}
+              {dealerHandRef.current.map((card, index) => renderCard(card, index === 1 && dealerHidden && !gameEnded, 'dealerCard'))}
             </div>
           </div>
 
           <div className="handSection player">
             <div className="handLabel">
               YOU ({playerValue})
-              {playerValue === 21 && playerHand.length === 2 && <span className="blackjackBadge">BLACKJACK!</span>}
+              {playerValue === 21 && playerHandRef.current.length === 2 && <span className="blackjackBadge">BLACKJACK!</span>}
               {playerValue > 21 && <span className="bustBadge">BUST!</span>}
             </div>
             <div className="cardHand">
-              {playerHand.map((card, index) => renderCard(card, false, 'playerCard cardSlideIn'))}
+              {playerHandRef.current.map((card, index) => renderCard(card, false, 'playerCard cardSlideIn'))}
             </div>
           </div>
         </div>
 
-        {playerTurn && !gameEnded && playerValue < 21 && (
+        {showControls && (
           <div className="blackjackControls">
             <button className="blackjackBtn hitBtn pixelBtn" onClick={hit} disabled={spectator}>HIT</button>
             <button className="blackjackBtn standBtn pixelBtn" onClick={stand} disabled={spectator}>STAND</button>

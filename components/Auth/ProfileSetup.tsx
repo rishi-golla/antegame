@@ -51,6 +51,8 @@ export default function ProfileSetup() {
             >
               <img src={c.sprite} alt={c.name} className="characterCardSprite" draggable={false} />
               <span className="characterCardName">{c.name}</span>
+              <span className="characterCardBuff">{c.buff.name}</span>
+              <span className="characterCardBuffDesc">{c.buff.description}</span>
             </div>
           ))}
         </div>

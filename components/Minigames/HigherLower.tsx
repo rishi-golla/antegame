@@ -40,20 +40,28 @@ const createDeck = (): Card[] => {
 
 export default function HigherLower({ onResult, baseAmount, context, spectator = false }: HigherLowerProps) {
   const { play } = useAudio();
-  const [deck, setDeck] = useState<Card[]>([]);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [nextCard, setNextCard] = useState<Card | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const [round, setRound] = useState(0);
   const [correctGuesses, setCorrectGuesses] = useState(0);
   const [showResult, setShowResult] = useState(false);
-  const [allGuesses, setAllGuesses] = useState<boolean[]>([]);
+  const [lastGuessCorrect, setLastGuessCorrect] = useState<boolean | null>(null);
+
+  // Refs to avoid nested setState race conditions
   const deckRef = useRef<Card[]>([]);
+  const roundRef = useRef(0);
+  const correctRef = useRef(0);
+  const endedRef = useRef(false);
+  const currentRef = useRef<Card | null>(null);
+  const nextRef = useRef<Card | null>(null);
 
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'init') {
       const d = data.deck as Card[];
       deckRef.current = d;
-      setDeck(d);
+      currentRef.current = d[0];
+      nextRef.current = d[1];
       setCurrentCard(d[0]);
       setNextCard(d[1]);
     } else if (data.type === 'guess') {
@@ -67,55 +75,79 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
     if (!spectator) {
       const d = createDeck();
       deckRef.current = d;
-      setDeck(d);
+      currentRef.current = d[0];
+      nextRef.current = d[1];
       setCurrentCard(d[0]);
       setNextCard(d[1]);
       emitAction({ type: 'init', deck: d });
     }
-    const timer = setTimeout(() => { onResult('catastrophic'); }, 30000);
+    const timer = setTimeout(() => {
+      if (!endedRef.current) {
+        endedRef.current = true;
+        onResult('catastrophic');
+      }
+    }, 30000);
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doGuess = (isHigher: boolean) => {
-    setCurrentCard(cur => {
-      setNextCard(nxt => {
-        if (!cur || !nxt) return nxt;
-        play('minigames/card-flip');
-        const isCorrect = isHigher ? (nxt.value > cur.value) : (nxt.value < cur.value);
-        const actuallyCorrect = nxt.value !== cur.value && isCorrect;
+    if (endedRef.current) return;
+    const cur = currentRef.current;
+    const nxt = nextRef.current;
+    if (!cur || !nxt) return;
 
-        setAllGuesses(prev => [...prev, actuallyCorrect]);
-        if (actuallyCorrect) setCorrectGuesses(prev => prev + 1);
+    play('minigames/card-flip');
 
-        setRound(r => {
-          if (r === 2) {
-            setShowResult(true);
-            setCorrectGuesses(cc => {
-              const finalCorrect = actuallyCorrect ? cc + 1 : cc;
-              setTimeout(() => {
-                if (finalCorrect === 3) onResult('win');
-                else if (finalCorrect === 2) onResult('close-win');
-                else if (finalCorrect === 1) onResult('close-loss');
-                else onResult('catastrophic');
-              }, 1000);
-              return finalCorrect;
-            });
-          } else {
-            setTimeout(() => {
-              setCurrentCard(nxt);
-              setNextCard(deckRef.current[r + 2] || null);
-            }, 1500);
-          }
-          return r + 1;
-        });
-        return nxt;
-      });
-      return cur;
-    });
+    // Ties are a push (count as correct) — not a penalty
+    let isCorrect: boolean;
+    if (nxt.value === cur.value) {
+      isCorrect = true; // push
+    } else {
+      isCorrect = isHigher ? (nxt.value > cur.value) : (nxt.value < cur.value);
+    }
+
+    const newCorrect = correctRef.current + (isCorrect ? 1 : 0);
+    correctRef.current = newCorrect;
+    setCorrectGuesses(newCorrect);
+    setLastGuessCorrect(isCorrect);
+
+    const r = roundRef.current;
+
+    // Reveal the next card
+    setRevealed(true);
+
+    if (r === 2) {
+      // Final round — show results
+      endedRef.current = true;
+      setShowResult(true);
+      setTimeout(() => {
+        if (newCorrect === 3) onResult('win');
+        else if (newCorrect === 2) onResult('close-win');
+        else if (newCorrect === 1) onResult('close-loss');
+        else onResult('catastrophic');
+      }, 1500);
+    } else {
+      // Advance to next round after reveal
+      setTimeout(() => {
+        const newCurrent = nxt;
+        const newNext = deckRef.current[r + 2] || null;
+        currentRef.current = newCurrent;
+        nextRef.current = newNext;
+        setCurrentCard(newCurrent);
+        setNextCard(newNext);
+        setRevealed(false);
+        setLastGuessCorrect(null);
+        roundRef.current = r + 1;
+        setRound(r + 1);
+      }, 1500);
+    }
+
+    roundRef.current = r + 1;
+    setRound(r + 1);
   };
 
   const makeGuess = (isHigher: boolean) => {
-    if (!currentCard || !nextCard || showResult || spectator) return;
+    if (!currentRef.current || !nextRef.current || endedRef.current || spectator || revealed) return;
     emitAction({ type: 'guess', isHigher });
     doGuess(isHigher);
   };
@@ -145,8 +177,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
           <div className="higherLowerVs">VS</div>
 
           <div className="cardWrapper">
-            {showResult && nextCard ? (
-              <div className="playingCard next revealed pixelCard cardRevealAnim">
+            {revealed && nextCard ? (
+              <div className={`playingCard next revealed pixelCard cardRevealAnim ${lastGuessCorrect === true ? 'cardCorrect' : lastGuessCorrect === false ? 'cardWrong' : ''}`}>
                 <div className="cardRank" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.rank}</div>
                 <div className="cardSuit" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.suit}</div>
                 <div className="cardCenter" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.suit}</div>
@@ -160,18 +192,24 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
           </div>
         </div>
 
-        {!showResult && (
+        {!revealed && !showResult && (
           <div className="higherLowerButtons">
+            <p className="higherLowerPrompt">Will the next card be higher or lower?</p>
             <button className="higherLowerBtn higher pixelBtn" onClick={() => makeGuess(true)} disabled={spectator}>▲ HIGHER</button>
             <button className="higherLowerBtn lower pixelBtn" onClick={() => makeGuess(false)} disabled={spectator}>▼ LOWER</button>
+          </div>
+        )}
+
+        {revealed && lastGuessCorrect !== null && !showResult && (
+          <div className="hlRoundFeedback">
+            {lastGuessCorrect ? '✓ CORRECT' : '✗ WRONG'}
           </div>
         )}
 
         <div className="higherLowerRules">
           <div className="ruleRow">3 CORRECT = WIN</div>
           <div className="ruleRow">2 CORRECT = CLOSE WIN</div>
-          <div className="ruleRow">1 CORRECT = CLOSE LOSS</div>
-          <div className="ruleRow">0 CORRECT = CATASTROPHIC</div>
+          <div className="ruleRow">TIES = PUSH (FREE)</div>
         </div>
       </div>
     </div>

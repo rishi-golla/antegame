@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useAudio } from '@/context/AudioContext';
 
 export default function AudioControls({ onHome, inGame }: { onHome?: () => void; inGame?: boolean } = {}) {
-  const { sfxVolume, musicVolume, setSfxVolume, setMusicVolume, muted, toggleMute } = useAudio();
+  const { sfxVolume, musicVolume, ambientVolume, setSfxVolume, setMusicVolume, setAmbientVolume, muted, toggleMute } = useAudio();
   const [expanded, setExpanded] = useState(false);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -93,6 +93,17 @@ export default function AudioControls({ onHome, inGame }: { onHome?: () => void;
               step="0.01"
               value={sfxVolume}
               onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
+            />
+          </label>
+          <label className="audio-controls-label">
+            <span>Ambient</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={ambientVolume}
+              onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
             />
           </label>
         </div>

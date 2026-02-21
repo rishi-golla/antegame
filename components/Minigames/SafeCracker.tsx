@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { MinigameTier, MinigameContext } from '@/types/game';
 import { useAudio } from '@/context/AudioContext';
 import { useMinigameSync } from '@/hooks/useMinigameSync';
@@ -21,17 +21,26 @@ interface GuessResult {
 export default function SafeCracker({ onResult, baseAmount, context, spectator = false }: SafeCrackerProps) {
   const { play } = useAudio();
   const [combination, setCombination] = useState<number[]>([]);
-  const [currentGuess, setCurrentGuess] = useState<number[]>([0, 0, 0]);
+  const [currentGuess, setCurrentGuess] = useState<number[]>([1, 1, 1]);
   const [attempts, setAttempts] = useState<GuessResult[]>([]);
   const [currentAttempt, setCurrentAttempt] = useState(1);
   const [gameEnded, setGameEnded] = useState(false);
   const [cracked, setCracked] = useState(false);
   const [selectedDial, setSelectedDial] = useState(0);
   const [dialRotation, setDialRotation] = useState([0, 0, 0]);
+  const [textInput, setTextInput] = useState('');
+
+  // Refs to avoid nested setState
+  const comboRef = useRef<number[]>([]);
+  const attemptsRef = useRef<GuessResult[]>([]);
+  const attemptNumRef = useRef(1);
+  const endedRef = useRef(false);
+  const guessRef = useRef<number[]>([1, 1, 1]);
 
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'init') {
       setCombination(data.combo);
+      comboRef.current = data.combo;
     } else if (data.type === 'dial') {
       adjustDialInternal(data.index, data.direction);
     } else if (data.type === 'submit') {
@@ -44,12 +53,19 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
   const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
   useEffect(() => {
-    const combo = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
+    const combo = [1 + Math.floor(Math.random() * 4), 1 + Math.floor(Math.random() * 4), 1 + Math.floor(Math.random() * 4)];
     setCombination(combo);
+    comboRef.current = combo;
     if (!spectator) {
       emitAction({ type: 'init', combo });
     }
-    const timer = setTimeout(() => { if (!gameEnded) onResult('catastrophic'); }, 45000);
+    const timer = setTimeout(() => {
+      if (!endedRef.current) {
+        endedRef.current = true;
+        setGameEnded(true);
+        onResult('catastrophic');
+      }
+    }, 90000);
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -57,7 +73,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
     play('minigames/safe-dial');
     setCurrentGuess(prev => {
       const n = [...prev];
-      n[dialIndex] = (n[dialIndex] + direction + 5) % 5;
+      n[dialIndex] = ((n[dialIndex] - 1 + direction + 4) % 4) + 1;
+      guessRef.current = n;
       return n;
     });
     setDialRotation(prev => {
@@ -68,7 +85,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
   };
 
   const adjustDial = (dialIndex: number, direction: 1 | -1) => {
-    if (gameEnded || spectator) return;
+    if (endedRef.current || spectator) return;
     adjustDialInternal(dialIndex, direction);
     emitAction({ type: 'dial', index: dialIndex, direction });
   };
@@ -80,55 +97,60 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
   };
 
   const submitGuessInternal = () => {
-    setCurrentGuess(cg => {
-      setCombination(combo => {
-        setAttempts(prev => {
-          setCurrentAttempt(ca => {
-            let correctPosition = 0;
-            let correctDigit = 0;
-            const comboUsed = [false, false, false];
-            const guessUsed = [false, false, false];
+    if (endedRef.current) return;
 
-            for (let i = 0; i < 3; i++) {
-              if (cg[i] === combo[i]) { correctPosition++; comboUsed[i] = true; guessUsed[i] = true; }
-            }
-            for (let i = 0; i < 3; i++) {
-              if (!guessUsed[i]) {
-                for (let j = 0; j < 3; j++) {
-                  if (!comboUsed[j] && cg[i] === combo[j]) { correctDigit++; comboUsed[j] = true; break; }
-                }
-              }
-            }
+    const cg = guessRef.current;
+    const combo = comboRef.current;
+    const ca = attemptNumRef.current;
 
-            const result: GuessResult = { guess: [...cg], correctPosition, correctDigit };
-            const newAttempts = [...prev, result];
+    // Calculate feedback
+    let correctPosition = 0;
+    let correctDigit = 0;
+    const comboUsed = [false, false, false];
+    const guessUsed = [false, false, false];
 
-            if (correctPosition === 3) {
-              play('minigames/safe-crack');
-              setCracked(true);
-              setGameEnded(true);
-              setTimeout(() => onResult(ca <= 2 ? 'win' : ca === 3 ? 'close-win' : 'close-loss'), 1500);
-            } else if (ca === 4) {
-              setGameEnded(true);
-              const totalCorrect = Math.max(...newAttempts.map(a => a.correctPosition + a.correctDigit));
-              setTimeout(() => onResult(totalCorrect >= 2 ? 'loss' : 'catastrophic'), 1000);
-            } else {
-              setCurrentGuess([0, 0, 0]);
-            }
+    for (let i = 0; i < 3; i++) {
+      if (cg[i] === combo[i]) { correctPosition++; comboUsed[i] = true; guessUsed[i] = true; }
+    }
+    for (let i = 0; i < 3; i++) {
+      if (!guessUsed[i]) {
+        for (let j = 0; j < 3; j++) {
+          if (!comboUsed[j] && cg[i] === combo[j]) { correctDigit++; comboUsed[j] = true; break; }
+        }
+      }
+    }
 
-            setAttempts(newAttempts);
-            return ca + 1;
-          });
-          return prev;
-        });
-        return combo;
-      });
-      return cg;
-    });
+    const result: GuessResult = { guess: [...cg], correctPosition, correctDigit };
+    const newAttempts = [...attemptsRef.current, result];
+    attemptsRef.current = newAttempts;
+    setAttempts(newAttempts);
+
+    if (correctPosition === 3) {
+      // Cracked!
+      play('minigames/safe-crack');
+      setCracked(true);
+      endedRef.current = true;
+      setGameEnded(true);
+      setTimeout(() => onResult(ca <= 2 ? 'win' : ca === 3 ? 'close-win' : 'close-loss'), 1500);
+    } else if (ca >= 4) {
+      // Out of attempts
+      endedRef.current = true;
+      setGameEnded(true);
+      const totalCorrect = Math.max(...newAttempts.map(a => a.correctPosition + a.correctDigit));
+      setTimeout(() => onResult(totalCorrect >= 2 ? 'loss' : 'catastrophic'), 1000);
+    } else {
+      // Reset guess for next attempt
+      guessRef.current = [1, 1, 1];
+      setCurrentGuess([1, 1, 1]);
+      setDialRotation([0, 0, 0]);
+    }
+
+    attemptNumRef.current = ca + 1;
+    setCurrentAttempt(ca + 1);
   };
 
   const submitGuess = () => {
-    if (gameEnded || spectator || attempts.length >= 4) return;
+    if (endedRef.current || spectator || attemptNumRef.current > 4) return;
     emitAction({ type: 'submit' });
     submitGuessInternal();
   };
@@ -163,7 +185,34 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           </div>
 
           {!gameEnded && currentAttempt <= 4 && (
-            <button className="submitBtn pixelBtn" onClick={submitGuess} disabled={spectator}>TRY COMBINATION</button>
+            <div className="safeSubmitRow">
+              <input
+                type="text"
+                className="safeTextInput"
+                placeholder="e.g. 132"
+                maxLength={3}
+                value={textInput}
+                disabled={spectator}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^1-4]/g, '');
+                  setTextInput(val);
+                  if (val.length <= 3) {
+                    const digits = val.split('').map(Number);
+                    const newGuess = [digits[0] ?? 1, digits[1] ?? 1, digits[2] ?? 1];
+                    guessRef.current = newGuess;
+                    setCurrentGuess(newGuess);
+                    setDialRotation(newGuess.map(d => d * 36));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && textInput.length === 3) {
+                    submitGuess();
+                    setTextInput('');
+                  }
+                }}
+              />
+              <button className="submitBtn pixelBtn" onClick={() => { submitGuess(); setTextInput(''); }} disabled={spectator}>TRY</button>
+            </div>
           )}
         </div>
       </div>
@@ -184,7 +233,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
       </div>
 
       <div className="safeInstructions">
-        {cracked ? 'SAFE CRACKED!' : gameEnded ? `FAILED! CODE: [${combination.join('')}]` : 'DIGITS 0-4. SET COMBO AND TRY. 🟢=RIGHT PLACE 🟡=WRONG PLACE'}
+        {cracked ? 'SAFE CRACKED!' : gameEnded ? `FAILED! CODE: [${combination.join('')}]` : 'DIGITS 1-4. SET COMBO AND TRY. 🟢=RIGHT PLACE 🟡=WRONG PLACE'}
       </div>
     </div>
   );

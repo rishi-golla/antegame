@@ -33,10 +33,27 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
   const [gameStarted, setGameStarted] = useState(false);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [leverPulled, setLeverPulled] = useState(false);
+  const [heartbeatEffect, setHeartbeatEffect] = useState(false);
+  const [finalReelSlowdown, setFinalReelSlowdown] = useState(false);
+  const [screenShake, setScreenShake] = useState(0); // 0 = none, 1 = mild, 2 = strong
+  
+  // Enhanced reel state for realistic spinning
+  const [reelPositions, setReelPositions] = useState([0, 0, 0]); // Vertical scroll positions
+  const [reelVelocities, setReelVelocities] = useState([0, 0, 0]); // Current spin speeds
+  const [blurIntensity, setBlurIntensity] = useState([0, 0, 0]); // Blur during fast spin
+  
   const finalReelsRef = useRef<SlotSymbol[]>(['cherry', 'cherry', 'cherry']);
   const startTriggeredRef = useRef(false);
+  const animationFrameRef = useRef<number | null>(null);
 
   const reelRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
+
+  // Create extended symbol arrays for realistic reel scrolling (20+ symbols each)
+  const REEL_SYMBOLS_EXTENDED = [
+    ['cherry', 'seven', 'diamond', 'bar', 'skull', 'cherry', 'diamond', 'bar', 'seven', 'cherry', 'skull', 'diamond', 'bar', 'seven', 'cherry', 'diamond', 'skull', 'bar', 'seven', 'cherry'],
+    ['bar', 'cherry', 'skull', 'diamond', 'seven', 'bar', 'cherry', 'diamond', 'skull', 'bar', 'seven', 'cherry', 'diamond', 'bar', 'skull', 'seven', 'cherry', 'bar', 'diamond', 'skull'],
+    ['skull', 'bar', 'seven', 'cherry', 'diamond', 'skull', 'bar', 'cherry', 'seven', 'skull', 'diamond', 'bar', 'cherry', 'skull', 'seven', 'diamond', 'bar', 'skull', 'cherry', 'seven']
+  ];
 
   const doStartRef = useRef<(finals: SlotSymbol[]) => void>(() => {});
 
@@ -68,16 +85,104 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
     }
   }, [stopped]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const stopReelAuto = useCallback((reelIndex: number, intervals: any[], finalSymbol: SlotSymbol) => {
-    if (intervals[reelIndex]) clearInterval(intervals[reelIndex]);
-    if (reelRefs[reelIndex]?.current) {
-      reelRefs[reelIndex].current!.classList.remove('pixelSpin');
+  // Physics-based reel animation loop
+  useEffect(() => {
+    const animateReels = () => {
+      setReelPositions(prev => prev.map((pos, index) => {
+        if (!spinning[index]) return pos;
+        return (pos + reelVelocities[index]) % (REEL_SYMBOLS_EXTENDED[index].length * 60); // 60px per symbol
+      }));
+
+      setBlurIntensity(prev => prev.map((blur, index) => {
+        const targetBlur = Math.min(reelVelocities[index] * 0.5, 15); // Max 15px blur
+        return blur + (targetBlur - blur) * 0.1; // Smooth blur transition
+      }));
+
+      if (spinning.some(Boolean)) {
+        animationFrameRef.current = requestAnimationFrame(animateReels);
+      }
+    };
+
+    if (spinning.some(Boolean)) {
+      animationFrameRef.current = requestAnimationFrame(animateReels);
     }
-    play('minigames/slot-stop');
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [spinning, reelVelocities]);
+
+  const stopReelAuto = useCallback((reelIndex: number, finalSymbol: SlotSymbol, isLastReel = false) => {
+    // Start deceleration process
+    const targetPosition = REEL_SYMBOLS_EXTENDED[reelIndex].indexOf(finalSymbol) * 60;
+    
+    // Gradual deceleration with overshoot and bounce
+    const decelerate = () => {
+      setReelVelocities(prev => {
+        const newVelocities = [...prev];
+        const currentVel = newVelocities[reelIndex];
+        
+        if (currentVel > 2) {
+          // Fast deceleration
+          newVelocities[reelIndex] = currentVel * 0.92;
+        } else {
+          // Final positioning with overshoot
+          const currentPos = reelPositions[reelIndex] % (REEL_SYMBOLS_EXTENDED[reelIndex].length * 60);
+          const distance = targetPosition - currentPos;
+          const adjustedDistance = distance > 300 ? distance - REEL_SYMBOLS_EXTENDED[reelIndex].length * 60 : distance;
+          
+          if (Math.abs(adjustedDistance) > 5) {
+            newVelocities[reelIndex] = adjustedDistance * 0.1;
+          } else {
+            // Final stop
+            newVelocities[reelIndex] = 0;
+            setReelPositions(prev => {
+              const newPos = [...prev];
+              newPos[reelIndex] = targetPosition;
+              return newPos;
+            });
+            
+            setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
+            setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
+            setBlurIntensity(prev => { const n = [...prev]; n[reelIndex] = 0; return n; });
+            play('minigames/slot-stop');
+            
+            // Special effects for final reel
+            if (isLastReel && reelIndex === 2) {
+              const [r1, r2] = finalReelsRef.current;
+              const r3 = finalSymbol;
+              
+              const willBeCloseResult = (r1 === r2) || (r2 === r3 && r1 !== r2) || (r1 === r3 && r1 !== r2);
+              
+              if (willBeCloseResult) {
+                setHeartbeatEffect(true);
+                const shakeLevel = (r1 === r2) ? 2 : 1;
+                setScreenShake(shakeLevel);
+                setTimeout(() => {
+                  setHeartbeatEffect(false);
+                  setScreenShake(0);
+                }, 1000);
+              }
+            }
+            
+            return newVelocities;
+          }
+        }
+        
+        return newVelocities;
+      });
+      
+      if (reelVelocities[reelIndex] !== 0) {
+        setTimeout(decelerate, 16); // ~60fps
+      }
+    };
+    
+    decelerate();
+    
     setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
-    setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
-    setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
-  }, [play]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [play, reelPositions, reelVelocities]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doStart = useCallback((finals: SlotSymbol[]) => {
     if (startTriggeredRef.current) return;
@@ -88,26 +193,17 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
     setSpinning([true, true, true]);
     play('minigames/slot-spin');
 
-    reelRefs.forEach((ref) => {
-      if (ref.current) ref.current.classList.add('pixelSpin');
-    });
+    // Set initial high velocities for each reel with slight variation
+    setReelVelocities([
+      12 + Math.random() * 3,  // Reel 1: 12-15 speed
+      15 + Math.random() * 3,  // Reel 2: 15-18 speed  
+      18 + Math.random() * 3   // Reel 3: 18-21 speed (fastest)
+    ]);
 
-    const spinIntervals = reelRefs.map((_, index) => {
-      return setInterval(() => {
-        setReels(prev => {
-          const newReels = [...prev];
-          newReels[index] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-          return newReels;
-        });
-      }, 100);
-    });
-
-    (window as any).slotIntervals = spinIntervals;
-
-    // Auto-stop reels with staggered timing
-    setTimeout(() => stopReelAuto(0, spinIntervals, finals[0]), 1500);
-    setTimeout(() => stopReelAuto(1, spinIntervals, finals[1]), 2500);
-    setTimeout(() => stopReelAuto(2, spinIntervals, finals[2]), 3500);
+    // Auto-stop reels with staggered timing and realistic deceleration
+    setTimeout(() => stopReelAuto(0, finals[0]), 1800);
+    setTimeout(() => stopReelAuto(1, finals[1]), 2800);
+    setTimeout(() => stopReelAuto(2, finals[2], true), 4200); // Final reel takes longest
   }, [play, stopReelAuto]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep ref in sync
@@ -139,11 +235,12 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
     setReels(prev => { const n = [...prev]; n[reelIndex] = finalSymbol; return n; });
     setStopped(prev => { const n = [...prev]; n[reelIndex] = true; return n; });
     setSpinning(prev => { const n = [...prev]; n[reelIndex] = false; return n; });
+    setBlurIntensity(prev => { const n = [...prev]; n[reelIndex] = 0; return n; });
     setCurrentReel(currentReel + 1);
   };
 
   return (
-    <div className="slotMachine pixelMinigame">
+    <div className={`slotMachine pixelMinigame ${heartbeatEffect ? 'slot-heartbeat' : ''} ${screenShake > 0 ? `slot-shake-${screenShake}` : ''}`}>
       <div className="slotFrame">
         <img src="/assets/minigames/slots/slot-machine.png" alt="" className="slotFrameImg" />
         <div className="slotHeader">
@@ -158,12 +255,64 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
           {reels.map((symbol, index) => (
             <div
               key={index}
-              className={`slotReel ${stopped[index] ? 'stopped' : ''} ${currentReel === index && gameStarted && !stopped[index] ? 'active' : ''}`}
+              className={`slotReel ${stopped[index] ? 'stopped' : ''} ${currentReel === index && gameStarted && !stopped[index] ? 'active' : ''} ${index === 2 && finalReelSlowdown ? 'final-reel-slowdown' : ''}`}
               onClick={() => stopReel(index)}
               ref={reelRefs[index]}
             >
-              <div className="slotSymbol">
-                <img src={SYMBOL_IMAGES[symbol]} alt={symbol} className="slotSymbolImg" />
+              {/* Reel window - shows multiple symbols with clipping */}
+              <div className="reel-window">
+                <div 
+                  className="reel-strip"
+                  style={{
+                    transform: `translateY(-${reelPositions[index]}px)`,
+                    filter: stopped[index] ? 'none' : `blur(${blurIntensity[index]}px)`,
+                    transition: stopped[index] ? 'filter 0.2s ease-out' : 'none'
+                  }}
+                >
+                  {/* Render extended symbol list for continuous scrolling */}
+                  {REEL_SYMBOLS_EXTENDED[index].concat(REEL_SYMBOLS_EXTENDED[index]).map((sym, symIndex) => (
+                    <div 
+                      key={`${index}-${symIndex}`}
+                      className={`reel-symbol ${sym}`}
+                      style={{
+                        height: '60px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <img 
+                        src={SYMBOL_IMAGES[sym as SlotSymbol]} 
+                        alt={sym} 
+                        className="reel-symbol-img"
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          imageRendering: 'pixelated'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Reel window overlay with visible center highlight */}
+                <div className="reel-window-overlay">
+                  <div className="reel-center-highlight" />
+                </div>
+              </div>
+              
+              {/* Light strips on reel borders */}
+              <div className={`reel-lights ${spinning[index] ? 'chasing' : ''}`}>
+                <div className="light-strip left">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="light-bulb" style={{ animationDelay: `${i * 0.1}s` }} />
+                  ))}
+                </div>
+                <div className="light-strip right">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="light-bulb" style={{ animationDelay: `${i * 0.1 + 0.3}s` }} />
+                  ))}
+                </div>
               </div>
             </div>
           ))}

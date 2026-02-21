@@ -19,6 +19,10 @@ interface TileProps {
   players: Player[];
   currentPlayerIndex?: number;
   onTileClick?: (tileIndex: number) => void;
+  isJustPurchased?: boolean;
+  hotLevel?: number;
+  isNearMiss?: boolean;
+  isDeclineFlash?: boolean;
 }
 
 const GROUP_COLORS: Record<string, string> = {
@@ -55,7 +59,7 @@ function getImageRotation(_orientation: string): number {
   return 0;
 }
 
-export default function Tile({ tile, activeTile, players, currentPlayerIndex, onTileClick }: TileProps) {
+export default function Tile({ tile, activeTile, players, currentPlayerIndex, onTileClick, isJustPurchased = false, hotLevel = 0, isNearMiss = false, isDeclineFlash = false }: TileProps) {
   const tokensOnTile = players.filter((p) => !p.bankrupt && p.position === tile.index);
   const owner = players.find((p) => !p.bankrupt && p.properties.includes(tile.index));
   const isMortgaged = owner?.mortgaged.includes(tile.index);
@@ -73,9 +77,17 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
     ? `tile-strip tile-strip-${tile.orientation}`
     : '';
 
+  // Hot property classes based on landing frequency
+  let hotClass = '';
+  if (hotLevel >= 5) {
+    hotClass = 'tile-hot-blazing'; // Golden aura
+  } else if (hotLevel >= 3) {
+    hotClass = 'tile-hot-warm'; // Warm glow
+  }
+
   return (
     <div
-      className={`tile tile-${tile.index % 4} tile-${tile.orientation} ${tile.isCorner ? 'tile-corner' : ''} ${activeTile === tile.index ? 'activeTile' : ''} ${isMortgaged ? 'tile-mortgaged' : ''} ${isCornerTile ? `tile-corner-${tileData.cornerKind}` : ''} ${tileData.type === 'chance' ? 'tile-risk' : ''} ${tileData.type === 'community-chest' ? 'tile-blind' : ''}`}
+      className={`tile tile-${tile.index % 4} tile-${tile.orientation} ${tile.isCorner ? 'tile-corner' : ''} ${activeTile === tile.index ? 'activeTile' : ''} ${isMortgaged ? 'tile-mortgaged' : ''} ${isCornerTile ? `tile-corner-${tileData.cornerKind}` : ''} ${tileData.type === 'chance' ? 'tile-risk' : ''} ${tileData.type === 'community-chest' ? 'tile-blind' : ''} ${isJustPurchased ? 'tile-just-purchased' : ''} ${hotClass} ${isNearMiss ? 'tile-near-miss' : ''} ${isDeclineFlash ? 'tile-decline-flash' : ''}`}
       data-tile-index={tile.index}
       style={{
         gridRow: `${tile.row} / span ${tile.rowSpan}`,
