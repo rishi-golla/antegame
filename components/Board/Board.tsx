@@ -12,6 +12,7 @@ import PropertyPopup from './PropertyPopup';
 import MoneyFloat, { useMoneyFloats } from './MoneyFloat';
 import RentAnimation from './RentAnimation';
 import ScreenEffects from '@/components/UI/ScreenEffects';
+import TurnTimer from '@/components/UI/TurnTimer';
 import { TILES } from '@/lib/gameData';
 // import { particles } from '@/lib/particles';
 
@@ -399,6 +400,7 @@ export default function Board() {
     <section className="boardWrap">
       {/* Global screen effects overlay */}
       <ScreenEffects />
+      <TurnTimer />
       
       <div ref={frameRef} className={`boardFrame ${isDiceFocus ? 'focused' : ''}`}>
         <div className="boardGrid" style={boardSize ? { width: `${boardSize}px`, height: `${boardSize}px` } : undefined}>

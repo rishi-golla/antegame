@@ -21,6 +21,12 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   const applyCardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (state.phase === 'drawing-card' && state.drawnCard && isMyTurn) {
+      // Play card draw sound based on effect type
+      const effect = state.drawnCard.effect.kind;
+      if (effect === 'go-to-jail') play('sfx/card-jail');
+      else if (effect === 'pay' || effect === 'pay-each-player' || effect === 'repairs') play('sfx/card-bad');
+      else play('sfx/card-good');
+
       applyCardTimerRef.current = setTimeout(() => {
         dispatch({ type: 'APPLY_CARD' });
       }, 2000);
@@ -218,7 +224,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
             <div className="cardOverlayCorner cardCornerBL" />
             <div className="cardOverlayCorner cardCornerBR" />
             <div className="cardOverlayDeckLabel">
-              {state.drawnCard.deckType === 'chance' ? '⚡ RISK' : '✦ BLIND CHEST'}
+              {state.drawnCard.deckType === 'chance' ? 'RISK' : 'BLIND CHEST'}
             </div>
             <div className="cardOverlayDivider" />
             <div className="cardOverlayIcon">

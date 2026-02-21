@@ -2622,7 +2622,6 @@ input {
 /* === Global Pixel Minigame Rules === */
 .pixelMinigame {
   font-family: 'Nunito', sans-serif;
-  image-rendering: pixelated;
   width: 100%;
   max-width: 700px;
   min-height: 80vh;
@@ -2635,7 +2634,6 @@ input {
 }
 
 .pixelMinigame img {
-  image-rendering: pixelated;
 }
 
 .pixelMinigame h2 {
@@ -2646,18 +2644,22 @@ input {
 
 .pixelBtn {
   font-family: 'Nunito', sans-serif;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
-  image-rendering: pixelated;
-  border: none !important;
+  font-weight: 700;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
 }
 
 .pixelBtn:hover {
-  filter: brightness(1.2);
+  filter: brightness(1.15);
+  transform: translateY(-1px);
 }
 
 .pixelBtn:active {
   filter: brightness(0.9);
+  transform: translateY(1px);
 }
 
 .pixelCard {
@@ -2909,7 +2911,6 @@ input {
 .slotSymbolImg {
   width: 70px;
   height: 70px;
-  image-rendering: pixelated;
   object-fit: contain;
 }
 
@@ -2960,7 +2961,6 @@ input {
 .paytableIcon {
   width: 16px;
   height: 16px;
-  image-rendering: pixelated;
   vertical-align: middle;
 }
 
@@ -3261,14 +3261,12 @@ input {
   width: 120px;
   height: 120px;
   position: relative;
-  image-rendering: pixelated;
 }
 
 .dieImg {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
   filter: drop-shadow(3px 3px 0 #000);
 }
 
@@ -3496,7 +3494,6 @@ input {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
@@ -3510,9 +3507,8 @@ input {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
   border-radius: 50%;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .wheelStandWrap {
@@ -3525,7 +3521,6 @@ input {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
 }
 
 .wheelSpinBtn {
@@ -3664,7 +3659,6 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  image-rendering: pixelated;
 }
 
 .msTileQuestion {
@@ -4224,7 +4218,7 @@ input {
   text-align: center;
   padding: 12px;
   background: rgba(0, 0, 0, 0.3);
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .selectedGuess { font-size: 1.1rem; color: var(--gold); margin-bottom: 4px; }
@@ -4319,7 +4313,6 @@ input {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
 }
 
 .safeBody {
@@ -4340,7 +4333,7 @@ input {
   align-items: center;
   background: var(--bg-elevated);
   cursor: pointer;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .dial.selected {
@@ -4374,7 +4367,6 @@ input {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
   opacity: 0.3;
   transition: transform 0.2s steps(6);
 }
@@ -4433,7 +4425,7 @@ input {
   background: rgba(0, 0, 0, 0.3);
   border: 2px solid var(--gold);
   padding: 8px;
-  box-shadow: 0 4px 0 #000, 4px 0 0 #000, 0 -4px 0 #000, -4px 0 0 #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .historyTitle {
@@ -4871,6 +4863,64 @@ input {
   40% { transform: translate(4px, -1px) rotate(0.5deg); }
   60% { transform: translate(-3px, -1px) rotate(-0.3deg); }
   80% { transform: translate(3px, 1px) rotate(0.3deg); }
+}
+
+/* === Turn Timer === */
+.turnTimer {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.turnTimerBar {
+  width: 80px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.turnTimerFill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+.turnTimer.urgent .turnTimerFill {
+  background: #f59e0b;
+}
+
+.turnTimer.critical .turnTimerFill {
+  background: #ef4444;
+  animation: timerPulse 0.5s ease-in-out infinite;
+}
+
+.turnTimerText {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 24px;
+  text-align: center;
+}
+
+.turnTimer.urgent .turnTimerText { color: #f59e0b; }
+.turnTimer.critical .turnTimerText { color: #ef4444; }
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* Property Popup Actions */

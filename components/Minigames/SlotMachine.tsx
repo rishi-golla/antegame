@@ -21,7 +21,7 @@ const SYMBOL_IMAGES: Record<SlotSymbol, string> = {
   seven: '/assets/minigames/slots/seven.png',
   diamond: '/assets/minigames/slots/diamond.png',
   bar: '/assets/minigames/slots/bar.png',
-  skull: '/assets/minigames/slots/cherry.png',
+  skull: '/assets/minigames/slots/skull.png',
 };
 
 const REEL_SYMBOLS_EXTENDED = [
