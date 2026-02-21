@@ -22,73 +22,97 @@ interface FlipResult {
 
 export default function CoinFlip({ onResult, baseAmount, context, spectator = false }: CoinFlipProps) {
   const { play } = useAudio();
-  const [displaySide, setDisplaySide] = useState<CoinSide>('heads');
-  const [results, setResults] = useState<FlipResult[]>([]);
-  const [phase, setPhase] = useState<'choosing' | 'flipping' | 'done'>('choosing');
-  const flipRef = useRef(false); // guard against double-flip
-  const resultsRef = useRef<FlipResult[]>([]); // stable ref for results
+
+  // All game state in refs
+  const resultsRef = useRef<FlipResult[]>([]);
+  const phaseRef = useRef<'choosing' | 'flipping' | 'done'>('choosing');
+  const displaySideRef = useRef<CoinSide>('heads');
+  const flipBusyRef = useRef(false);
+  const endedRef = useRef(false);
+
+  const [, forceRender] = useState(0);
+  const rerender = () => forceRender(n => n + 1);
+
+  const executeFlipRef = useRef<(guess: CoinSide, actual: CoinSide) => void>(() => {});
 
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'flip') {
-      executeFlip(data.guess, data.actual);
+      executeFlipRef.current(data.guess, data.actual);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
+  // Safety timeout
   useEffect(() => {
-    const timer = setTimeout(() => onResult('catastrophic'), 30000);
+    const timer = setTimeout(() => {
+      if (!endedRef.current) {
+        endedRef.current = true;
+        onResult('catastrophic');
+      }
+    }, 30000);
     return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [onResult]);
 
   const executeFlip = useCallback((guess: CoinSide, actual: CoinSide) => {
-    if (flipRef.current) return;
-    flipRef.current = true;
-    setPhase('flipping');
+    if (flipBusyRef.current || endedRef.current) return;
+    flipBusyRef.current = true;
+    phaseRef.current = 'flipping';
+    rerender();
 
     play('minigames/coin-flip-air');
 
     // Animate coin spinning
     let count = 0;
     const interval = setInterval(() => {
-      setDisplaySide(prev => prev === 'heads' ? 'tails' : 'heads');
+      displaySideRef.current = displaySideRef.current === 'heads' ? 'tails' : 'heads';
+      rerender();
       count++;
       if (count >= 10) {
         clearInterval(interval);
-        setDisplaySide(actual);
+        displaySideRef.current = actual;
+        rerender();
 
         const result: FlipResult = { actual, guessed: guess, correct: guess === actual };
-        const newResults = [...resultsRef.current, result];
-        resultsRef.current = newResults;
-        setResults(newResults);
+        resultsRef.current = [...resultsRef.current, result];
+        rerender();
 
-        // Wait then either next round or end game
         setTimeout(() => {
-          if (newResults.length >= 3) {
-            setPhase('done');
-            const correctCount = newResults.filter(r => r.correct).length;
+          const allResults = resultsRef.current;
+          if (allResults.length >= 3) {
+            phaseRef.current = 'done';
+            rerender();
+            const correctCount = allResults.filter(r => r.correct).length;
             setTimeout(() => {
+              if (endedRef.current) return;
+              endedRef.current = true;
               if (correctCount === 3) onResult('win');
               else if (correctCount === 2) onResult('close-win');
               else if (correctCount === 1) onResult('close-loss');
               else onResult('loss');
             }, 800);
           } else {
-            setPhase('choosing');
-            flipRef.current = false;
+            phaseRef.current = 'choosing';
+            flipBusyRef.current = false;
+            rerender();
           }
         }, 600);
       }
     }, 150);
   }, [play, onResult]);
 
+  useEffect(() => { executeFlipRef.current = executeFlip; }, [executeFlip]);
+
   const makeGuess = (side: CoinSide) => {
-    if (phase !== 'choosing' || spectator) return;
+    if (phaseRef.current !== 'choosing' || spectator || flipBusyRef.current) return;
     const actual: CoinSide = Math.random() < 0.5 ? 'heads' : 'tails';
     emitAction({ type: 'flip', guess: side, actual });
     executeFlip(side, actual);
   };
 
+  const phase = phaseRef.current;
+  const displaySide = displaySideRef.current;
+  const results = resultsRef.current;
   const coinImg = displaySide === 'heads'
     ? '/assets/minigames/coin/coin-heads.png'
     : '/assets/minigames/coin/coin-tails.png';

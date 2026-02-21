@@ -144,8 +144,8 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
 
   useEffect(() => { doStartRef.current = doStart; }, [doStart]);
 
-  // Pull lever to start
-  const pullLever = useCallback(() => {
+  // Auto-start on mount (no lever pull needed)
+  const startGame = useCallback(() => {
     if (initRef.current || spectator) return;
 
     const finals: SlotSymbol[] = [
@@ -157,6 +157,13 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
     emitAction({ type: 'start', finalReels: finals });
     doStart(finals);
   }, [spectator, emitAction, doStart]);
+
+  // Auto-start after brief delay
+  useEffect(() => {
+    if (spectator) return;
+    const t = setTimeout(startGame, 600);
+    return () => clearTimeout(t);
+  }, [startGame, spectator]);
 
   // Safety timeout
   useEffect(() => {
@@ -201,7 +208,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
         <img src="/assets/minigames/slots/slot-machine.png" alt="" className="slotFrameImg" />
         <div className="slotHeader">
           <h2 className="slotTitle">SLOT MACHINE</h2>
-          <div className={`slotLever ${leverPulled ? 'pulled' : 'ready'}`} onClick={pullLever}>
+          <div className={`slotLever ${leverPulled ? 'pulled' : 'ready'}`}>
             <div className="leverArm"></div>
             <div className="leverKnob"></div>
           </div>
@@ -260,7 +267,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
 
       <div className="slotInstructions">
         {!initRef.current ? (
-          <p>PULL THE LEVER!</p>
+          <p>GET READY...</p>
         ) : !stopped.every(Boolean) ? (
           <p>SPINNING...</p>
         ) : (

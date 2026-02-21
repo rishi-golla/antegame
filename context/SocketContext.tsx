@@ -267,8 +267,32 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const noop = () => {};
+const noopAsync = () => Promise.resolve({ ok: false, error: 'No SocketProvider' });
+const FALLBACK: SocketContextValue = {
+  connected: false,
+  roomState: null,
+  gameState: null,
+  chatMessages: [],
+  turnTimer: null,
+  createRoom: noopAsync as any,
+  joinRoom: noopAsync as any,
+  leaveRoom: noop,
+  toggleReady: noop,
+  startGame: noopAsync as any,
+  sendChat: noop,
+  sendGameAction: noop,
+  sendPropertyAction: noop,
+  sendTradeAction: noop,
+  socket: null as any,
+  quickPlay: noopAsync as any,
+  sendDeposit: noopAsync as any,
+  pendingRefund: null,
+  clearPendingRefund: noop,
+  rawSocket: null,
+};
+
 export function useSocket(): SocketContextValue {
   const ctx = useContext(SocketContext);
-  if (!ctx) throw new Error('useSocket must be inside SocketProvider');
-  return ctx;
+  return ctx ?? FALLBACK;
 }
