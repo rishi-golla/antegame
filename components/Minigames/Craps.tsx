@@ -70,9 +70,10 @@ function CasinoDie({ value, rolling, result, won }: { value: number; rolling: bo
     width: '72px', height: '72px',
     borderRadius: '12px',
     background: 'linear-gradient(145deg, #f5f0e0, #ddd5c0)',
+    border: '2px solid #d4af37',
     boxShadow: result && won
-      ? '0 6px 20px rgba(34,197,94,0.5), inset 0 1px 0 rgba(255,255,255,0.3)'
-      : '0 6px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+      ? '0 6px 20px rgba(212,175,55,0.5), inset 0 1px 0 rgba(255,255,255,0.3)'
+      : '0 6px 20px rgba(0,0,0,0.4), 0 0 8px rgba(212,175,55,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
     display: 'grid',
     gridTemplateRows: '1fr 1fr 1fr',
     gridTemplateColumns: '1fr 1fr 1fr',
@@ -92,7 +93,7 @@ function CasinoDie({ value, rolling, result, won }: { value: number; rolling: bo
         {hasPip && (
           <div style={{
             width: '12px', height: '12px', borderRadius: '50%',
-            background: 'linear-gradient(145deg, #1a1a2e, #2a2a3e)',
+            background: 'linear-gradient(145deg, #1a0f0f, #2e1a1a)',
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5), 0 1px 1px rgba(255,255,255,0.2)',
           }} />
         )}
@@ -209,8 +210,8 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
     <div style={{
       position: 'relative', width: '100%', minHeight: '440px',
       background: isPointPhase
-        ? 'linear-gradient(180deg, #1a1000 0%, #2a1a00 50%, #0d0800 100%)'
-        : 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0d1117 100%)',
+        ? 'linear-gradient(180deg, #2a0f1f 0%, #3d0f22 50%, #1a0f0f 100%)'
+        : 'linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 50%, #1a0f0f 100%)',
       borderRadius: '16px', overflow: 'hidden', fontFamily: 'Nunito, sans-serif',
       transition: 'background 0.8s ease',
     }}>
@@ -260,8 +261,8 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
                 fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '15px',
                 background: targetNumber === num
                   ? 'linear-gradient(180deg, #d4af37 0%, #a68628 100%)'
-                  : 'linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%)',
-                color: targetNumber === num ? '#1a1a2e' : '#d4af37',
+                  : 'linear-gradient(180deg, #2a0f1f 0%, #1a0f0f 100%)',
+                color: targetNumber === num ? '#1a0f0f' : '#d4af37',
                 border: targetNumber === num ? '2px solid #ffd700' : '2px solid rgba(212,175,55,0.3)',
                 cursor: spectator ? 'not-allowed' : 'pointer',
                 boxShadow: targetNumber === num ? '0 0 12px rgba(212,175,55,0.4)' : '0 2px 8px rgba(0,0,0,0.3)',
@@ -293,7 +294,7 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
           <button onClick={rollDice} disabled={spectator} style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '18px',
             padding: '16px 48px', borderRadius: '50px',
-            background: 'linear-gradient(180deg, #c0392b 0%, #8b1a1a 100%)',
+            background: 'linear-gradient(180deg, #d4af37 0%, #8b6914 100%)',
             color: '#ffd700', border: '3px solid #d4af37',
             cursor: spectator ? 'not-allowed' : 'pointer',
             boxShadow: '0 6px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',

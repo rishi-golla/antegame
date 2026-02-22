@@ -129,11 +129,11 @@ function CardBack() {
     <div style={{
       width: 100, height: 140,
       borderRadius: 10,
-      border: '2px solid #c9a84c',
+      border: '2px solid #d4af37',
       background: `
-        repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(201,168,76,0.15) 8px, rgba(201,168,76,0.15) 9px),
-        repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(201,168,76,0.15) 8px, rgba(201,168,76,0.15) 9px),
-        linear-gradient(135deg, #1a1a2e, #12121e)
+        repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(212,175,55,0.15) 8px, rgba(212,175,55,0.15) 9px),
+        repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(212,175,55,0.15) 8px, rgba(212,175,55,0.15) 9px),
+        linear-gradient(135deg, #3d0f22, #2a0f1f)
       `,
       boxShadow: '0 4px 16px rgba(0,0,0,0.4), inset 0 0 20px rgba(201,168,76,0.1)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -142,7 +142,7 @@ function CardBack() {
         fontFamily: 'Cinzel, serif',
         fontSize: 24,
         fontWeight: 900,
-        color: '#c9a84c',
+        color: '#d4af37',
         opacity: 0.6,
       }}>
         ◆
@@ -285,14 +285,14 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
           {/* Spotlight left */}
           <div style={{
             position: 'absolute', left: 30, top: -20, width: 100, height: 60,
-            background: 'radial-gradient(ellipse, rgba(255,255,255,0.08), transparent)',
+            background: 'radial-gradient(ellipse, rgba(212,175,55,0.08), transparent)',
             animation: 'hrSpotlight 3s infinite',
             pointerEvents: 'none',
           }} />
           {/* Spotlight right */}
           <div style={{
             position: 'absolute', right: 30, top: -20, width: 100, height: 60,
-            background: 'radial-gradient(ellipse, rgba(255,255,255,0.08), transparent)',
+            background: 'radial-gradient(ellipse, rgba(212,175,55,0.08), transparent)',
             animation: 'hrSpotlight 3s infinite 1.5s',
             pointerEvents: 'none',
           }} />

@@ -11,7 +11,7 @@ interface MinigameResultProps {
   onDismiss: () => void;
 }
 
-function useCountUp(target: number, duration = 1000, startDelay = 600) {
+function useCountUp(target: number, duration = 500, startDelay = 400) {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (target === 0) { setValue(0); return; }
@@ -40,7 +40,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
     'win': 0, 'close-win': 0.5, 'close-loss': 1.5, 'loss': 2, 'catastrophic': 5
   };
   const amount = Math.floor(baseAmount * multipliers[tier]);
-  const displayAmount = useCountUp(amount, 1000, tier === 'loss' ? 1900 : 600);
+  const displayAmount = useCountUp(amount, 500, tier === 'loss' ? 1200 : 400);
 
   const info: Record<MinigameTier, { title: string; description: string }> = {
     'win': { title: 'JACKPOT!', description: context === 'buying' ? 'FREE PROPERTY!' : 'NO RENT!' },

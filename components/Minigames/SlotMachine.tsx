@@ -20,11 +20,11 @@ const SYMBOL_HEIGHT = 80;
 const TOTAL_HEIGHT = SYMBOL_COUNT * SYMBOL_HEIGHT;
 
 const SYMBOL_DISPLAY: Record<SlotSymbol, { char: string; color: string }> = {
-  cherry: { char: '★', color: '#ff4466' },
+  cherry: { char: '★', color: '#d4af37' },
   seven: { char: '7', color: '#ffd700' },
-  diamond: { char: '◆', color: '#00cfff' },
-  bar: { char: '▪', color: '#c0c0c0' },
-  skull: { char: '✕', color: '#ff2222' },
+  diamond: { char: '◆', color: '#f5e6a3' },
+  bar: { char: '▪', color: '#e8d5b5' },
+  skull: { char: '✕', color: '#ff1744' },
 };
 
 const STYLES = `
@@ -260,8 +260,8 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
   const Rivet = ({ top, left }: { top: number | string; left: number | string }) => (
     <div style={{
       position: 'absolute', top, left, width: 10, height: 10, borderRadius: '50%',
-      background: 'radial-gradient(circle at 35% 35%, #e0e0e0, #666)',
-      boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.6)',
+      background: 'radial-gradient(circle at 35% 35%, #d4af37, #8b6914)',
+      boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.6), 0 0 4px rgba(212,175,55,0.3)',
       zIndex: 10,
     }} />
   );
@@ -276,7 +276,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
         {/* Machine body */}
         <div style={{
           position: 'relative',
-          background: 'linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 40%, #12121e 100%)',
+          background: 'linear-gradient(180deg, #2e1a1a 0%, #2a0f1f 40%, #1a0f0f 100%)',
           border: '3px solid transparent',
           borderImage: 'linear-gradient(180deg, #c9a84c, #8b6914, #c9a84c) 1',
           borderRadius: 12,
@@ -296,7 +296,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
 
           {/* Top marquee */}
           <div style={{
-            background: 'linear-gradient(90deg, #1a0a00, #3d1f00, #1a0a00)',
+            background: 'linear-gradient(90deg, #1a0f0f, #3d0f22, #1a0f0f)',
             padding: '10px 0',
             textAlign: 'center',
             borderBottom: '2px solid #c9a84c',
@@ -321,7 +321,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
             gap: 0,
             padding: '16px 20px',
             position: 'relative',
-            background: 'linear-gradient(180deg, #0a0a14, #111122, #0a0a14)',
+            background: 'linear-gradient(180deg, #1a0f0f, #0d0505, #1a0f0f)',
           }}>
             {[0, 1, 2].map((reelIndex) => (
               <div key={reelIndex} style={{ display: 'flex', alignItems: 'center' }}>
@@ -336,7 +336,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
                 <div style={{
                   width: 80, height: SYMBOL_HEIGHT, overflow: 'hidden',
                   position: 'relative',
-                  background: '#080812',
+                  background: '#1a0f0f',
                   boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.8), inset 0 0 6px rgba(0,0,0,0.5)',
                   borderRadius: 4,
                   margin: '0 2px',
@@ -366,7 +366,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
 
           {/* Status bar */}
           <div style={{
-            background: 'linear-gradient(90deg, #1a0a00, #2d1500, #1a0a00)',
+            background: 'linear-gradient(90deg, #1a0f0f, #2a0f1f, #1a0f0f)',
             padding: '8px 0',
             textAlign: 'center',
             borderTop: '2px solid #c9a84c',
@@ -385,8 +385,8 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
           {/* Coin tray */}
           <div style={{
             height: 12,
-            background: 'linear-gradient(180deg, #c9a84c22, #ffd70011, transparent)',
-            borderTop: '1px solid #c9a84c33',
+            background: 'linear-gradient(180deg, rgba(212,175,55,0.15), rgba(255,215,0,0.05), transparent)',
+            borderTop: '1px solid rgba(212,175,55,0.2)',
           }} />
         </div>
 
@@ -397,21 +397,21 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
         }}>
           <div style={{
             width: 22, height: 22, borderRadius: '50%',
-            background: 'radial-gradient(circle at 35% 35%, #e8e8e8, #888, #555)',
+            background: 'radial-gradient(circle at 35% 35%, #f5e6a3, #d4af37, #8b6914)',
             boxShadow: '0 2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.4)',
             animation: leverPulled ? 'slotLeverPull 0.8s ease-out' : 'none',
             zIndex: 2,
           }} />
           <div style={{
             width: 6, height: 80,
-            background: 'linear-gradient(90deg, #888, #ccc, #888)',
+            background: 'linear-gradient(90deg, #8b6914, #d4af37, #8b6914)',
             borderRadius: 3,
             boxShadow: '1px 0 3px rgba(0,0,0,0.3)',
             marginTop: -2,
           }} />
           <div style={{
             width: 16, height: 8,
-            background: 'linear-gradient(180deg, #666, #444)',
+            background: 'linear-gradient(180deg, #8b6914, #5a4a20)',
             borderRadius: '0 0 4px 4px',
           }} />
         </div>

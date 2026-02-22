@@ -184,23 +184,23 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
         <div style={{
           fontFamily: 'monospace',
           fontSize: 16,
-          color: '#00ff88',
-          background: '#0a0a0a',
-          border: '2px solid #333',
+          color: '#d4af37',
+          background: '#1a0f0f',
+          border: '2px solid #4a2828',
           borderRadius: 6,
           padding: '6px 16px',
           letterSpacing: 3,
-          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8), 0 0 8px rgba(0,255,136,0.15)',
-          textShadow: '0 0 6px rgba(0,255,136,0.5)',
+          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8), 0 0 8px rgba(212,175,55,0.15)',
+          textShadow: '0 0 6px rgba(212,175,55,0.5)',
         }}>
           SAFE: {safeCount}/{GRID_SIZE - MINE_COUNT}
         </div>
 
         {/* Vault frame + grid */}
         <div style={{
-          background: 'linear-gradient(135deg, #2a2a3e, #1a1a2e)',
-          border: '4px solid #555',
-          borderImage: 'linear-gradient(180deg, #c9a84c, #7a5a1e, #c9a84c) 1',
+          background: 'linear-gradient(135deg, #2e1a1a, #2a0f1f)',
+          border: '4px solid #4a2828',
+          borderImage: 'linear-gradient(180deg, #d4af37, #8b6914, #d4af37) 1',
           borderRadius: 12,
           padding: 16,
           boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.4)',
@@ -225,15 +225,16 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
                   overflow: 'hidden',
                   transition: 'transform 0.15s, box-shadow 0.15s',
                   ...(cell.state === 'hidden' ? {
-                    background: 'linear-gradient(145deg, #555 0%, #3a3a3a 50%, #444 100%)',
-                    boxShadow: '2px 2px 6px rgba(0,0,0,0.5), -1px -1px 3px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.1)',
+                    background: 'linear-gradient(145deg, #3a2020 0%, #2a0f1f 50%, #2e1a1a 100%)',
+                    border: '1px solid rgba(212,175,55,0.4)',
+                    boxShadow: '2px 2px 6px rgba(0,0,0,0.5), -1px -1px 3px rgba(212,175,55,0.08), inset 0 1px 0 rgba(255,255,255,0.05)',
                   } : cell.state === 'revealed' ? {
-                    background: 'radial-gradient(circle, #1a3a1a, #0a1f0a)',
-                    boxShadow: '0 0 12px rgba(0,255,100,0.3), inset 0 0 8px rgba(0,255,100,0.1)',
+                    background: 'radial-gradient(circle, #2e1a1a, #1a0f0f)',
+                    boxShadow: '0 0 12px rgba(212,175,55,0.3), inset 0 0 8px rgba(212,175,55,0.1)',
                     animation: 'msRevealPop 0.4s ease-out',
                   } : {
-                    background: '#2a0a0a',
-                    boxShadow: '0 0 20px rgba(255,0,0,0.5), inset 0 0 12px rgba(255,0,0,0.3)',
+                    background: '#3d0f22',
+                    boxShadow: '0 0 20px rgba(107,26,58,0.5), inset 0 0 12px rgba(255,23,68,0.3)',
                     animation: 'msExplode 0.6s ease-out',
                   }),
                 }}

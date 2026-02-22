@@ -224,7 +224,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
   const cardBackEl = (
     <div style={{
       width: '100px', height: '140px', borderRadius: '10px',
-      background: 'repeating-conic-gradient(#1a1a2e 0% 25%, #16213e 0% 50%) 50% / 16px 16px',
+      background: 'repeating-conic-gradient(#3d0f22 0% 25%, #2a0f1f 0% 50%) 50% / 16px 16px',
       border: '2px solid #d4af37',
       boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
       position: 'relative' as const, overflow: 'hidden',
@@ -239,7 +239,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
   return (
     <div style={{
       position: 'relative', width: '100%', minHeight: '440px',
-      background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0d1117 100%)',
+      background: 'linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 50%, #1a0f0f 100%)',
       borderRadius: '16px', overflow: 'hidden', fontFamily: 'Nunito, sans-serif',
     }}>
       <style>{HLStyles}</style>
@@ -354,8 +354,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
             <button onClick={() => makeGuess(false)} disabled={spectator} style={{
               fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
               padding: '14px 36px', borderRadius: '50px',
-              background: 'linear-gradient(180deg, #8a8a8a 0%, #5a5a5a 100%)',
-              color: '#fff', border: '2px solid #aaa',
+              background: 'linear-gradient(180deg, #8b6914 0%, #5a4a20 100%)',
+              color: '#fff8e7', border: '2px solid #d4af37',
               cursor: spectator ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
               letterSpacing: '2px',
