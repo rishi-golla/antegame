@@ -2693,10 +2693,10 @@ input {
 .gambleBtn::before {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   border-radius: 16px;
-  border: 3px dashed #ffd700;
-  animation: gambleDashMarch 1s linear infinite, gambleRingPulse 1.5s ease-in-out infinite;
+  border: 2px dashed #ffd700;
+  animation: gambleDashMarch 2s linear infinite, gambleRingPulse 1.5s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -2714,27 +2714,24 @@ input {
   pointer-events: none;
 }
 
-/* Suit symbols ORBIT the button */
+/* Suit symbols at corners — subtle pulse */
 .gambleSuit {
   position: absolute;
-  font-size: 11px;
+  font-size: 9px;
   color: #ffd700;
-  opacity: 0.7;
+  opacity: 0.5;
   pointer-events: none;
-  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8));
-  animation: gambleSuitOrbit 4s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.6));
+  animation: gambleSuitPulse 2s ease-in-out infinite;
 }
-.gambleSuitTL { top: -8px; left: 10px; animation-delay: 0s; }
-.gambleSuitTR { top: -8px; right: 10px; animation-delay: -1s; }
-.gambleSuitBL { bottom: -8px; left: 10px; animation-delay: -2s; }
-.gambleSuitBR { bottom: -8px; right: 10px; animation-delay: -3s; }
+.gambleSuitTL { top: 5px; left: 7px; animation-delay: 0s; }
+.gambleSuitTR { top: 5px; right: 7px; animation-delay: -0.5s; }
+.gambleSuitBL { bottom: 5px; left: 7px; animation-delay: -1s; }
+.gambleSuitBR { bottom: 5px; right: 7px; animation-delay: -1.5s; }
 
-@keyframes gambleSuitOrbit {
-  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.7; }
-  25% { transform: translateY(-6px) rotate(90deg) scale(1.3); opacity: 1; }
-  50% { transform: translateY(0) rotate(180deg) scale(1); opacity: 0.7; }
-  75% { transform: translateY(6px) rotate(270deg) scale(1.3); opacity: 1; }
-  100% { transform: translateY(0) rotate(360deg) scale(1); opacity: 0.7; }
+@keyframes gambleSuitPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.3); }
 }
 
 @keyframes gambleGoldShift {
@@ -2745,11 +2742,11 @@ input {
 
 @keyframes gambleWobble {
   0%, 100% { transform: scale(1) rotate(0deg); }
-  15% { transform: scale(1.08) rotate(-1.5deg); }
-  30% { transform: scale(1.05) rotate(1.5deg); }
-  45% { transform: scale(1.1) rotate(-1deg); }
-  60% { transform: scale(1.05) rotate(1deg); }
-  75% { transform: scale(1.08) rotate(-0.5deg); }
+  15% { transform: scale(1.05) rotate(-1.2deg); }
+  30% { transform: scale(1.03) rotate(1.2deg); }
+  45% { transform: scale(1.06) rotate(-0.8deg); }
+  60% { transform: scale(1.03) rotate(0.8deg); }
+  75% { transform: scale(1.05) rotate(-0.4deg); }
 }
 
 @keyframes gambleBloom {
@@ -2773,8 +2770,8 @@ input {
 }
 
 @keyframes gambleRingPulse {
-  0%, 100% { opacity: 0.5; inset: -4px; }
-  50% { opacity: 1; inset: -7px; }
+  0%, 100% { opacity: 0.4; inset: -3px; }
+  50% { opacity: 1; inset: -5px; }
 }
 
 @keyframes gambleSubWave {
