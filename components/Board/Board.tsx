@@ -612,19 +612,7 @@ export default function Board() {
           </div>
         )}
 
-        {/* Phase 3: Property Decline Warning */}
-        {declineWarning && (
-          <div className="decline-warning-overlay">
-            <div className="decline-warning-content">
-              <div className="decline-warning-icon">▲</div>
-              <div className="decline-warning-title">WARNING!</div>
-              <div className="decline-warning-message">
-                Next player who lands here<br />
-                pays <span className="decline-rent-amount">${declineWarning.rent}</span> rent!
-              </div>
-              <div className="decline-warning-subtitle">You just missed your chance to own this!</div>
-            </div>
-          </div>
+        {/* Phase 3: Property Decline Warning — removed */}
         )}
 
         {isDiceFocus && (
