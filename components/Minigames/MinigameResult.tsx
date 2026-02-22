@@ -123,7 +123,8 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(onDismiss, 2000);
+    // 400ms reveal delay + 2s visible = 2400ms total
+    const t = setTimeout(onDismiss, 2400);
     return () => clearTimeout(t);
   }, [onDismiss]);
 

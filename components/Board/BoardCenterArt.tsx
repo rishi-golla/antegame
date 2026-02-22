@@ -34,9 +34,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       else if (effect === 'pay' || effect === 'pay-each-player' || effect === 'repairs') play('sfx/card-bad');
       else play('sfx/card-good');
 
-      applyCardTimerRef.current = setTimeout(() => {
-        dispatch({ type: 'APPLY_CARD' });
-      }, 1800);
+      // Let CardDrawOverlay handle dismiss via its own timer + progress bar
+      // applyCardTimerRef removed to avoid racing with overlay's onDismiss
     }
     return () => {
       if (applyCardTimerRef.current) clearTimeout(applyCardTimerRef.current);
