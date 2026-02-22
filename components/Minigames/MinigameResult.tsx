@@ -22,10 +22,10 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
 
   const info: Record<MinigameTier, { title: string; description: string }> = {
     'win': { title: 'JACKPOT!', description: context === 'buying' ? 'FREE PROPERTY!' : 'NO RENT!' },
-    'close-win': { title: 'CLOSE WIN!', description: context === 'buying' ? '50% PRICE' : '50% RENT' },
-    'close-loss': { title: 'CLOSE CALL', description: '150% PENALTY' },
-    'loss': { title: 'YOU LOST', description: '200% PENALTY' },
-    'catastrophic': { title: 'DISASTER!', description: '500% PENALTY' },
+    'close-win': { title: 'CLOSE WIN!', description: context === 'buying' ? `GOT IT FOR $${amount} (50% OFF)` : `PAID $${amount} RENT (50%)` },
+    'close-loss': { title: 'CLOSE CALL', description: context === 'buying' ? `LOST $${amount} (1.5× PENALTY)` : `PAID $${amount} RENT (1.5×)` },
+    'loss': { title: 'YOU LOST', description: context === 'buying' ? `LOST $${amount} (2× PENALTY)` : `PAID $${amount} RENT (2×)` },
+    'catastrophic': { title: 'DISASTER!', description: context === 'buying' ? `LOST $${amount} (5× PENALTY)` : `PAID $${amount} RENT (5×)` },
   };
 
   const { title, description } = info[tier];
@@ -88,8 +88,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
         <p className="minigameResultDesc">{description}</p>
         {tier !== 'win' && (
           <div className="minigameResultAmount">
-            <span className="minigameResultAmountLabel">BASE:</span>
-            <span className="minigameResultAmountValue">${baseAmount}</span>
+            <span className="minigameResultAmountLabel">BASE: ${baseAmount}</span>
           </div>
         )}
         <button className="minigameResultBtn" onClick={onDismiss}>CONTINUE</button>

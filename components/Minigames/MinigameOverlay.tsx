@@ -130,10 +130,10 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
           <p className="minigameContext">{minigame.context === 'buying' ? 'PROPERTY PURCHASE' : 'RENT PAYMENT'}</p>
           <div className="minigameTierInfo">
             <div className="tierRow tier-win">WIN: {minigame.context === 'buying' ? 'FREE PROPERTY!' : 'NO RENT!'}</div>
-            <div className="tierRow tier-close-win">CLOSE: {minigame.context === 'buying' ? '50% PRICE' : '50% RENT'}</div>
-            <div className="tierRow tier-close-loss">ALMOST: 150% PENALTY</div>
-            <div className="tierRow tier-loss">LOSS: 200% PENALTY</div>
-            <div className="tierRow tier-catastrophic">DISASTER: 500% PENALTY</div>
+            <div className="tierRow tier-close-win">CLOSE: {minigame.context === 'buying' ? `PAY $${Math.floor(minigame.baseAmount * 0.5)}` : `PAY $${Math.floor(minigame.baseAmount * 0.5)} RENT`}</div>
+            <div className="tierRow tier-close-loss">ALMOST: PAY ${Math.floor(minigame.baseAmount * 1.5)}</div>
+            <div className="tierRow tier-loss">LOSS: PAY ${Math.floor(minigame.baseAmount * 2)}</div>
+            <div className="tierRow tier-catastrophic">DISASTER: PAY ${Math.floor(minigame.baseAmount * 5)}</div>
           </div>
         </div>
       </div>
