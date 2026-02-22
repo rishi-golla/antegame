@@ -40,7 +40,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
     'win': 0, 'close-win': 0.5, 'close-loss': 1.5, 'loss': 2, 'catastrophic': 5
   };
   const amount = Math.floor(baseAmount * multipliers[tier]);
-  const displayAmount = useCountUp(amount, 500, tier === 'loss' ? 1200 : 400);
+  const displayAmount = useCountUp(amount, 500, tier === 'loss' ? 800 : 400);
 
   const info: Record<MinigameTier, { title: string; description: string }> = {
     'win': { title: 'JACKPOT!', description: context === 'buying' ? 'FREE PROPERTY!' : 'NO RENT!' },
@@ -75,7 +75,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
   const [flipped, setFlipped] = useState(tier !== 'loss');
   useEffect(() => {
     if (tier === 'loss') {
-      const t = setTimeout(() => setFlipped(true), 1300); // 500 black + 800 pause
+      const t = setTimeout(() => setFlipped(true), 700); // 500 black + 200 pause
       return () => clearTimeout(t);
     }
   }, [tier]);
