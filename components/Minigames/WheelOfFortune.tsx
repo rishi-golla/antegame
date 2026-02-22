@@ -31,8 +31,17 @@ const WHEEL_SEGMENTS: WheelSegment[] = [
   { id: 9, tier: 'close-win', label: 'CLOSE', color: '#84cc16' },
   { id: 10, tier: 'close-loss', label: 'ALMOST', color: '#eab308' },
   { id: 11, tier: 'loss', label: 'LOSS', color: '#f97316' },
-  { id: 12, tier: 'catastrophic', label: '☠', color: '#ef4444' }
+  { id: 12, tier: 'catastrophic', label: '✕✕', color: '#ef4444' }
 ];
+
+function darkenColor(hex: string, amount: number): string {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount);
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount);
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount);
+  return `rgb(${r},${g},${b})`;
+}
+
+const STYLE_ID = 'wheel-of-fortune-styles';
 
 export default function WheelOfFortune({ onResult, baseAmount, context, spectator = false }: WheelOfFortuneProps) {
   const { play } = useAudio();
@@ -42,6 +51,41 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
   const [result, setResult] = useState<WheelSegment | null>(null);
   const [canSpin, setCanSpin] = useState(true);
   const spinTriggeredRef = useRef(false);
+  const [bulbOffset, setBulbOffset] = useState(0);
+
+  // Inject styles
+  useEffect(() => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      @keyframes wof-pulse-spin-btn {
+        0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 15px rgba(212,175,55,0.5); }
+        50% { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 30px rgba(212,175,55,0.9); }
+      }
+      @keyframes wof-pointer-bounce {
+        0%, 100% { transform: translateX(-50%) rotate(0deg); }
+        50% { transform: translateX(-50%) rotate(-8deg); }
+      }
+      @keyframes wof-glow-pulse {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; }
+      }
+      @keyframes wof-result-pop {
+        0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+        60% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+        100% { transform: translateX(-50%) scale(1); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => { document.getElementById(STYLE_ID)?.remove(); };
+  }, []);
+
+  // Chase light animation
+  useEffect(() => {
+    const iv = setInterval(() => setBulbOffset(o => (o + 1) % 24), 120);
+    return () => clearInterval(iv);
+  }, []);
 
   const doSpin = useCallback((totalRotation: number, selectedSegment: WheelSegment) => {
     if (spinTriggeredRef.current) return;
@@ -67,7 +111,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
       setSpinning(false);
       setResult(selectedSegment);
       setTimeout(() => { onResult(selectedSegment.tier); }, 1500);
-    }, 3500);
+    }, 4000);
   }, [play, onResult]);
 
   const doSpinRef = useRef(doSpin);
@@ -102,29 +146,52 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
     doSpin(totalRotation, selectedSegment);
   };
 
-  const size = 280;
+  const size = 300;
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 4;
+  const radius = size / 2 - 20;
+  const outerR = size / 2 - 4;
   const segmentAngle = 360 / WHEEL_SEGMENTS.length;
+  const bulbCount = 24;
+
+  const resultSegmentIdx = result ? WHEEL_SEGMENTS.findIndex(s => s.id === result.id) : -1;
 
   return (
-    <div className="wheelOfFortune pixelMinigame">
-      <h2 className="wheelTitle">WHEEL OF FORTUNE</h2>
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
+      background: 'linear-gradient(180deg, #1a0a0a 0%, #0d0505 100%)',
+      borderRadius: '16px', padding: '20px 16px', border: '1px solid #3d2a0a',
+      boxShadow: '0 0 40px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
+      fontFamily: "'Nunito', sans-serif",
+    }}>
+      <h2 style={{
+        fontFamily: "'Cinzel', serif", fontSize: '1.3rem', fontWeight: 700,
+        color: '#d4af37', letterSpacing: '3px', margin: 0,
+        textShadow: '0 0 20px rgba(212,175,55,0.6), 0 2px 4px rgba(0,0,0,0.8)',
+      }}>
+        WHEEL OF FORTUNE
+      </h2>
 
-      <div className="wheelContainer" style={{ width: size + 40, height: size + 60, position: 'relative', margin: '0 auto' }}>
+      <div style={{
+        width: size + 40, height: size + 60, position: 'relative', margin: '0 auto',
+      }}>
+        {/* Pointer */}
         <div style={{
-          position: 'absolute',
-          top: -8,
-          left: '50%',
+          position: 'absolute', top: -2, left: '50%',
           transform: 'translateX(-50%)',
-          fontSize: '28px',
-          zIndex: 10,
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
-          lineHeight: 1,
-        }}>
-          ▼
-        </div>
+          zIndex: 10, width: 0, height: 0,
+          borderLeft: '14px solid transparent', borderRight: '14px solid transparent',
+          borderTop: '28px solid #d4af37',
+          filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))',
+          animation: spinning ? 'wof-pointer-bounce 0.15s ease-in-out infinite' : 'none',
+        }} />
+        <div style={{
+          position: 'absolute', top: -2, left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 11, width: 0, height: 0,
+          borderLeft: '8px solid transparent', borderRight: '8px solid transparent',
+          borderTop: '18px solid #f5e6a3',
+        }} />
 
         <svg
           width={size + 20}
@@ -132,11 +199,55 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
           viewBox={`-10 -10 ${size + 20} ${size + 20}`}
           style={{
             transform: `rotate(${rotation}deg)`,
-            transition: spinning ? 'transform 3.5s cubic-bezier(0.15, 0.6, 0.35, 1)' : 'none',
+            transition: spinning ? 'transform 4s cubic-bezier(0.12, 0.7, 0.3, 1)' : 'none',
+            filter: spinning ? 'none' : undefined,
           }}
         >
-          <circle cx={cx} cy={cy} r={radius + 3} fill="none" stroke="#8b7320" strokeWidth="6" />
+          <defs>
+            {WHEEL_SEGMENTS.map((seg, i) => (
+              <radialGradient key={`grad-${i}`} id={`wof-seg-grad-${i}`} cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor={seg.color} stopOpacity="1" />
+                <stop offset="60%" stopColor={seg.color} stopOpacity="0.9" />
+                <stop offset="100%" stopColor={darkenColor(seg.color, 80)} stopOpacity="1" />
+              </radialGradient>
+            ))}
+            <radialGradient id="wof-hub-grad" cx="30%" cy="30%">
+              <stop offset="0%" stopColor="#f5e6a3" />
+              <stop offset="50%" stopColor="#d4af37" />
+              <stop offset="100%" stopColor="#8b6914" />
+            </radialGradient>
+            <radialGradient id="wof-hub-inner" cx="35%" cy="35%">
+              <stop offset="0%" stopColor="#ffe082" />
+              <stop offset="100%" stopColor="#b8860b" />
+            </radialGradient>
+          </defs>
 
+          {/* Outer decorative ring */}
+          <circle cx={cx} cy={cy} r={outerR + 6} fill="none" stroke="#2a1a00" strokeWidth="14" />
+          <circle cx={cx} cy={cy} r={outerR + 6} fill="none" stroke="url(#wof-hub-grad)" strokeWidth="3" />
+
+          {/* Light bulbs on outer ring */}
+          {Array.from({ length: bulbCount }).map((_, i) => {
+            const angle = (i / bulbCount) * 360 - 90;
+            const rad = (angle * Math.PI) / 180;
+            const br = outerR + 6;
+            const bx = cx + Math.cos(rad) * br;
+            const by = cy + Math.sin(rad) * br;
+            const isLit = (i + bulbOffset) % 3 === 0;
+            return (
+              <circle key={`bulb-${i}`} cx={bx} cy={by} r={3.5}
+                fill={isLit ? '#fffbe6' : '#5a4a20'}
+                stroke="#8b7320" strokeWidth="0.5"
+                style={{ filter: isLit ? 'drop-shadow(0 0 4px #fffbe6)' : 'none' }}
+              />
+            );
+          })}
+
+          {/* Inner gold trim ring */}
+          <circle cx={cx} cy={cy} r={radius + 2} fill="none" stroke="#d4af37" strokeWidth="3" />
+          <circle cx={cx} cy={cy} r={radius - 1} fill="none" stroke="#8b6914" strokeWidth="1" />
+
+          {/* Segments */}
           {WHEEL_SEGMENTS.map((seg, i) => {
             const startDeg = i * segmentAngle - 90;
             const endDeg = (i + 1) * segmentAngle - 90;
@@ -157,16 +268,27 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
             const ty = cy + Math.sin(midRad) * textR;
             const textRotation = (startDeg + endDeg) / 2 + 90;
 
+            const isDimmed = result && i !== resultSegmentIdx;
+            const isWinner = result && i === resultSegmentIdx;
+
             return (
-              <g key={seg.id}>
-                <path d={path} fill={seg.color} stroke="#1a0f0f" strokeWidth="2" />
+              <g key={seg.id} style={{
+                opacity: isDimmed ? 0.3 : 1,
+                transition: 'opacity 0.5s ease',
+              }}>
+                <path d={path} fill={`url(#wof-seg-grad-${i})`} stroke="#1a0f0f" strokeWidth="1.5" />
+                {isWinner && (
+                  <path d={path} fill="none" stroke="#fff" strokeWidth="2"
+                    style={{ animation: 'wof-glow-pulse 0.6s ease-in-out infinite', filter: 'drop-shadow(0 0 8px ' + seg.color + ')' }}
+                  />
+                )}
                 <text
                   x={tx} y={ty}
                   textAnchor="middle" dominantBaseline="middle"
-                  fill="#fff" fontSize="9" fontWeight="bold"
+                  fill="#fff" fontSize="10" fontWeight="bold"
                   fontFamily="'Cinzel', serif"
                   transform={`rotate(${textRotation}, ${tx}, ${ty})`}
-                  style={{ textShadow: '1px 1px 0 #000' } as any}
+                  style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)', pointerEvents: 'none' } as any}
                 >
                   {seg.label}
                 </text>
@@ -174,46 +296,90 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
             );
           })}
 
-          <circle cx={cx} cy={cy} r={20} fill="#1a0f0f" stroke="#d4af37" strokeWidth="3" />
-          <circle cx={cx} cy={cy} r={8} fill="#d4af37" />
+          {/* Center hub */}
+          <circle cx={cx} cy={cy} r={26} fill="url(#wof-hub-grad)" stroke="#8b6914" strokeWidth="2" />
+          <circle cx={cx} cy={cy} r={16} fill="url(#wof-hub-inner)" stroke="#d4af37" strokeWidth="1.5" />
+          <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
+            fill="#1a0a0a" fontSize="8" fontWeight="bold" fontFamily="'Cinzel', serif">
+            ★
+          </text>
         </svg>
 
+        {/* Spin button */}
         {canSpin && !spinning && !result && (
           <button
-            className="wheelSpinBtn pixelBtn"
             onClick={spinWheel}
             disabled={spectator}
             style={{
-              position: 'absolute',
-              bottom: 10,
-              left: '50%',
+              position: 'absolute', bottom: 8, left: '50%',
               transform: 'translateX(-50%)',
+              background: 'linear-gradient(180deg, #f5e6a3 0%, #d4af37 40%, #8b6914 100%)',
+              color: '#1a0a0a', border: '2px solid #d4af37',
+              borderRadius: '30px', padding: '10px 36px',
+              fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1rem',
+              letterSpacing: '4px', cursor: spectator ? 'default' : 'pointer',
+              animation: 'wof-pulse-spin-btn 1.8s ease-in-out infinite',
+              textShadow: '0 1px 0 rgba(255,255,255,0.3)',
             }}
           >
             SPIN
           </button>
         )}
 
-        {result && (
-          <div className="wheelResult" style={{
-            position: 'absolute',
-            bottom: 10,
-            left: '50%',
+        {spinning && (
+          <div style={{
+            position: 'absolute', bottom: 8, left: '50%',
             transform: 'translateX(-50%)',
-            textAlign: 'center',
+            color: '#d4af37', fontFamily: "'Cinzel', serif", fontSize: '0.85rem',
+            letterSpacing: '2px', textShadow: '0 0 10px rgba(212,175,55,0.6)',
           }}>
-            <div style={{ color: '#aaa', fontSize: '0.6rem', fontFamily: "'Cinzel', serif" }}>RESULT:</div>
-            <div style={{ color: result.color, fontSize: '0.9rem', fontFamily: "'Cinzel', serif", fontWeight: 'bold' }}>{result.label}</div>
+            ★ SPINNING ★
+          </div>
+        )}
+
+        {result && (
+          <div style={{
+            position: 'absolute', bottom: 6, left: '50%',
+            textAlign: 'center',
+            animation: 'wof-result-pop 0.5s ease-out forwards',
+          }}>
+            <div style={{
+              color: '#a0906a', fontSize: '0.55rem', fontFamily: "'Cinzel', serif",
+              letterSpacing: '2px', marginBottom: '2px',
+            }}>RESULT</div>
+            <div style={{
+              color: result.color, fontSize: '1.1rem', fontFamily: "'Cinzel', serif",
+              fontWeight: 700, textShadow: `0 0 15px ${result.color}`,
+            }}>{result.label}</div>
           </div>
         )}
       </div>
 
-      <div className="wheelLegend">
-        <div className="legendRow"><span className="legendColor" style={{ backgroundColor: '#4ade80' }}></span>WIN</div>
-        <div className="legendRow"><span className="legendColor" style={{ backgroundColor: '#84cc16' }}></span>CLOSE WIN</div>
-        <div className="legendRow"><span className="legendColor" style={{ backgroundColor: '#eab308' }}></span>CLOSE LOSS</div>
-        <div className="legendRow"><span className="legendColor" style={{ backgroundColor: '#f97316' }}></span>LOSS</div>
-        <div className="legendRow"><span className="legendColor" style={{ backgroundColor: '#ef4444' }}></span>DISASTER</div>
+      {/* Legend */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: '8px 16px', justifyContent: 'center',
+        marginTop: '4px',
+      }}>
+        {[
+          { color: '#4ade80', label: 'WIN' },
+          { color: '#84cc16', label: 'CLOSE WIN' },
+          { color: '#eab308', label: 'CLOSE LOSS' },
+          { color: '#f97316', label: 'LOSS' },
+          { color: '#ef4444', label: 'DISASTER' },
+        ].map(item => (
+          <div key={item.label} style={{
+            display: 'flex', alignItems: 'center', gap: '5px',
+            fontSize: '0.65rem', color: '#a0906a', fontFamily: "'Nunito', sans-serif",
+          }}>
+            <span style={{
+              width: 10, height: 10, borderRadius: '50%',
+              background: `radial-gradient(circle at 30% 30%, ${item.color}, ${darkenColor(item.color, 60)})`,
+              border: '1px solid rgba(212,175,55,0.4)',
+              display: 'inline-block',
+            }} />
+            {item.label}
+          </div>
+        ))}
       </div>
     </div>
   );
