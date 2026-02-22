@@ -307,8 +307,10 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
           {/* Player card slot */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <span style={{
-              fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 800,
+              fontFamily: 'Nunito, sans-serif', fontSize: 12, fontWeight: 800,
               color: '#ffd700', letterSpacing: 2, textTransform: 'uppercase',
+              textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+              background: 'rgba(0,0,0,0.4)', padding: '2px 10px', borderRadius: 8,
             }}>YOU</span>
             {playerCard ? (
               <CardFace card={playerCard} side="left"
@@ -347,8 +349,10 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
           {/* House card slot */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <span style={{
-              fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 800,
-              color: '#dc2626', letterSpacing: 2, textTransform: 'uppercase',
+              fontFamily: 'Nunito, sans-serif', fontSize: 12, fontWeight: 800,
+              color: '#fca5a5', letterSpacing: 2, textTransform: 'uppercase',
+              textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+              background: 'rgba(0,0,0,0.4)', padding: '2px 10px', borderRadius: 8,
             }}>HOUSE</span>
             {houseCard ? (
               <CardFace card={houseCard} side="right"
