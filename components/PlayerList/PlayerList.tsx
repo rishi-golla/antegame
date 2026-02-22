@@ -5,7 +5,12 @@ import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { getNetWorth } from '@/lib/gameEngine';
 import { getPlayerBuff } from '@/lib/buffs';
+import { GROUP_COLORS, GROUP_ORDER } from '@/components/PropertyCard/propertyCardUtils';
+import { COLOR_GROUPS, RAILROAD_INDICES, UTILITY_INDICES } from '@/lib/gameData';
 import AssetsModal from '@/components/PropertyCard/AssetsModal';
+
+const TOTAL_PURCHASABLE = 28; // 22 properties + 4 railroads + 2 utilities
+const SUIT_SYMBOLS = ['♠', '♥', '♣', '♦'];
 
 interface PlayerListProps {
   onTrade?: (playerIndex: number) => void;
@@ -19,6 +24,7 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
   const [viewingPlayer, setViewingPlayer] = useState<number | null>(null);
   const [screenFlash, setScreenFlash] = useState(false);
   const [redVignette, setRedVignette] = useState(false);
+  const [moneyDiffs, setMoneyDiffs] = useState<Record<number, number>>({});
   const offer = state.activeTradeOffer;
   const prevMoneyRef = useRef<number[]>([]);
   const prevPhaseRef = useRef(state.phase);
@@ -69,6 +75,18 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
       }
     });
 
+    // Money change flash
+    const diffs: Record<number, number> = {};
+    state.players.forEach((player, i) => {
+      const prev = prevMoneyRef.current[i] ?? 0;
+      const diff = player.money - prev;
+      if (diff !== 0 && !isFirstRender) diffs[i] = diff;
+    });
+    if (Object.keys(diffs).length > 0) {
+      setMoneyDiffs(diffs);
+      setTimeout(() => setMoneyDiffs({}), 1500);
+    }
+
     prevMoneyRef.current = currentMoney;
     prevPhaseRef.current = state.phase;
     prevPlayerRef.current = state.currentPlayerIndex;
@@ -93,10 +111,17 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
       )}
 
       <ul>
-        {state.players.map((player) => {
+        {(() => {
+          // Compute ranks by net worth
+          const worths = state.players.map(p => ({ id: p.id, worth: getNetWorth(state, p.id), bankrupt: p.bankrupt }));
+          const sorted = [...worths].sort((a, b) => (a.bankrupt ? 1 : 0) - (b.bankrupt ? 1 : 0) || b.worth - a.worth);
+          const rankMap: Record<number, number> = {};
+          sorted.forEach((w, i) => { rankMap[w.id] = i + 1; });
+          return state.players.map((player) => {
           const isActive = state.currentPlayerIndex === player.id;
           const isMe = myPlayerIndex === null || myPlayerIndex === player.id;
           const worth = getNetWorth(state, player.id);
+          const rank = rankMap[player.id];
           const canTrade = player.id !== state.currentPlayerIndex &&
             !player.bankrupt &&
             !state.activeTradeOffer &&
@@ -116,6 +141,7 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
           return (
             <li
               key={player.id}
+              data-suit={SUIT_SYMBOLS[player.id % 4]}
               className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''} ${!player.bankrupt ? 'clickablePlayer' : ''} ${dangerClass}`}
               onClick={() => {
                 if (!player.bankrupt) {
@@ -127,18 +153,52 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                 }
               }}
             >
-              <div className={`avatar ${player.sprite ? 'spriteAvatar' : ''}`} style={{ background: player.color }}>
+              <div className={`avatar casinoChip ${player.sprite ? 'spriteAvatar' : ''}`} style={{ background: player.color }}>
+                <span className="chipInnerRing" style={{ borderColor: `${player.color}88` }} />
                 {player.sprite ? (
                   <img src={player.sprite} alt={player.name} className="avatarSprite" draggable={false} />
                 ) : (
-                  player.name[0]
+                  <span className="chipLetter">{player.name[0]}</span>
                 )}
               </div>
               <div className="playerInfo">
                 <strong>
                   {player.name}
+                  {rank === 1 && !player.bankrupt && <span className="plRankStar"> ★</span>}
+                  {rank > 1 && !player.bankrupt && <span className="plRankBadge">{rank === 2 ? '2nd' : rank === 3 ? '3rd' : '4th'}</span>}
                 </strong>
-                <p className="playerMoney">${player.money.toLocaleString()}</p>
+                <p className="playerMoney">
+                  ${player.money.toLocaleString()}
+                  {moneyDiffs[player.id] != null && (
+                    <span className={`moneyFlash ${moneyDiffs[player.id]! > 0 ? 'moneyFlashGain' : 'moneyFlashLoss'}`}>
+                      {moneyDiffs[player.id]! > 0 ? '+' : '−'}${Math.abs(moneyDiffs[player.id]!).toLocaleString()}
+                    </span>
+                  )}
+                </p>
+                {/* Property progress bar */}
+                <div className="plPropBar">
+                  <div className="plPropBarFill" style={{ width: `${(player.properties.length / TOTAL_PURCHASABLE) * 100}%` }} />
+                </div>
+                {/* Color swatches */}
+                {player.properties.length > 0 && (
+                  <div className="plSwatches">
+                    {GROUP_ORDER.map((g) => {
+                      const groupIndices = g === 'railroad' ? RAILROAD_INDICES : g === 'utility' ? UTILITY_INDICES : COLOR_GROUPS[g as keyof typeof COLOR_GROUPS];
+                      if (!groupIndices) return null;
+                      const owned = groupIndices.filter(i => player.properties.includes(i)).length;
+                      if (owned === 0) return null;
+                      const full = owned === groupIndices.length;
+                      return (
+                        <span
+                          key={g}
+                          className={`plSwatch ${full ? 'plSwatchFull' : 'plSwatchPartial'}`}
+                          style={{ ['--swatch-color' as string]: GROUP_COLORS[g] }}
+                          title={`${g}: ${owned}/${groupIndices.length}`}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
                 {(() => { const buff = getPlayerBuff(player); return buff ? (
                   <span className="playerBuff" title={buff.description}>⚡ {buff.name}</span>
                 ) : null; })()}
@@ -170,7 +230,8 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
               </div>
             </li>
           );
-        })}
+        });
+        })()}
       </ul>
 
       {state.phase === 'in-debt' && (

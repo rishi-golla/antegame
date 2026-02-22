@@ -215,12 +215,26 @@ input {
 }
 
 .leftPanel h2 {
-  margin: 4px 0 14px;
+  margin: 4px 0 16px;
   font-family: 'Cinzel', serif;
   font-size: 1.45rem;
   color: var(--gold);
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
-  letter-spacing: 0.04em;
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.leftPanel h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  opacity: 0.4;
 }
 
 .leftPanel ul {
@@ -234,39 +248,69 @@ input {
 }
 
 .leftPanel li {
-  border-radius: var(--radius-lg);
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 12px 14px;
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 48px 1fr;
   align-items: start;
-  gap: 10px;
-  background: linear-gradient(180deg, rgba(42, 15, 31, 0.8), rgba(30, 10, 20, 0.85));
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s var(--ease-out);
+  gap: 12px;
+  background:
+    linear-gradient(135deg, rgba(50, 20, 35, 0.9) 0%, rgba(30, 12, 22, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.leftPanel li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
 }
 
 .leftPanel li:hover {
-  background: linear-gradient(180deg, rgba(55, 20, 35, 0.85), rgba(42, 15, 28, 0.88));
+  background:
+    linear-gradient(135deg, rgba(65, 25, 42, 0.95) 0%, rgba(40, 16, 28, 0.95) 100%);
   border-color: rgba(212, 175, 55, 0.3);
-  transform: translateX(2px);
+  transform: translateX(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(212, 175, 55, 0.06);
 }
 
 .avatar,
 .bubbleAvatar {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   color: #fff;
   font-weight: 800;
-  border: 2px dashed rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(212, 175, 55, 0.4);
   box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.25),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 4px 9px rgba(0, 0, 0, 0.35),
-    0 0 6px rgba(212, 175, 55, 0.15);
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(212, 175, 55, 0.12);
+  transition: all 0.2s ease;
+}
+
+.activePlayer .avatar {
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 0 16px rgba(212, 175, 55, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .leftPanel p {
@@ -617,21 +661,23 @@ input {
 }
 
 .token {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.95);
   display: grid;
   place-items: center;
   color: #fff;
-  font-size: 0.58rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   box-shadow:
     inset 0 2px 4px rgba(255, 255, 255, 0.3),
     inset 0 -3px 5px rgba(0, 0, 0, 0.25),
-    0 3px 6px rgba(0, 0, 0, 0.35);
+    0 3px 8px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(255, 255, 255, 0.2);
   transition: transform 0.15s var(--ease-out);
+  z-index: 5;
 }
 
 .token.casinoChip {
@@ -671,8 +717,7 @@ input {
 
 .deckStack .deckImg {
   width: 100%;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 10px 14px rgba(24, 47, 83, 0.35));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
 }
 
 .deckLabel {
@@ -707,21 +752,21 @@ input {
 .deckStack.deckCommunity {
   top: 11%;
   left: 13%;
-  transform: rotate(-26deg);
+  transform: rotate(-12deg);
 }
 
 .deckStack.deckChance {
   right: 11%;
   bottom: 10%;
-  transform: rotate(22deg);
+  transform: rotate(10deg);
 }
 
 .deckStack.deckCommunity:hover {
-  transform: translateY(-3px) scale(1.05) rotate(-24deg);
+  transform: translateY(-3px) scale(1.08) rotate(-8deg);
 }
 
 .deckStack.deckChance:hover {
-  transform: translateY(-3px) scale(1.05) rotate(20deg);
+  transform: translateY(-3px) scale(1.08) rotate(6deg);
 }
 
 .rollHint {
@@ -1534,8 +1579,24 @@ input {
 
 .activePlayer {
   border-color: var(--gold) !important;
-  box-shadow: 0 0 16px rgba(212, 175, 55, 0.3), var(--shadow-sm) !important;
-  background: linear-gradient(180deg, rgba(60, 30, 40, 0.9), rgba(45, 20, 30, 0.9)) !important;
+  background:
+    linear-gradient(135deg, rgba(80, 35, 50, 0.95) 0%, rgba(50, 20, 35, 0.95) 100%) !important;
+  box-shadow:
+    0 0 20px rgba(212, 175, 55, 0.2),
+    0 0 40px rgba(212, 175, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+.activePlayer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.7;
 }
 
 .bankruptPlayer {
@@ -1544,12 +1605,14 @@ input {
 }
 
 .propCount {
-  font-size: 0.72rem;
-  color: var(--muted);
-  background: rgba(212, 175, 55, 0.08);
-  padding: 1px 6px;
-  border-radius: 4px;
+  font-size: 0.68rem;
+  color: rgba(212, 175, 55, 0.7);
+  background: rgba(212, 175, 55, 0.06);
+  padding: 2px 8px;
+  border-radius: 10px;
   border: 1px solid rgba(212, 175, 55, 0.1);
+  font-family: 'Nunito', sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .jailBadge {
@@ -1760,14 +1823,18 @@ input {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   z-index: 3;
-  background: rgba(15, 10, 10, 0.9);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  border-radius: 24px;
-  padding: 6px 16px 6px 6px;
-  backdrop-filter: blur(8px);
-  box-shadow: var(--shadow-md);
+  background:
+    linear-gradient(135deg, rgba(40, 18, 30, 0.95) 0%, rgba(20, 10, 16, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 28px;
+  padding: 8px 20px 8px 8px;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(212, 175, 55, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.3s var(--ease-out);
 }
 
@@ -1781,9 +1848,10 @@ input {
   align-items: flex-end;
   gap: 2px;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.35rem;
-  color: rgba(212, 175, 55, 0.7);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(212, 175, 55, 0.85);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
 }
 
 .rentMultiplier {
@@ -1939,6 +2007,7 @@ input {
   padding: 0 24px 24px;
   overflow: hidden;
   animation: popupSlide 0.25s var(--ease-out);
+  color: var(--ink);
 }
 
 @keyframes popupSlide {
@@ -1982,6 +2051,7 @@ input {
   border-radius: 6px;
   background: rgba(212, 175, 55, 0.06);
   border: 1px solid rgba(212, 175, 55, 0.08);
+  color: var(--ink-secondary);
 }
 
 .popupRentRow span:last-child {
@@ -2848,21 +2918,32 @@ input {
   box-shadow: 0 3px 8px rgba(255, 23, 68, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Pull animation: down smoothly, then spring back up */
+/* Pull animation: sharp pull down, hold briefly, spring back */
 .slotLever.pulled .leverArm {
-  animation: leverPull 0.8s ease-out forwards;
+  animation: leverPullArm 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 
 .slotLever.pulled .leverKnob {
-  animation: leverPull 0.8s ease-out forwards;
+  animation: leverPullKnob 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 
-@keyframes leverPull {
+@keyframes leverPullArm {
+  0%   { transform: translateY(0) scaleY(1); }
+  20%  { transform: translateY(30px) scaleY(0.85); }
+  35%  { transform: translateY(32px) scaleY(0.83); }
+  55%  { transform: translateY(6px) scaleY(1.05); }
+  70%  { transform: translateY(-2px) scaleY(1.02); }
+  85%  { transform: translateY(1px) scaleY(1); }
+  100% { transform: translateY(0) scaleY(1); }
+}
+
+@keyframes leverPullKnob {
   0%   { transform: translateY(0); }
-  30%  { transform: translateY(28px); }
-  50%  { transform: translateY(26px); }
-  70%  { transform: translateY(4px); }
-  85%  { transform: translateY(2px); }
+  20%  { transform: translateY(34px); }
+  35%  { transform: translateY(36px); }
+  55%  { transform: translateY(6px); }
+  70%  { transform: translateY(-3px); }
+  85%  { transform: translateY(1px); }
   100% { transform: translateY(0); }
 }
 
@@ -2879,17 +2960,17 @@ input {
 
 .slotReel {
   width: 100px;
-  height: 100px;
+  height: 190px;
   border: 3px solid rgba(212, 175, 55, 0.4);
   background: linear-gradient(180deg, #1a1a2e, #0f0f1f);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  cursor: pointer;
   border-radius: 10px;
   transition: all 0.2s ease;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 }
 
 .slotReel.active {
@@ -5306,23 +5387,44 @@ input {
 
 /* Trade Button in Player List */
 .tradeBtn {
-  margin-top: 4px;
-  padding: 4px 12px;
-  border: 1px solid rgba(212, 175, 55, 0.5);
+  margin-top: 6px;
+  padding: 5px 16px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 6px;
-  background: transparent;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.04) 100%);
   color: var(--gold);
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
   font-family: 'Cinzel', serif;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
 }
+
+.tradeBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.15), transparent);
+  transition: left 0.4s ease;
+}
+
+.tradeBtn:hover::before {
+  left: 100%;
+}
+
 .tradeBtn:hover {
-  background: var(--gold);
-  color: #0a0a0a;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.12) 100%);
+  border-color: rgba(212, 175, 55, 0.6);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
 }
 
 /* Trade Notification Card (in-panel) */
@@ -5638,20 +5740,23 @@ input {
 .activeTile {
   animation: activeTilePulse 1.8s ease-in-out infinite, tileBounce 430ms cubic-bezier(0.25, 0.85, 0.42, 1.2);
   z-index: 4;
+  border-color: var(--gold) !important;
 }
 
 @keyframes activeTilePulse {
   0%, 100% {
     box-shadow:
-      inset 0 1px 0 rgba(212, 175, 55, 0.15),
-      0 0 8px rgba(212, 175, 55, 0.35),
-      0 0 16px rgba(212, 175, 55, 0.15);
+      inset 0 1px 0 rgba(212, 175, 55, 0.2),
+      0 0 12px rgba(212, 175, 55, 0.5),
+      0 0 24px rgba(212, 175, 55, 0.25),
+      0 0 40px rgba(212, 175, 55, 0.1);
   }
   50% {
     box-shadow:
-      inset 0 1px 0 rgba(212, 175, 55, 0.15),
-      0 0 14px rgba(212, 175, 55, 0.55),
-      0 0 28px rgba(212, 175, 55, 0.3);
+      inset 0 1px 0 rgba(212, 175, 55, 0.2),
+      0 0 18px rgba(212, 175, 55, 0.7),
+      0 0 36px rgba(212, 175, 55, 0.4),
+      0 0 56px rgba(212, 175, 55, 0.2);
   }
 }
 
@@ -5679,7 +5784,7 @@ input {
 
 .tile-corner-jail {
   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important;
-  border-color: #555 !important;
+  border-color: rgba(100, 100, 100, 0.4) !important;
 }
 .tile-corner-jail::after {
   content: '';
@@ -5699,12 +5804,12 @@ input {
 
 .tile-corner-free-parking {
   background: linear-gradient(135deg, #0d4a0d 0%, #072807 100%) !important;
-  border-color: var(--gold-dim) !important;
+  border-color: rgba(100, 100, 80, 0.4) !important;
 }
 
 .tile-corner-go-to-jail {
   background: linear-gradient(135deg, #8b1122 0%, #5a0a15 100%) !important;
-  border-color: var(--neon-red) !important;
+  border-color: rgba(139, 17, 34, 0.5) !important;
 }
 .tile-corner-go-to-jail::after {
   content: '\2190';
@@ -5768,25 +5873,7 @@ input {
 /* ===== PHASE 5.4: Side Panels ===== */
 
 /* Player list card-style entries */
-.leftPanel li {
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  align-items: start;
-  gap: 10px;
-  background: var(--bg-card);
-  border: 1px solid rgba(212, 175, 55, 0.12);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s var(--ease-out);
-}
-
-.leftPanel li:hover {
-  background: var(--bg-elevated);
-  border-color: rgba(212, 175, 55, 0.25);
-  box-shadow: var(--shadow-md);
-  transform: translateX(3px);
-}
+/* Player list override - handled in main block above */
 
 /* Chat message bubbles */
 .bubble {
@@ -6920,10 +7007,21 @@ button:active:not(:disabled) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  image-rendering: pixelated;
+  object-position: center 40%;
   pointer-events: none;
   z-index: 0;
   border-radius: inherit;
+}
+
+/* Side tiles are tall/narrow — show the center of the image */
+.tile-left .tileBackgroundImg,
+.tile-right .tileBackgroundImg {
+  object-position: center center;
+}
+
+/* Top tiles are wide — show upper portion */
+.tile-top .tileBackgroundImg {
+  object-position: center 40%;
 }
 
 .tileLabelText {
@@ -6963,17 +7061,21 @@ button:active:not(:disabled) {
   z-index: 3;
 }
 
+.token.activePlayer,
 .token.spriteToken.activePlayer {
   border-color: var(--gold);
   box-shadow:
     0 0 10px rgba(212, 175, 55, 0.6),
-    0 0 20px rgba(212, 175, 55, 0.3);
+    0 0 20px rgba(212, 175, 55, 0.3),
+    0 0 30px rgba(212, 175, 55, 0.15);
   animation: tokenPulse 1.5s ease-in-out infinite;
+  z-index: 10;
+  transform: scale(1.15);
 }
 
 @keyframes tokenPulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3); }
-  50% { box-shadow: 0 0 14px rgba(212, 175, 55, 0.8), 0 0 28px rgba(212, 175, 55, 0.5); }
+  0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3), 0 0 30px rgba(212, 175, 55, 0.15); }
+  50% { box-shadow: 0 0 16px rgba(212, 175, 55, 0.9), 0 0 32px rgba(212, 175, 55, 0.5), 0 0 44px rgba(212, 175, 55, 0.25); }
 }
 
 /* ===== CHARACTER SELECT GRID ===== */
@@ -7984,6 +8086,14 @@ img[src*="/assets/"] {
   width: 100%;
   flex-shrink: 0;
 }
+.propCardImage {
+  width: 100%;
+  height: 50px;
+  object-fit: cover;
+  object-position: center 40%;
+  flex-shrink: 0;
+}
+
 .propCardBody {
   padding: 4px 5px;
   flex: 1;
@@ -11315,7 +11425,7 @@ img[src*="/assets/"] {
   width: 80px;
   height: 180px; /* Show 3 symbols at 60px each */
   overflow: hidden;
-  border: 3px solid var(--gold);
+  border: 2px solid rgba(212, 175, 55, 0.3);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6));
 }
@@ -11393,4 +11503,119 @@ img[src*="/assets/"] {
     background-color: var(--gold-bright);
     box-shadow: 0 0 8px var(--gold-bright);
   }
+}
+
+/* ===== Sidebar Enhancements (Casino Theme) ===== */
+
+/* Casino Chip Avatar */
+.casinoChip {
+  position: relative;
+  border: 3px dashed rgba(255,255,255,0.35) !important;
+  box-shadow:
+    inset 0 0 0 3px rgba(0,0,0,0.3),
+    inset 0 2px 4px rgba(255,255,255,0.2),
+    inset 0 -2px 4px rgba(0,0,0,0.4),
+    0 4px 12px rgba(0,0,0,0.5),
+    0 0 12px rgba(212,175,55,0.12) !important;
+}
+.chipInnerRing {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  pointer-events: none;
+}
+.chipLetter {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-cinzel), serif;
+  font-size: 1.1rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+
+/* Rank indicators */
+.plRankStar {
+  color: var(--gold-bright);
+  font-size: 0.85em;
+  text-shadow: 0 0 6px rgba(212,175,55,0.5);
+}
+.plRankBadge {
+  display: inline-block;
+  margin-left: 4px;
+  font-family: var(--font-nunito), sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255,255,255,0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+/* Money change flash */
+.moneyFlash {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--font-nunito), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  animation: moneyFlashAnim 1.5s ease-out forwards;
+}
+.moneyFlashGain { color: var(--success); }
+.moneyFlashLoss { color: var(--danger); }
+@keyframes moneyFlashAnim {
+  0% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 0.8; transform: translateY(-2px); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Property progress bar */
+.plPropBar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  margin: 3px 0 2px;
+  overflow: hidden;
+}
+.plPropBarFill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  transition: width 0.4s ease;
+}
+
+/* Color swatches */
+.plSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+.plSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.plSwatchFull {
+  background: var(--swatch-color);
+  box-shadow: 0 0 3px var(--swatch-color);
+}
+.plSwatchPartial {
+  background: transparent;
+  border: 1.5px solid var(--swatch-color);
+}
+
+/* Card suit watermark */
+.leftPanel li::after {
+  content: attr(data-suit);
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  font-size: 3rem;
+  opacity: 0.05;
+  pointer-events: none;
+  line-height: 1;
+  font-family: serif;
 }
