@@ -101,13 +101,11 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
   const { play } = useAudio();
   const hasPlayed = useRef(false);
   const [revealed, setRevealed] = useState(false);
-  const [flipped, setFlipped] = useState(tier !== 'loss');
-
   const multipliers: Record<MinigameTier, number> = {
     'win': 0, 'close-win': 0.5, 'close-loss': 1.5, 'loss': 2, 'catastrophic': 5
   };
   const amount = Math.floor(baseAmount * multipliers[tier]);
-  const displayAmount = useCountUp(amount, 500, tier === 'loss' ? 800 : 500);
+  const displayAmount = useCountUp(amount, 500, 500);
 
   const config = TIER_CONFIG[tier];
   const multiplierLabel = tier === 'close-win' ? '×0.5' : tier === 'close-loss' ? '×1.5' : tier === 'loss' ? '×2' : tier === 'catastrophic' ? '×5' : '';
@@ -128,13 +126,6 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
     const t = setTimeout(onDismiss, 8000);
     return () => clearTimeout(t);
   }, [onDismiss]);
-
-  useEffect(() => {
-    if (tier === 'loss') {
-      const t = setTimeout(() => setFlipped(true), 650);
-      return () => clearTimeout(t);
-    }
-  }, [tier]);
 
   const rng = useCallback((seed: number) => {
     return ((seed * 9301 + 49297) % 233280) / 233280;
@@ -186,8 +177,8 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
-        backdropFilter: (revealed && (tier !== 'loss' || flipped)) ? 'blur(10px)' : 'none',
-        backgroundColor: (revealed && (tier !== 'loss' || flipped)) ? 'rgba(0,0,0,0.75)' : '#000',
+        backdropFilter: revealed ? 'blur(10px)' : 'none',
+        backgroundColor: revealed ? 'rgba(0,0,0,0.75)' : '#000',
         transition: 'background-color 0.3s, backdrop-filter 0.3s',
         animation: tier === 'close-loss' && revealed ? 'mr-tiltSnap 0.4s ease-out forwards' : tier === 'catastrophic' && revealed ? 'mr-screenShake 0.5s ease-out' : undefined,
       }}>
@@ -312,12 +303,10 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
             width: '380px', maxWidth: '92vw',
             opacity: 0,
             animation: tier === 'win' ? 'mr-bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' :
-              tier === 'close-win' ? `mr-slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards` :
+              tier === 'close-win' ? 'mr-slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' :
               tier === 'close-loss' ? 'mr-dropSlam 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' :
-              tier === 'loss' && !flipped ? undefined :
-              tier === 'loss' ? 'mr-flipReveal 0.5s ease-out forwards' :
+              tier === 'loss' ? 'mr-dropSlam 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards' :
               tier === 'catastrophic' ? 'mr-slamIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards' : 'mr-fadeIn 0.3s forwards',
-            ...(!flipped && tier === 'loss' ? { opacity: 1, transform: 'perspective(800px) rotateY(180deg)' } : {}),
           }}>
             <div style={{
               position: 'relative',
@@ -507,7 +496,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
                 )}
 
                 {/* Loss floating dollar signs */}
-                {tier === 'loss' && flipped && (
+                {tier === 'loss' && revealed && (
                   <div style={{ position: 'absolute', top: '40%', left: '50%', pointerEvents: 'none', zIndex: 20 }}>
                     {Array.from({ length: 5 }).map((_, i) => (
                       <span key={`ds-${i}`} style={{
@@ -597,12 +586,12 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
                 </div>
               )}
 
-              {/* Loss VHS glitch */}
-              {tier === 'loss' && flipped && (
+              {/* Loss scanline overlay */}
+              {tier === 'loss' && (
                 <div style={{
                   position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
-                  animation: 'mr-glitch 0.3s linear 0.5s',
-                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)',
+                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px)',
+                  opacity: 0.5,
                 }} />
               )}
 
