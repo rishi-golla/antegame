@@ -38,6 +38,37 @@ const createDeck = (): Card[] => {
   return deck.sort(() => Math.random() - 0.5);
 };
 
+const HLStyles = `
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Nunito:wght@400;600;700&display=swap');
+
+@keyframes hl-spotlight {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes hl-cardReveal {
+  0% { transform: translateY(60px) scale(0.8); opacity: 0; }
+  60% { transform: translateY(-5px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes hl-correctRipple {
+  0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  100% { box-shadow: 0 0 0 30px rgba(34,197,94,0); }
+}
+
+@keyframes hl-wrongShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes hl-neonPulse {
+  0%, 100% { text-shadow: 0 0 8px #d4af37, 0 0 16px #d4af37; }
+  50% { text-shadow: 0 0 16px #ffd700, 0 0 32px #ffd700, 0 0 48px rgba(255,215,0,0.4); }
+}
+`;
+
 export default function HigherLower({ onResult, baseAmount, context, spectator = false }: HigherLowerProps) {
   const { play } = useAudio();
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
@@ -47,8 +78,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
   const [correctGuesses, setCorrectGuesses] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [lastGuessCorrect, setLastGuessCorrect] = useState<boolean | null>(null);
+  const [history, setHistory] = useState<boolean[]>([]);
 
-  // Refs to avoid nested setState race conditions
   const deckRef = useRef<Card[]>([]);
   const roundRef = useRef(0);
   const correctRef = useRef(0);
@@ -98,10 +129,9 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
 
     play('minigames/card-flip');
 
-    // Ties are a push (count as correct) — not a penalty
     let isCorrect: boolean;
     if (nxt.value === cur.value) {
-      isCorrect = true; // push
+      isCorrect = true;
     } else {
       isCorrect = isHigher ? (nxt.value > cur.value) : (nxt.value < cur.value);
     }
@@ -110,14 +140,13 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
     correctRef.current = newCorrect;
     setCorrectGuesses(newCorrect);
     setLastGuessCorrect(isCorrect);
+    setHistory(prev => [...prev, isCorrect]);
 
     const r = roundRef.current;
 
-    // Reveal the next card
     setRevealed(true);
 
     if (r === 2) {
-      // Final round — show results
       endedRef.current = true;
       setShowResult(true);
       setTimeout(() => {
@@ -127,7 +156,6 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
         else onResult('catastrophic');
       }, 1500);
     } else {
-      // Advance to next round after reveal
       setTimeout(() => {
         const newCurrent = nxt;
         const newNext = deckRef.current[r + 2] || null;
@@ -152,65 +180,196 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
     doGuess(isHigher);
   };
 
-  const getCardColor = (suit: Suit): string => (suit === '♥' || suit === '♦') ? 'var(--neon-red)' : '#1f2937';
+  const isRed = (suit: Suit): boolean => suit === '♥' || suit === '♦';
 
-  if (!currentCard) return <div className="higherLower pixelMinigame">Loading...</div>;
+  const cardStyle = (large: boolean, animClass?: string): React.CSSProperties => ({
+    width: large ? '100px' : '80px',
+    height: large ? '140px' : '112px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #fffef5, #f5f0e0)',
+    border: '2px solid #c9b06b',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
+    position: 'relative' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    justifyContent: 'space-between',
+    padding: '6px 8px',
+    animation: animClass,
+    flexShrink: 0,
+  });
+
+  const renderCardFace = (card: Card, large = false, extraStyle?: React.CSSProperties) => {
+    const red = isRed(card.suit);
+    const color = red ? '#c0392b' : '#1a1a2e';
+    const sz = large ? '20px' : '16px';
+    const centerSz = large ? '36px' : '28px';
+
+    return (
+      <div style={{ ...cardStyle(large), ...extraStyle }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
+          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: sz, color }}>{card.rank}</span>
+          <span style={{ fontSize: large ? '18px' : '14px', color }}>{card.suit}</span>
+        </div>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: centerSz, color, opacity: 0.8 }}>
+          {card.suit}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1, transform: 'rotate(180deg)' }}>
+          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: sz, color }}>{card.rank}</span>
+          <span style={{ fontSize: large ? '18px' : '14px', color }}>{card.suit}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const cardBackEl = (
+    <div style={{
+      width: '100px', height: '140px', borderRadius: '10px',
+      background: 'repeating-conic-gradient(#1a1a2e 0% 25%, #16213e 0% 50%) 50% / 16px 16px',
+      border: '2px solid #d4af37',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+      position: 'relative' as const, overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', inset: '6px', borderRadius: '6px', border: '1px solid #d4af37', background: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(212,175,55,0.08) 8px, rgba(212,175,55,0.08) 16px)' }} />
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: '#d4af37', fontSize: '28px', opacity: 0.4 }}>✦</div>
+    </div>
+  );
+
+  if (!currentCard) return <div style={{ color: '#d4af37', textAlign: 'center', padding: '40px', fontFamily: 'Nunito, sans-serif' }}>Loading...</div>;
 
   return (
-    <div className="higherLower pixelMinigame" style={{ backgroundImage: 'url(/assets/minigames/cards/card-table.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <div className="hlOverlayBg">
-        <div className="higherLowerHeader">
-          <h2 className="higherLowerTitle">HIGHER OR LOWER</h2>
-          <div className="higherLowerScore">ROUND {Math.min(round + 1, 3)}/3 | CORRECT: {correctGuesses}</div>
+    <div style={{
+      position: 'relative', width: '100%', minHeight: '440px',
+      background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0d1117 100%)',
+      borderRadius: '16px', overflow: 'hidden', fontFamily: 'Nunito, sans-serif',
+    }}>
+      <style>{HLStyles}</style>
+
+      {/* Spotlight effect */}
+      <div style={{
+        position: 'absolute', top: '-40px', left: '50%', transform: 'translateX(-50%)',
+        width: '300px', height: '300px',
+        background: 'radial-gradient(ellipse, rgba(212,175,55,0.12) 0%, transparent 70%)',
+        pointerEvents: 'none', animation: 'hl-spotlight 3s ease-in-out infinite',
+      }} />
+
+      {/* Header */}
+      <div style={{ textAlign: 'center', padding: '16px 0 4px' }}>
+        <h2 style={{
+          fontFamily: 'Cinzel, serif', fontSize: '24px', fontWeight: 900,
+          color: '#d4af37', textShadow: '0 0 12px rgba(212,175,55,0.5)',
+          margin: 0, letterSpacing: '3px',
+        }}>HIGHER OR LOWER</h2>
+        <div style={{ fontSize: '13px', color: 'rgba(212,175,55,0.7)', marginTop: '4px', letterSpacing: '1px' }}>
+          ROUND {Math.min(round + 1, 3)}/3
+        </div>
+      </div>
+
+      {/* Streak counter */}
+      <div style={{
+        textAlign: 'center', margin: '8px 0',
+        fontFamily: 'Cinzel, serif', fontSize: '20px', fontWeight: 700,
+        color: '#ffd700', letterSpacing: '3px',
+        animation: 'hl-neonPulse 2s ease-in-out infinite',
+      }}>
+        STREAK: {correctGuesses}
+      </div>
+
+      {/* Cards area */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', padding: '16px 20px' }}>
+        {/* Current card */}
+        <div style={{ textAlign: 'center' }}>
+          {renderCardFace(currentCard, true)}
+          <div style={{ marginTop: '8px', fontSize: '11px', color: 'rgba(212,175,55,0.6)', letterSpacing: '2px', textTransform: 'uppercase' as const }}>CURRENT</div>
         </div>
 
-        <div className="higherLowerCards">
-          <div className="cardWrapper">
-            <div className="playingCard current pixelCard">
-              <div className="cardRank" style={{ color: getCardColor(currentCard.suit) }}>{currentCard.rank}</div>
-              <div className="cardSuit" style={{ color: getCardColor(currentCard.suit) }}>{currentCard.suit}</div>
-              <div className="cardCenter" style={{ color: getCardColor(currentCard.suit) }}>{currentCard.suit}</div>
-            </div>
-            <div className="cardLabel">CURRENT</div>
+        {/* VS */}
+        <div style={{
+          fontFamily: 'Cinzel, serif', fontSize: '20px', fontWeight: 900,
+          color: 'rgba(212,175,55,0.4)', textShadow: '0 0 8px rgba(212,175,55,0.2)',
+        }}>VS</div>
+
+        {/* Next card */}
+        <div style={{ textAlign: 'center' }}>
+          {revealed && nextCard ? (
+            renderCardFace(nextCard, true, {
+              animation: 'hl-cardReveal 0.5s ease-out both' + (lastGuessCorrect === true ? ', hl-correctRipple 0.6s ease-out 0.3s' : lastGuessCorrect === false ? ', hl-wrongShake 0.4s ease-out 0.3s' : ''),
+              ...(lastGuessCorrect === false ? { borderColor: '#dc2626', boxShadow: '0 0 20px rgba(220,38,38,0.4)' } : {}),
+              ...(lastGuessCorrect === true ? { borderColor: '#22c55e', boxShadow: '0 0 20px rgba(34,197,94,0.4)' } : {}),
+            })
+          ) : cardBackEl}
+          <div style={{ marginTop: '8px', fontSize: '11px', color: 'rgba(212,175,55,0.6)', letterSpacing: '2px', textTransform: 'uppercase' as const }}>NEXT</div>
+        </div>
+      </div>
+
+      {/* Round history */}
+      {history.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+          {history.map((correct, i) => (
+            <div key={i} style={{
+              width: '28px', height: '28px', borderRadius: '6px',
+              background: correct ? 'rgba(34,197,94,0.2)' : 'rgba(220,38,38,0.2)',
+              border: `1px solid ${correct ? '#22c55e' : '#dc2626'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '14px', color: correct ? '#22c55e' : '#dc2626', fontWeight: 700,
+            }}>{correct ? '★' : '✕'}</div>
+          ))}
+          {Array.from({ length: 3 - history.length }).map((_, i) => (
+            <div key={`e-${i}`} style={{
+              width: '28px', height: '28px', borderRadius: '6px',
+              background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.2)',
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Feedback */}
+      {revealed && lastGuessCorrect !== null && !showResult && (
+        <div style={{
+          textAlign: 'center', padding: '8px 0',
+          fontFamily: 'Cinzel, serif', fontSize: '22px', fontWeight: 700,
+          color: lastGuessCorrect ? '#22c55e' : '#dc2626',
+          textShadow: lastGuessCorrect ? '0 0 12px rgba(34,197,94,0.5)' : '0 0 12px rgba(220,38,38,0.5)',
+        }}>
+          {lastGuessCorrect ? '★ CORRECT ★' : '✕ WRONG ✕'}
+        </div>
+      )}
+
+      {/* Buttons */}
+      {!revealed && !showResult && (
+        <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+          <div style={{ fontSize: '13px', color: 'rgba(212,175,55,0.6)', marginBottom: '12px', letterSpacing: '1px' }}>
+            Will the next card be higher or lower?
           </div>
-
-          <div className="higherLowerVs">VS</div>
-
-          <div className="cardWrapper">
-            {revealed && nextCard ? (
-              <div className={`playingCard next revealed pixelCard cardRevealAnim ${lastGuessCorrect === true ? 'cardCorrect' : lastGuessCorrect === false ? 'cardWrong' : ''}`}>
-                <div className="cardRank" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.rank}</div>
-                <div className="cardSuit" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.suit}</div>
-                <div className="cardCenter" style={{ color: getCardColor(nextCard.suit) }}>{nextCard.suit}</div>
-              </div>
-            ) : (
-              <div className="playingCard next hidden pixelCard">
-                <img src="/assets/minigames/cards/card-back.png" alt="?" className="cardBackImg" />
-              </div>
-            )}
-            <div className="cardLabel">NEXT</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+            <button onClick={() => makeGuess(true)} disabled={spectator} style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
+              padding: '14px 36px', borderRadius: '50px',
+              background: 'linear-gradient(180deg, #d4af37 0%, #a68628 100%)',
+              color: '#1a1a2e', border: '2px solid #ffd700',
+              cursor: spectator ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 16px rgba(212,175,55,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
+              letterSpacing: '2px',
+              transition: 'transform 0.1s',
+            }}>▲ HIGHER</button>
+            <button onClick={() => makeGuess(false)} disabled={spectator} style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
+              padding: '14px 36px', borderRadius: '50px',
+              background: 'linear-gradient(180deg, #8a8a8a 0%, #5a5a5a 100%)',
+              color: '#fff', border: '2px solid #aaa',
+              cursor: spectator ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+              letterSpacing: '2px',
+              transition: 'transform 0.1s',
+            }}>▼ LOWER</button>
           </div>
         </div>
+      )}
 
-        {!revealed && !showResult && (
-          <div className="higherLowerButtons">
-            <p className="higherLowerPrompt">Will the next card be higher or lower?</p>
-            <button className="higherLowerBtn higher pixelBtn" onClick={() => makeGuess(true)} disabled={spectator}>▲ HIGHER</button>
-            <button className="higherLowerBtn lower pixelBtn" onClick={() => makeGuess(false)} disabled={spectator}>▼ LOWER</button>
-          </div>
-        )}
-
-        {revealed && lastGuessCorrect !== null && !showResult && (
-          <div className="hlRoundFeedback">
-            {lastGuessCorrect ? '✓ CORRECT' : '✗ WRONG'}
-          </div>
-        )}
-
-        <div className="higherLowerRules">
-          <div className="ruleRow">3 CORRECT = WIN</div>
-          <div className="ruleRow">2 CORRECT = CLOSE WIN</div>
-          <div className="ruleRow">TIES = PUSH (FREE)</div>
-        </div>
+      {/* Rules */}
+      <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+        {['3 CORRECT = WIN', '2 CORRECT = CLOSE WIN', 'TIES = PUSH (FREE)'].map((r, i) => (
+          <div key={i} style={{ fontSize: '11px', color: 'rgba(212,175,55,0.4)', letterSpacing: '1px', lineHeight: 1.8 }}>{r}</div>
+        ))}
       </div>
     </div>
   );
