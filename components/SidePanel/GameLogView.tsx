@@ -1,7 +1,7 @@
 'use client';
 
 import { useGame } from '@/context/GameContext';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 type LogStyle = {
   icon: string;
@@ -52,9 +52,9 @@ function classifyLog(message: string): LogStyle {
   return { icon: '·', color: 'var(--ink-secondary)' };
 }
 
-function highlightMessage(message: string, players: { name: string; color: string }[]): JSX.Element[] {
+function highlightMessage(message: string, players: { name: string; color: string }[]): React.ReactElement[] {
   // Highlight player names and dollar amounts
-  const parts: JSX.Element[] = [];
+  const parts: React.ReactElement[] = [];
   let remaining = message;
   let key = 0;
 
