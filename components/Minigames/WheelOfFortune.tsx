@@ -173,7 +173,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
       </h2>
 
       <div style={{
-        width: size + 40, height: size + 60, position: 'relative', margin: '0 auto',
+        width: size + 40, height: size + 100, position: 'relative', margin: '0 auto',
       }}>
         {/* Pointer */}
         <div style={{
