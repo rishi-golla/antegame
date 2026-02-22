@@ -43,6 +43,10 @@ const STYLES = `
   40% { transform: translateY(50px); }
   100% { transform: translateY(0); }
 }
+@keyframes slotBulbPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,215,0,0.8), 0 0 24px rgba(255,140,0,0.5), 0 0 40px rgba(255,215,0,0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 20px rgba(255,215,0,1), 0 0 40px rgba(255,140,0,0.8), 0 0 60px rgba(255,215,0,0.5); transform: scale(1.1); }
+}
 @keyframes slotBounce {
   0% { transform: translateY(var(--land-y)); }
   50% { transform: translateY(calc(var(--land-y) - 8px)); }
@@ -202,24 +206,18 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
     return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
   }, [animate]);
 
-  useEffect(() => {
-    if (spectator) return;
+  const handlePullLever = useCallback(() => {
+    if (spectator || leverPulled) return;
+    setLeverPulled(true);
 
-    const startGame = () => {
-      const finals: SlotSymbol[] = [
-        SYMBOLS[Math.floor(Math.random() * SYMBOL_COUNT)],
-        SYMBOLS[Math.floor(Math.random() * SYMBOL_COUNT)],
-        SYMBOLS[Math.floor(Math.random() * SYMBOL_COUNT)],
-      ];
-      emitAction({ type: 'start', finalReels: finals });
-      doStart(finals);
-    };
-
-    const leverTimer = setTimeout(() => setLeverPulled(true), 500);
-    const spinTimer = setTimeout(startGame, 1400);
-
-    return () => { clearTimeout(leverTimer); clearTimeout(spinTimer); };
-  }, [spectator, emitAction, doStart]);
+    const finals: SlotSymbol[] = [
+      SYMBOLS[Math.floor(Math.random() * SYMBOL_COUNT)],
+      SYMBOLS[Math.floor(Math.random() * SYMBOL_COUNT)],
+      SYMBOLS[Math.floor(Math.random() * SYMBOL_COUNT)],
+    ];
+    emitAction({ type: 'start', finalReels: finals });
+    setTimeout(() => doStart(finals), 800);
+  }, [spectator, leverPulled, emitAction, doStart]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -394,14 +392,24 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           marginLeft: -4, width: 36,
-        }}>
+          cursor: leverPulled ? 'default' : 'pointer',
+        }}
+          onClick={handlePullLever}
+        >
+          {/* Glowing bulb on top */}
           <div style={{
-            width: 22, height: 22, borderRadius: '50%',
-            background: 'radial-gradient(circle at 35% 35%, #f5e6a3, #d4af37, #8b6914)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.4)',
-            animation: leverPulled ? 'slotLeverPull 0.8s ease-out' : 'none',
+            width: 26, height: 26, borderRadius: '50%',
+            background: leverPulled
+              ? 'radial-gradient(circle at 35% 35%, #8b6914, #5a4a20)'
+              : 'radial-gradient(circle at 35% 35%, #fff8a0, #ffd700, #ff8c00)',
+            boxShadow: leverPulled
+              ? '0 2px 6px rgba(0,0,0,0.5)'
+              : '0 0 12px rgba(255,215,0,0.8), 0 0 24px rgba(255,140,0,0.5), 0 0 40px rgba(255,215,0,0.3), inset 0 1px 2px rgba(255,255,255,0.6)',
+            animation: leverPulled ? 'slotLeverPull 0.8s ease-out' : 'slotBulbPulse 1s ease-in-out infinite',
             zIndex: 2,
+            transition: 'all 0.3s ease',
           }} />
+          {/* Lever shaft */}
           <div style={{
             width: 6, height: 80,
             background: 'linear-gradient(90deg, #8b6914, #d4af37, #8b6914)',
@@ -409,6 +417,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
             boxShadow: '1px 0 3px rgba(0,0,0,0.3)',
             marginTop: -2,
           }} />
+          {/* Base */}
           <div style={{
             width: 16, height: 8,
             background: 'linear-gradient(180deg, #8b6914, #5a4a20)',
