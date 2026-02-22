@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
@@ -16,6 +16,34 @@ import LuckyNumber from './DartThrow';
 import Blackjack from './Blackjack';
 import CoinFlip from './CoinFlip';
 import SafeCracker from './SafeCracker';
+
+// All minigame background image paths for preloading
+const MINIGAME_BG_PATHS: Record<string, string> = {
+  'slots': '/assets/minigames/backgrounds/slots.png',
+  'higher-lower': '/assets/minigames/backgrounds/higher-lower.png',
+  'craps': '/assets/minigames/backgrounds/craps.png',
+  'wheel': '/assets/minigames/backgrounds/wheel.png',
+  'minesweeper': '/assets/minigames/backgrounds/minesweeper.png',
+  'card-war': '/assets/minigames/backgrounds/card-war.png',
+  'lucky-number': '/assets/minigames/backgrounds/lucky-number.png',
+  'blackjack': '/assets/minigames/backgrounds/blackjack.png',
+  'coin-flip': '/assets/minigames/backgrounds/coin-flip.png',
+  'safe-cracker': '/assets/minigames/backgrounds/safe-cracker.png',
+};
+
+// Global cache so images are only preloaded once across mounts
+let _preloadStarted = false;
+const _loadedImages = new Set<string>();
+
+export function preloadAllMinigameBackgrounds() {
+  if (_preloadStarted) return;
+  _preloadStarted = true;
+  Object.entries(MINIGAME_BG_PATHS).forEach(([id, src]) => {
+    const img = new Image();
+    img.onload = () => _loadedImages.add(id);
+    img.src = src;
+  });
+}
 
 interface MinigameOverlayProps {}
 
@@ -42,8 +70,38 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const [resultLocked, setResultLocked] = useState(false);
   const { isMyTurn } = useMultiplayerTurn();
 
+  const [bgReady, setBgReady] = useState(false);
+  const bgCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const minigame = state.activeMinigame;
   const currentPlayerName = state.players[state.currentPlayerIndex]?.name || 'Player';
+
+  // Preload all backgrounds on first mount & check active minigame bg
+  useEffect(() => {
+    preloadAllMinigameBackgrounds();
+  }, []);
+
+  useEffect(() => {
+    if (!minigame) { setBgReady(false); return; }
+    // If already cached, ready immediately
+    if (_loadedImages.has(minigame.id)) {
+      setBgReady(true);
+      return;
+    }
+    // Load this specific one and wait
+    const img = new Image();
+    img.onload = () => { _loadedImages.add(minigame.id); setBgReady(true); };
+    img.onerror = () => setBgReady(true); // don't block on error
+    img.src = MINIGAME_BG_PATHS[minigame.id] || '';
+    // Also poll the global cache in case it loaded via the global preloader
+    bgCheckRef.current = setInterval(() => {
+      if (_loadedImages.has(minigame.id)) {
+        setBgReady(true);
+        if (bgCheckRef.current) clearInterval(bgCheckRef.current);
+      }
+    }, 50);
+    return () => { if (bgCheckRef.current) clearInterval(bgCheckRef.current); };
+  }, [minigame?.id]);
 
   useEffect(() => {
     if (minigame?.status === 'intro') {
@@ -57,6 +115,54 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   }, [minigame?.status, playMusic]);
 
   if (!minigame) return null;
+
+  // Show loading screen while background image loads
+  if (!bgReady) {
+    return (
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: '#1a0f0f',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '1rem',
+      }}>
+        <div style={{
+          fontFamily: 'Cinzel, serif',
+          color: '#d4af37',
+          fontSize: '1.5rem',
+          letterSpacing: '0.1em',
+        }}>
+          Loading...
+        </div>
+        <div style={{
+          width: '120px',
+          height: '3px',
+          backgroundColor: 'rgba(212,175,55,0.2)',
+          borderRadius: '2px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            width: '40%',
+            height: '100%',
+            backgroundColor: '#d4af37',
+            borderRadius: '2px',
+            animation: 'mgLoadSlide 1s ease-in-out infinite',
+          }} />
+        </div>
+        <style>{`
+          @keyframes mgLoadSlide {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(200%); }
+            100% { transform: translateX(-100%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   const handleResult = (tier: MinigameTier) => {
     // Prevent double-result from timeout + game completion race

@@ -5,8 +5,9 @@ import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
-import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
+import MinigameOverlay, { preloadAllMinigameBackgrounds } from '@/components/Minigames/MinigameOverlay';
 import CardDrawOverlay from '@/components/Board/CardDrawOverlay';
+import CountdownTimer from '@/components/Board/CountdownTimer';
 
 interface BoardCenterArtProps {
   isRolling: boolean;
@@ -17,6 +18,11 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   const { state, dispatch } = useGame();
   const { play } = useAudio();
   const { isMyTurn } = useMultiplayerTurn();
+
+  // Eagerly preload all minigame backgrounds on game start
+  useEffect(() => {
+    preloadAllMinigameBackgrounds();
+  }, []);
 
   // Auto-apply drawn card after 2 seconds (dismisses the full-screen overlay)
   const applyCardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,6 +72,38 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   }, [state.phase, dispatch, play]);
   const player = state.players[state.currentPlayerIndex];
   const disabled = isRolling || isAnimating || state.phase === 'game-over';
+
+  // Countdown timer config per phase
+  const timerPhases: Record<string, number> = {
+    buying: 30,
+    rolling: 15,
+    'paying-rent': 20,
+    'in-debt': 30,
+  };
+  const timerDuration = timerPhases[state.phase] ?? 0;
+  const showTimer = isMyTurn && timerDuration > 0 && !isRolling && !isAnimating;
+  const timerResetKey = `${state.phase}-${state.currentPlayerIndex}-${state.turnCount ?? state.roundNumber}`;
+
+  const handleTimerExpire = () => {
+    switch (state.phase) {
+      case 'buying':
+        play('sfx/decline-property');
+        dispatch({ type: 'DECLINE' });
+        break;
+      case 'rolling':
+        play('sfx/dice-shake');
+        dispatch({ type: 'ROLL' });
+        break;
+      case 'paying-rent':
+        play('sfx/pay-rent');
+        dispatch({ type: 'PAY_RENT' });
+        break;
+      case 'in-debt':
+        play('sfx/bankruptcy');
+        dispatch({ type: 'BANKRUPTCY' });
+        break;
+    }
+  };
 
   const handleMainAction = () => {
     if (disabled) return;
@@ -305,6 +343,13 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         </button>
       ) : (
         <div className="waitingLabel">{player.name}&apos;s turn</div>
+      )}
+      {showTimer && (
+        <CountdownTimer
+          duration={timerDuration}
+          onExpire={handleTimerExpire}
+          resetKey={timerResetKey}
+        />
       )}
       <p className="rollHint">{getHint()}</p>
 
