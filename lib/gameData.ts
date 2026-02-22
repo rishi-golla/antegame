@@ -81,7 +81,7 @@ export const TILES: Tile[] = [
   /* 18 */ prop(18, 'Cherry Row', 'orange', 180, [14, 28, 70, 200, 550, 750], 100),
   /* 19 */ prop(19, 'Oak Crest', 'orange', 200, [16, 32, 80, 220, 600, 800], 100),
   /* 20 */ corner(20, 'Free Parking', 'free-parking'),
-  /* 21 */ prop(21, 'Sapphire St', 'red', 220, [18, 36, 90, 250, 700, 875], 150),
+  /* 21 */ prop(21, 'Ruby Row', 'red', 220, [18, 36, 90, 250, 700, 875], 150),
   /* 22 */ chance(22),
   /* 23 */ prop(23, 'Pearl Street', 'red', 220, [18, 36, 90, 250, 700, 875], 150),
   /* 24 */ prop(24, 'Hill Crest', 'red', 240, [20, 40, 100, 300, 750, 925], 150),
@@ -152,7 +152,7 @@ export const MAX_HOUSES = 5; // 5 = hotel
 export const CHANCE_CARDS: Card[] = [
   { id: 'ch-1', deckType: 'chance', text: 'Advance to GO. Collect $200.', effect: { kind: 'move-to', tileIndex: 0 } },
   { id: 'ch-2', deckType: 'chance', text: 'Advance to Park Lane.', effect: { kind: 'move-to', tileIndex: 39 } },
-  { id: 'ch-3', deckType: 'chance', text: 'Advance to Sapphire St. If you pass GO, collect $200.', effect: { kind: 'move-to', tileIndex: 21 } },
+  { id: 'ch-3', deckType: 'chance', text: 'Advance to Ruby Row. If you pass GO, collect $200.', effect: { kind: 'move-to', tileIndex: 21 } },
   { id: 'ch-4', deckType: 'chance', text: 'Advance to Orchid Lane. If you pass GO, collect $200.', effect: { kind: 'move-to', tileIndex: 11 } },
   { id: 'ch-5', deckType: 'chance', text: 'Advance to the nearest Railroad.', effect: { kind: 'nearest-railroad' } },
   { id: 'ch-6', deckType: 'chance', text: 'Advance to the nearest Railroad.', effect: { kind: 'nearest-railroad' } },
