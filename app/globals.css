@@ -12170,3 +12170,38 @@ img[src*="/assets/"] {
   font-weight: 700;
   color: #fff8e7;
 }
+
+/* ── Countdown Timer ── */
+.countdownTimer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 6px auto 0;
+}
+
+.countdownRing {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.countdownNumber {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #d4af37;
+  z-index: 1;
+}
+
+.countdownWarning .countdownNumber {
+  color: #ff4444;
+  animation: countdownPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
+}
