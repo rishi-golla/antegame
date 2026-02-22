@@ -317,6 +317,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
                 <span className="gambleSuit gambleSuitBL">♦</span>
                 <span className="gambleSuit gambleSuitBR">♣</span>
                 Gamble
+                <span className="gambleSub">RISK IT ALL</span>
               </button>
             )}
             <button className="declineButton" onClick={() => { play('sfx/decline-property'); dispatch({ type: 'DECLINE' }); }} disabled={isAnimating}>
@@ -344,6 +345,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
                   <span className="gambleSuit gambleSuitBL">♦</span>
                   <span className="gambleSuit gambleSuitBR">♣</span>
                   Gamble
+                  <span className="gambleSub">RISK IT ALL</span>
                 </button>
               )}
             </div>

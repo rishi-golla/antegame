@@ -1488,162 +1488,131 @@ input {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 12px;
-  border-radius: 12px;
-  border-top: 1px solid rgba(212, 175, 55, 0.15);
-  animation: buyRowSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 14px;
+  background: rgba(10, 5, 8, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  animation: buyRowSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes buyRowSlideUp {
-  from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.9); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  from { opacity: 0; transform: translateX(-50%) translateY(24px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* ── BUY — Maroon Powerhouse ── */
-.buyButton {
-  position: relative;
-  min-width: 145px;
-  padding: 14px 28px;
-  font-family: 'Cinzel', serif;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #fff8e7 !important;
-  background: linear-gradient(135deg, #5a1020 0%, #8b1a2b 40%, #6b1525 70%, #3d0a15 100%) !important;
-  border: none !important;
-  border-radius: 12px;
-  cursor: pointer;
-  text-shadow: 0 0 8px rgba(255, 200, 100, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
-  overflow: visible;
-  z-index: 1;
-  animation: buyGlow 3s ease-in-out infinite !important;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
-}
-
-/* Spinning conic-gradient border */
-.buyButton::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 14px;
-  background: conic-gradient(from var(--buy-angle, 0deg), #d4af37, #8b1a2b, #d4af37, #3d0a15, #d4af37);
-  z-index: -1;
-  animation: buyBorderSpin 6s linear infinite;
-}
-
-/* Inner mask to show border only */
-.buyButton::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #5a1020 0%, #8b1a2b 40%, #6b1525 70%, #3d0a15 100%);
-  z-index: -1;
-}
-
-@property --buy-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes buyBorderSpin {
-  to { --buy-angle: 360deg; }
-}
-
-@keyframes buyPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-@keyframes buyGlow {
-  0%, 100% { box-shadow: 0 0 12px rgba(139, 26, 43, 0.3), 0 0 24px rgba(139, 26, 43, 0.15); }
-  50% { box-shadow: 0 0 20px rgba(139, 26, 43, 0.5), 0 0 40px rgba(212, 175, 55, 0.2); }
-}
-
-.buyButton:hover:not(:disabled) {
-  filter: brightness(1.2);
-  animation: buyGlow 1.5s ease-in-out infinite !important;
-}
-
-.buyButton:active:not(:disabled) {
-  transform: scale(0.93) !important;
-  filter: brightness(0.9);
-  transition-duration: 0.05s;
-}
-
-.buyButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  animation: none !important;
-  filter: grayscale(0.5);
-}
-
-/* ── PASS / DECLINE — Smoky Ghost ── */
+/* ── Shared button base ── */
+.buyButton,
+.gambleBtn,
 .declineButton {
   position: relative;
-  padding: 10px 20px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: #b89a6a !important;
-  background: linear-gradient(135deg, rgba(30,15,15,0.6) 0%, rgba(60,30,30,0.3) 50%, rgba(30,15,15,0.6) 100%) !important;
-  background-size: 200% 200% !important;
-  border: 1px solid rgba(212, 175, 55, 0.15) !important;
-  border-radius: 10px;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: none !important;
   cursor: pointer;
-  text-shadow: 0 0 6px rgba(184, 154, 106, 0.3);
-  min-width: auto;
   overflow: hidden;
-  animation: passBreathe 3.5s ease-in-out infinite !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, filter 0.3s ease;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-/* Drifting smoke overlay */
-.declineButton::before {
+/* Shared glossy highlight */
+.buyButton::after,
+.gambleBtn::after {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  background: radial-gradient(ellipse at 30% 50%, rgba(184, 154, 106, 0.08) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 50%, rgba(184, 154, 106, 0.05) 0%, transparent 60%);
-  animation: passSmokeDrift 6s ease-in-out infinite alternate;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+  border-radius: inherit;
   pointer-events: none;
 }
 
-@keyframes passBreathe {
-  0%, 100% { opacity: 0.75; transform: scale(1); }
-  50% { opacity: 0.95; transform: scale(1.01); }
+/* ── BUY — Rich Crimson ── */
+.buyButton {
+  min-width: 140px;
+  padding: 13px 28px;
+  font-size: 16px;
+  color: #fff8e7 !important;
+  background: linear-gradient(180deg, #8b1a2b 0%, #6b1525 50%, #4a0e1a 100%) !important;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 0 rgba(212, 175, 55, 0.25) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 4px 16px rgba(139, 26, 43, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes passSmoke {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+.buyButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(212, 175, 55, 0.3) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 8px 24px rgba(139, 26, 43, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(212, 175, 55, 0.12);
+  filter: brightness(1.12);
 }
 
-@keyframes passSmokeDrift {
-  from { transform: translateX(-10px); }
-  to { transform: translateX(10px); }
+.buyButton:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    0 1px 0 rgba(212, 175, 55, 0.15) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.4) inset,
+    0 2px 8px rgba(139, 26, 43, 0.3);
+  filter: brightness(0.92);
+  transition-duration: 0.08s;
+}
+
+.buyButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.4) brightness(0.8);
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ── PASS / DECLINE — Understated ── */
+.declineButton {
+  padding: 10px 22px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(212, 175, 55, 0.6) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(212, 175, 55, 0.12) !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .declineButton:hover:not(:disabled) {
-  opacity: 1 !important;
-  border-color: rgba(212, 175, 55, 0.5) !important;
-  color: #d4af37 !important;
-  animation: passBreathe 1.2s ease-in-out infinite !important;
-  box-shadow: 0 0 15px rgba(184, 154, 106, 0.15) !important;
+  color: rgba(212, 175, 55, 0.85) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(212, 175, 55, 0.3) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .declineButton:active:not(:disabled) {
-  transform: scale(0.92) !important;
-  transition-duration: 0.05s;
+  transform: translateY(1px);
+  background: rgba(255, 255, 255, 0.02) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition-duration: 0.08s;
 }
 
 .declineButton:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
-  animation: none !important;
+  transform: none;
 }
 
 .jailActions {
@@ -2692,132 +2661,86 @@ input {
 
 /* ===== MINIGAME STYLES ===== */
 
-/* ── GAMBLE — THE STAR ── */
-/* ── GAMBLE — Gold Nuclear ── */
+/* ── GAMBLE — Gold Premium ── */
 .gambleBtn {
-  position: relative;
-  min-width: 155px;
-  padding: 14px 32px;
-  font-family: 'Cinzel', serif;
-  font-size: 18px;
-  font-weight: 700;
+  min-width: 150px;
+  padding: 13px 30px;
+  font-size: 17px;
   color: #1a0a00 !important;
-  background: linear-gradient(135deg, #ffd700 0%, #d4af37 25%, #b8860b 50%, #d4af37 75%, #ffd700 100%) !important;
-  background-size: 400% 400% !important;
-  border: none !important;
-  border-radius: 14px;
-  cursor: pointer;
-  text-shadow: 0 1px 0 rgba(255, 255, 200, 0.5);
-  overflow: visible;
-  letter-spacing: 0.1em;
-  z-index: 1;
-  animation:
-    gambleGoldShift 4s ease-in-out infinite,
-    gambleBloom 3s ease-in-out infinite !important;
-  will-change: background-position, box-shadow;
+  background: linear-gradient(180deg, #ffd700 0%, #d4af37 40%, #b8860b 100%) !important;
+  border-radius: 12px;
+  text-shadow: 0 1px 0 rgba(255, 255, 200, 0.6);
+  letter-spacing: 0.08em;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 200, 0.4) inset,
+    0 -1px 0 rgba(139, 115, 32, 0.5) inset,
+    0 4px 16px rgba(212, 175, 55, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Spinning dashed border ring */
+/* Shimmer sweep */
 .gambleBtn::before {
   content: '';
   position: absolute;
-  inset: -3px;
-  border-radius: 16px;
-  border: 2px dashed #ffd700;
-  animation: gambleDashMarch 6s linear infinite;
+  top: 0; left: -75%;
+  width: 50%; height: 100%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%);
+  transform: skewX(-20deg);
+  animation: gambleShimmer 4s ease-in-out infinite;
   pointer-events: none;
 }
 
-/* Subtitle */
-.gambleBtn::after {
-  content: 'RISK IT ALL';
+/* Subtitle line */
+.gambleBtn .gambleSub {
   display: block;
   font-family: 'Nunito', sans-serif;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
-  color: #3d1a00;
-  letter-spacing: 0.2em;
-  margin-top: 3px;
+  color: rgba(80, 40, 0, 0.5);
   letter-spacing: 0.25em;
-  opacity: 0.8;
-  pointer-events: none;
+  margin-top: 2px;
 }
 
-/* Suit symbols at corners — subtle pulse */
+/* Suit symbols — static, decorative */
 .gambleSuit {
   position: absolute;
-  font-size: 9px;
-  color: #ffd700;
-  opacity: 0.5;
+  font-size: 8px;
+  color: rgba(139, 115, 32, 0.3);
   pointer-events: none;
-  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.6));
-  animation: gambleSuitPulse 3s ease-in-out infinite;
 }
-.gambleSuitTL { top: 5px; left: 7px; animation-delay: 0s; }
-.gambleSuitTR { top: 5px; right: 7px; animation-delay: -0.5s; }
-.gambleSuitBL { bottom: 5px; left: 7px; animation-delay: -1s; }
-.gambleSuitBR { bottom: 5px; right: 7px; animation-delay: -1.5s; }
+.gambleSuitTL { top: 5px; left: 7px; }
+.gambleSuitTR { top: 5px; right: 7px; }
+.gambleSuitBL { bottom: 5px; left: 7px; }
+.gambleSuitBR { bottom: 5px; right: 7px; }
 
-@keyframes gambleSuitPulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
-}
-
-@keyframes gambleGoldShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes gambleWobble {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.02) rotate(0.5deg); }
-}
-
-@keyframes gambleBloom {
-  0%, 100% {
-    box-shadow:
-      0 0 12px rgba(255, 215, 0, 0.3),
-      0 0 24px rgba(212, 175, 55, 0.15);
-  }
-  50% {
-    box-shadow:
-      0 0 20px rgba(255, 215, 0, 0.5),
-      0 0 40px rgba(255, 215, 0, 0.25),
-      0 0 60px rgba(212, 175, 55, 0.1);
-  }
-}
-
-@keyframes gambleDashMarch {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes gambleRingPulse {
-  0%, 100% { opacity: 0.4; inset: -3px; }
-  50% { opacity: 1; inset: -5px; }
-}
-
-@keyframes gambleSubWave {
-  0%, 100% { letter-spacing: 0.2em; opacity: 0.7; }
-  50% { letter-spacing: 0.35em; opacity: 1; }
+@keyframes gambleShimmer {
+  0%, 100% { left: -75%; }
+  50% { left: 125%; }
 }
 
 .gambleBtn:hover:not(:disabled) {
-  animation:
-    gambleGoldShift 2s ease-in-out infinite,
-    gambleBloom 1.5s ease-in-out infinite !important;
-  filter: brightness(1.1) saturate(1.1);
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 200, 0.5) inset,
+    0 -1px 0 rgba(139, 115, 32, 0.5) inset,
+    0 8px 28px rgba(212, 175, 55, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 24px rgba(255, 215, 0, 0.15);
+  filter: brightness(1.08);
 }
 
 .gambleBtn:active:not(:disabled) {
-  transform: scale(0.92) rotate(0deg) !important;
-  filter: brightness(0.85);
-  transition-duration: 0.05s;
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 200, 0.2) inset,
+    0 -1px 0 rgba(139, 115, 32, 0.6) inset,
+    0 2px 8px rgba(212, 175, 55, 0.25);
+  filter: brightness(0.92);
+  transition-duration: 0.08s;
 }
 
 .gambleBtn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   animation: none !important;
   cursor: not-allowed;
   filter: grayscale(0.6);
