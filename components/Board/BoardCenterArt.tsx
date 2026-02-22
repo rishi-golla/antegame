@@ -131,7 +131,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     if (state.phase === 'in-jail') {
       play('sfx/dice-shake');
       dispatch({ type: 'JAIL_ESCAPE', method: 'roll' });
-    } else if (state.phase === 'rolling') {
+    } else if (state.phase === 'rolling' || state.phase === 'pre-roll') {
       play('sfx/dice-shake');
       dispatch({ type: 'ROLL' });
     } else if (state.phase === 'drawing-card' && !state.drawnCard) {
@@ -148,6 +148,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     if (isRolling) return 'Rolling...';
     if (isAnimating) return 'Moving...';
     switch (state.phase) {
+      case 'pre-roll':
       case 'rolling':
         return `Roll Dice`;
       case 'in-jail':
