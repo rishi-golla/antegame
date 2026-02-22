@@ -92,6 +92,20 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
     prevPlayerRef.current = state.currentPlayerIndex;
   }, [state.players, state.phase, state.currentPlayerIndex, state.activeMinigame]);
 
+  // Compute net worths for bar proportions
+  const allWorths = state.players.map(p => getNetWorth(state, p.id));
+  const maxWorth = Math.max(...allWorths, 1);
+
+  // Helper: money color
+  const getMoneyColor = (amount: number) => {
+    if (amount > 1000) return '#d4af37';
+    if (amount >= 500) return '#fff8e7';
+    if (amount >= 200) return '#f59e0b';
+    return '#ff1744';
+  };
+
+  const currentRound = state.roundNumber ?? 1;
+
   return (
     <>
       {/* Phase 3: Screen flash and vignette effects */}
@@ -99,7 +113,10 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
       {redVignette && <div className="bankruptcy-red-vignette" />}
       
       <aside className="leftPanel panel">
-        <h2>Players</h2>
+        <h2>
+          Players
+          <span className="vipRoundBadge">RD {currentRound}</span>
+        </h2>
 
       {offer && (
         <TradeNotification
@@ -128,21 +145,24 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
             state.phase !== 'game-over';
           // Danger classes based on money
           let dangerClass = '';
-          let shouldFlashScreen = false;
           if (!player.bankrupt) {
             if (player.money < 50) {
               dangerClass = 'player-critical-phase3';
-              shouldFlashScreen = true; // Red vignette for everyone
             } else if (player.money < 100) {
               dangerClass = 'player-danger-phase3';
             }
           }
 
+          const worthPct = maxWorth > 0 ? (worth / maxWorth) * 100 : 0;
+
           return (
             <li
               key={player.id}
               data-suit={SUIT_SYMBOLS[player.id % 4]}
-              className={`${isActive ? 'activePlayer' : ''} ${player.bankrupt ? 'bankruptPlayer' : ''} ${!player.bankrupt ? 'clickablePlayer' : ''} ${dangerClass}`}
+              className={`vipBadge ${isActive ? 'activePlayer vipActive' : ''} ${player.bankrupt ? 'bankruptPlayer vipBankrupt' : ''} ${!player.bankrupt ? 'clickablePlayer' : ''} ${dangerClass}`}
+              style={{
+                background: `radial-gradient(circle at 15% 15%, ${player.color}0F, transparent 70%), linear-gradient(135deg, #1a0f0f, #2a0f1f)`,
+              }}
               onClick={() => {
                 if (!player.bankrupt) {
                   if (isMe) {
@@ -153,7 +173,17 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                 }
               }}
             >
-              <div className={`avatar casinoChip ${player.sprite ? 'spriteAvatar' : ''}`} style={{ background: player.color }}>
+              {/* Bankrupt overlay */}
+              {player.bankrupt && <span className="vipBankruptLabel">BANKRUPT</span>}
+
+              <div
+                className={`avatar casinoChip ${player.sprite ? 'spriteAvatar' : ''} ${player.bankrupt ? 'vipChipBankrupt' : ''}`}
+                style={{
+                  background: player.color,
+                  borderColor: isActive ? '#d4af37' : player.color,
+                  boxShadow: isActive ? '0 0 12px rgba(212,175,55,0.4)' : undefined,
+                }}
+              >
                 <span className="chipInnerRing" style={{ borderColor: `${player.color}88` }} />
                 {player.sprite ? (
                   <img src={player.sprite} alt={player.name} className="avatarSprite" draggable={false} />
@@ -162,43 +192,41 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                 )}
               </div>
               <div className="playerInfo">
-                <strong>
+                <strong className={`vipName ${isActive ? 'vipNameActive' : ''} ${player.bankrupt ? 'vipNameBankrupt' : ''}`}>
                   {player.name}
                   {rank === 1 && !player.bankrupt && <span className="plRankStar"> ★</span>}
                   {rank > 1 && !player.bankrupt && <span className="plRankBadge">{rank === 2 ? '2nd' : rank === 3 ? '3rd' : '4th'}</span>}
                 </strong>
-                <p className="playerMoney">
+                <p className="playerMoney vipMoney" style={{ color: getMoneyColor(player.money) }}>
                   ${player.money.toLocaleString()}
+                  {moneyDiffs[player.id] != null && (
+                    <span className={`vipMoneyArrow ${moneyDiffs[player.id]! > 0 ? 'vipMoneyUp' : 'vipMoneyDown'}`}>
+                      {moneyDiffs[player.id]! > 0 ? '▲' : '▼'}
+                    </span>
+                  )}
                   {moneyDiffs[player.id] != null && (
                     <span className={`moneyFlash ${moneyDiffs[player.id]! > 0 ? 'moneyFlashGain' : 'moneyFlashLoss'}`}>
                       {moneyDiffs[player.id]! > 0 ? '+' : '−'}${Math.abs(moneyDiffs[player.id]!).toLocaleString()}
                     </span>
                   )}
                 </p>
-                {/* Property progress bar */}
-                <div className="plPropBar">
-                  <div className="plPropBarFill" style={{ width: `${(player.properties.length / TOTAL_PURCHASABLE) * 100}%` }} />
+                {/* Property dots */}
+                <div className="vipPropDots">
+                  {GROUP_ORDER.map((g) => {
+                    const groupIndices = g === 'railroad' ? RAILROAD_INDICES : g === 'utility' ? UTILITY_INDICES : COLOR_GROUPS[g as keyof typeof COLOR_GROUPS];
+                    if (!groupIndices) return null;
+                    const owned = groupIndices.filter(i => player.properties.includes(i)).length;
+                    if (owned === 0) return null;
+                    return (
+                      <span
+                        key={g}
+                        className="vipPropDot"
+                        style={{ background: GROUP_COLORS[g] }}
+                        title={`${g}: ${owned}/${groupIndices.length}`}
+                      />
+                    );
+                  })}
                 </div>
-                {/* Color swatches */}
-                {player.properties.length > 0 && (
-                  <div className="plSwatches">
-                    {GROUP_ORDER.map((g) => {
-                      const groupIndices = g === 'railroad' ? RAILROAD_INDICES : g === 'utility' ? UTILITY_INDICES : COLOR_GROUPS[g as keyof typeof COLOR_GROUPS];
-                      if (!groupIndices) return null;
-                      const owned = groupIndices.filter(i => player.properties.includes(i)).length;
-                      if (owned === 0) return null;
-                      const full = owned === groupIndices.length;
-                      return (
-                        <span
-                          key={g}
-                          className={`plSwatch ${full ? 'plSwatchFull' : 'plSwatchPartial'}`}
-                          style={{ ['--swatch-color' as string]: GROUP_COLORS[g] }}
-                          title={`${g}: ${owned}/${groupIndices.length}`}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
                 {(() => { const buff = getPlayerBuff(player); return buff ? (
                   <span className="playerBuff" title={buff.description}>⚡ {buff.name}</span>
                 ) : null; })()}
@@ -214,7 +242,6 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                   <span className="assetsHint">{player.properties.length} assets — tap to view</span>
                 )}
                 {player.inJail && <span className="jailBadge">In Jail</span>}
-                {player.bankrupt && <span className="bankruptBadge">Bankrupt</span>}
                 {canTrade && onTrade && (
                   <button
                     className="tradeBtn"
@@ -227,6 +254,10 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                     Trade
                   </button>
                 )}
+              </div>
+              {/* Net worth bar */}
+              <div className="vipNetBar">
+                <div className="vipNetBarFill" style={{ width: `${worthPct}%` }} />
               </div>
             </li>
           );
