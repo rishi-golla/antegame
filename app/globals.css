@@ -565,11 +565,14 @@ input {
   color: #fff8e7;
   white-space: normal;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: none;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   max-width: 100%;
+  font-size: 0.45rem;
 }
 
 /* Property name text (top/bottom tiles — slightly larger) */
@@ -1482,10 +1485,10 @@ input {
 /* ── BUY — Maroon Powerhouse ── */
 .buyButton {
   position: relative;
-  min-width: 130px;
-  padding: 12px 24px;
+  min-width: 145px;
+  padding: 14px 28px;
   font-family: 'Cinzel', serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #fff8e7 !important;
@@ -1591,8 +1594,8 @@ input {
 }
 
 @keyframes passBreathe {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.04); }
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
 }
 
 @keyframes passSmoke {
@@ -2019,11 +2022,16 @@ input {
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: rgba(212, 175, 55, 0.85);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #d4af37;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4), 0 1px 3px rgba(0,0,0,0.8);
+  background: rgba(10, 5, 5, 0.5);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .rentMultiplier {
@@ -2668,10 +2676,10 @@ input {
 /* ── GAMBLE — Gold Nuclear ── */
 .gambleBtn {
   position: relative;
-  min-width: 170px;
-  padding: 16px 40px;
+  min-width: 155px;
+  padding: 14px 32px;
   font-family: 'Cinzel', serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #1a0a00 !important;
   background: linear-gradient(135deg, #ffd700 0%, #d4af37 25%, #b8860b 50%, #d4af37 75%, #ffd700 100%) !important;
@@ -7625,13 +7633,13 @@ button:active:not(:disabled) {
 
 .casinoCrestImg {
   display: block;
-  width: 65%;
+  width: 48%;
   height: auto;
   image-rendering: pixelated;
   object-fit: contain;
-  opacity: 1;
+  opacity: 0.9;
   position: absolute;
-  top: 50%;
+  top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
