@@ -230,8 +230,8 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
   const isRed = (suit: Suit): boolean => suit === '♥' || suit === '♦';
 
   const cardFaceStyle = (index: number): React.CSSProperties => ({
-    width: '80px',
-    height: '112px',
+    width: '100px',
+    height: '140px',
     borderRadius: '10px',
     background: 'linear-gradient(135deg, #fffef5, #f5f0e0)',
     border: '2px solid #c9b06b',
@@ -246,8 +246,8 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
   });
 
   const cardBackStyle = (pulsing: boolean): React.CSSProperties => ({
-    width: '80px',
-    height: '112px',
+    width: '100px',
+    height: '140px',
     borderRadius: '10px',
     background: 'repeating-conic-gradient(#3d0f22 0% 25%, #2a0f1f 0% 50%) 50% / 16px 16px',
     border: '2px solid #d4af37',
@@ -283,14 +283,14 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
     return (
       <div key={`${card.rank}-${card.suit}-${index}`} style={cardFaceStyle(index)}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '16px', color }}>{card.rank}</span>
+          <span style={{ fontFamily: 'Cinzel, serif', {fontWeight: 700, fontSize: '20px', color }}>{card.rank}</span>
           <span style={{ fontSize: '14px', color }}>{card.suit}</span>
         </div>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '28px', color, opacity: 0.8 }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '32px', color, opacity: 0.8 }}>
           {card.suit}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1, transform: 'rotate(180deg)' }}>
-          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '16px', color }}>{card.rank}</span>
+          <span style={{ fontFamily: 'Cinzel, serif', {fontWeight: 700, fontSize: '20px', color }}>{card.rank}</span>
           <span style={{ fontSize: '14px', color }}>{card.suit}</span>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
       <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
         <h2 style={{
           fontFamily: 'Cinzel, serif',
-          fontSize: '28px',
+          fontSize: '32px',
           fontWeight: 900,
           color: '#d4af37',
           textShadow: '0 0 12px rgba(212,175,55,0.5)',
@@ -348,7 +348,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
       )}
 
       {/* Table area */}
-      <div style={{ padding: '0 20px 16px', position: 'relative', zIndex: 1 }}>
+      <div style={{ padding: '0 24px 20px', position: 'relative', zIndex: 1 }}>
         {/* Dealer */}
         <div style={{ marginBottom: '20px' }}>
           <div style={{
@@ -358,7 +358,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
           }}>
             Dealer {!dealerHidden || gameEnded ? `(${dealerValue})` : '(??)'}
           </div>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
             {dealerHandRef.current.map((card, index) =>
               renderCard(card, index === 1 && dealerHidden && !gameEnded, index)
             )}
@@ -366,7 +366,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #d4af37, transparent)', margin: '8px 0 16px' }} />
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #d4af37, transparent)', margin: '12px 0 20px' }} />
 
         {/* Player */}
         <div style={{ position: 'relative' }}>
@@ -377,7 +377,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
           }}>
             You ({playerValue})
           </div>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
             {playerHandRef.current.map((card, index) => renderCard(card, false, index))}
           </div>
 
@@ -411,7 +411,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
 
       {/* Controls */}
       {showControls && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '8px 0 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '12px 0 20px' }}>
           <button onClick={hit} disabled={spectator} style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
             padding: '12px 32px', borderRadius: '50px',
