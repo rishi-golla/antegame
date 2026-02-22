@@ -283,15 +283,15 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
     return (
       <div key={`${card.rank}-${card.suit}-${index}`} style={cardFaceStyle(index)}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-          <span style={{ fontFamily: 'Cinzel, serif', {fontWeight: 700, fontSize: '20px', color }}>{card.rank}</span>
-          <span style={{ fontSize: '14px', color }}>{card.suit}</span>
+          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '20px', color }}>{card.rank}</span>
+          <span style={{ fontSize: '16px', color }}>{card.suit}</span>
         </div>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '32px', color, opacity: 0.8 }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '36px', color, opacity: 0.8 }}>
           {card.suit}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1, transform: 'rotate(180deg)' }}>
-          <span style={{ fontFamily: 'Cinzel, serif', {fontWeight: 700, fontSize: '20px', color }}>{card.rank}</span>
-          <span style={{ fontSize: '14px', color }}>{card.suit}</span>
+          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '20px', color }}>{card.rank}</span>
+          <span style={{ fontSize: '16px', color }}>{card.suit}</span>
         </div>
       </div>
     );
