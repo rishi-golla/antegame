@@ -276,12 +276,12 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
             }}>HOUSE</div>
             <div style={{
               width: 64, height: 64, borderRadius: '50%',
-              background: 'radial-gradient(circle at 35% 35%, #e0e0e0, #a0a0a0 50%, #505050)',
-              border: '3px solid #888',
+              background: 'radial-gradient(circle at 35% 35%, #6b1a3a, #3d0f22 50%, #2a0f1f)',
+              border: '3px solid #d4af37',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1.8rem',
-              color: '#1a1a1a',
-              boxShadow: '0 0 20px rgba(150,150,150,0.4)',
+              color: '#fff8e7',
+              boxShadow: '0 0 20px rgba(212,175,55,0.4)',
             }}>
               {houseNumber}
             </div>

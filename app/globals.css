@@ -2609,81 +2609,62 @@ input {
 /* Slots — neon casino floor, purple/magenta ambience */
 .mg-slots {
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(180, 50, 180, 0.15), transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(255, 50, 100, 0.1), transparent 50%),
-    linear-gradient(135deg, #1a0a1a 0%, #120818 50%, #0a0510 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/slots.png') center/cover no-repeat;
 }
 
-/* Higher/Lower — deep green card table */
 .mg-higher-lower {
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(20, 100, 40, 0.25), transparent 60%),
-    radial-gradient(ellipse at 50% 90%, rgba(10, 50, 20, 0.3), transparent 50%),
-    linear-gradient(135deg, #0a2a0f 0%, #071a08 50%, #040f05 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/higher-lower.png') center/cover no-repeat;
 }
 
-/* Craps — warm red/amber dice table */
 .mg-craps {
   background:
-    radial-gradient(ellipse at 40% 30%, rgba(180, 80, 20, 0.15), transparent 50%),
-    radial-gradient(ellipse at 60% 70%, rgba(200, 50, 30, 0.1), transparent 50%),
-    linear-gradient(135deg, #1a0f08 0%, #12080a 50%, #0a0505 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/craps.png') center/cover no-repeat;
 }
 
-/* Wheel — royal purple/gold show floor */
 .mg-wheel {
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(100, 50, 180, 0.2), transparent 60%),
-    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.08), transparent 40%),
-    linear-gradient(135deg, #12081a 0%, #0a0512 50%, #080410 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/wheel.png') center/cover no-repeat;
 }
 
-/* Minesweeper — dark industrial/vault */
 .mg-minesweeper {
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(40, 60, 80, 0.2), transparent 60%),
-    radial-gradient(ellipse at 30% 80%, rgba(20, 40, 60, 0.15), transparent 50%),
-    linear-gradient(135deg, #0a0f14 0%, #08101a 50%, #050a10 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/minesweeper.png') center/cover no-repeat;
 }
 
-/* Card War — classic green felt */
 .mg-card-war {
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(15, 80, 30, 0.25), transparent 60%),
-    radial-gradient(ellipse at 50% 90%, rgba(10, 40, 15, 0.2), transparent 50%),
-    linear-gradient(135deg, #0b2810 0%, #071a08 50%, #040f05 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/card-war.png') center/cover no-repeat;
 }
 
-/* Lucky Number (Darts) — warm pub/bar amber */
 .mg-lucky-number {
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(160, 100, 30, 0.15), transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(80, 40, 10, 0.15), transparent 50%),
-    linear-gradient(135deg, #14100a 0%, #0f0a06 50%, #0a0804 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/lucky-number.png') center/cover no-repeat;
 }
 
-/* Blackjack — rich green/teal table */
 .mg-blackjack {
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(10, 80, 60, 0.25), transparent 60%),
-    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.06), transparent 40%),
-    linear-gradient(135deg, #081a14 0%, #061210 50%, #040a08 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/blackjack.png') center/cover no-repeat;
 }
 
-/* Coin Flip — sleek silver/steel */
 .mg-coin-flip {
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(120, 130, 150, 0.15), transparent 55%),
-    radial-gradient(ellipse at 50% 80%, rgba(60, 60, 80, 0.15), transparent 50%),
-    linear-gradient(135deg, #10101a 0%, #0a0a14 50%, #08080f 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/coin-flip.png') center/cover no-repeat;
 }
 
-/* Safe Cracker — dark vault with gold accent */
 .mg-safe-cracker {
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(212, 175, 55, 0.08), transparent 50%),
-    radial-gradient(ellipse at 30% 70%, rgba(40, 30, 20, 0.3), transparent 50%),
-    linear-gradient(135deg, #100c08 0%, #0a0806 50%, #080604 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.7) 100%),
+    url('/assets/minigames/backgrounds/safe-cracker.png') center/cover no-repeat;
 }
 
 .minigameIntro {

@@ -47,13 +47,13 @@ const STYLES = `
   100% { transform: scale(1) rotate(-12deg); opacity: 1; }
 }
 @keyframes scTumblerFill {
-  0% { background: #333; box-shadow: none; }
-  100% { background: #1a4a1a; box-shadow: 0 0 8px rgba(0,255,100,0.4); }
+  0% { background: #2a0f1f; box-shadow: none; }
+  100% { background: #8b6914; box-shadow: 0 0 8px rgba(212,175,55,0.6); }
 }
 @keyframes scClickGlow {
-  0% { box-shadow: 0 0 0 rgba(0,255,100,0); }
-  50% { box-shadow: 0 0 15px rgba(0,255,100,0.5); }
-  100% { box-shadow: 0 0 0 rgba(0,255,100,0); }
+  0% { box-shadow: 0 0 0 rgba(212,175,55,0); }
+  50% { box-shadow: 0 0 15px rgba(212,175,55,0.5); }
+  100% { box-shadow: 0 0 0 rgba(212,175,55,0); }
 }
 `;
 
@@ -222,16 +222,16 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
         <div style={{
           fontFamily: 'monospace',
           fontSize: 14,
-          color: cracked ? '#00ff88' : '#c9a84c',
-          background: '#0a0a0a',
-          border: '2px solid #333',
+          color: cracked ? '#d4af37' : '#d4af37',
+          background: '#1a0f0f',
+          border: '2px solid #4a2828',
           borderRadius: 6,
           padding: '4px 14px',
           letterSpacing: 2,
           boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.8)',
         }}>
           ATTEMPT {Math.min(currentAttempt, 4)}/4
-          {cracked && <span style={{ color: '#00ff88', marginLeft: 8 }}>✦ CRACKED</span>}
+          {cracked && <span style={{ color: '#ffd700', marginLeft: 8 }}>✦ CRACKED</span>}
         </div>
 
         {/* Tumblers */}
@@ -239,9 +239,9 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           {[0, 1, 2].map((i) => (
             <div key={i} style={{
               width: 24, height: 24, borderRadius: '50%',
-              border: '2px solid #555',
-              background: i < bestCorrectPos ? '#1a4a1a' : '#222',
-              boxShadow: i < bestCorrectPos ? '0 0 8px rgba(0,255,100,0.4), inset 0 0 4px rgba(0,255,100,0.2)' : 'inset 0 2px 4px rgba(0,0,0,0.5)',
+              border: '2px solid #d4af37',
+              background: i < bestCorrectPos ? '#8b6914' : '#2a0f1f',
+              boxShadow: i < bestCorrectPos ? '0 0 8px rgba(212,175,55,0.6), inset 0 0 4px rgba(212,175,55,0.3)' : 'inset 0 2px 4px rgba(0,0,0,0.5)',
               transition: 'all 0.4s ease',
             }} />
           ))}
@@ -253,8 +253,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
             position: 'relative',
             width: 200, height: 200,
             borderRadius: '50%',
-            background: 'conic-gradient(from 0deg, #444, #666, #444, #555, #444)',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.4), 0 0 0 4px #333, 0 0 0 6px #c9a84c44',
+            background: 'conic-gradient(from 0deg, #2a0f1f, #3d0f22, #2a0f1f, #2e1a1a, #2a0f1f)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.4), 0 0 0 4px #4a2828, 0 0 0 6px rgba(212,175,55,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {/* Tick marks */}
@@ -306,8 +306,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
             <div style={{
               width: 180, height: 180,
               borderRadius: 12,
-              background: 'linear-gradient(135deg, #2a2a3e, #1a1a2e)',
-              border: '4px solid #c9a84c',
+              background: 'linear-gradient(135deg, #2e1a1a, #2a0f1f)',
+              border: '4px solid #d4af37',
               animation: 'scVaultOpen 1s ease-out forwards',
               transformOrigin: 'left center',
             }} />
@@ -342,8 +342,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
             <div style={{
               width: 180, height: 180,
               borderRadius: 12,
-              background: 'repeating-linear-gradient(45deg, #3a0a0a, #3a0a0a 10px, #2a0505 10px, #2a0505 20px)',
-              border: '4px solid #882222',
+              background: 'repeating-linear-gradient(45deg, #3d0f22, #3d0f22 10px, #2a0f1f 10px, #2a0f1f 20px)',
+              border: '4px solid #6b1a3a',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <span style={{
@@ -378,8 +378,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                   onMouseDown={() => selectDial(index)}
                   style={{
                     width: 36, height: 28,
-                    background: 'linear-gradient(180deg, #444, #333)',
-                    border: '1px solid #666',
+                    background: 'linear-gradient(180deg, #3a2020, #2a0f1f)',
+                    border: '1px solid #d4af37',
                     borderRadius: 4,
                     color: '#ccc',
                     fontSize: 14,
@@ -394,9 +394,9 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                     width: 48, height: 48,
                     borderRadius: '50%',
                     background: selectedDial === index
-                      ? 'radial-gradient(circle, #2a2a4e, #1a1a3e)'
-                      : 'radial-gradient(circle, #222, #1a1a1a)',
-                    border: selectedDial === index ? '2px solid #ffd700' : '2px solid #555',
+                      ? 'radial-gradient(circle, #3d0f22, #2a0f1f)'
+                      : 'radial-gradient(circle, #2a0f1f, #1a0f0f)',
+                    border: selectedDial === index ? '2px solid #ffd700' : '2px solid #d4af37',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer',
                     boxShadow: selectedDial === index ? '0 0 10px rgba(255,215,0,0.3)' : 'inset 0 2px 6px rgba(0,0,0,0.5)',
@@ -418,8 +418,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                   onMouseDown={() => selectDial(index)}
                   style={{
                     width: 36, height: 28,
-                    background: 'linear-gradient(180deg, #333, #444)',
-                    border: '1px solid #666',
+                    background: 'linear-gradient(180deg, #2a0f1f, #3a2020)',
+                    border: '1px solid #d4af37',
                     borderRadius: 4,
                     color: '#ccc',
                     fontSize: 14,
