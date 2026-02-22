@@ -233,14 +233,14 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
         </div>
         <div className={`minigameIntro ${curtainOpen ? 'visible' : ''}`}>
           <h2 className="minigameIntroTitle">{MINIGAME_NAMES[minigame.id] || minigame.id.replace('-', ' ').toUpperCase()}</h2>
-          <p className="minigameStakes">STAKES: ${minigame.baseAmount}</p>
-          <p className="minigameContext">{minigame.context === 'buying' ? 'PROPERTY PURCHASE' : 'RENT PAYMENT'}</p>
+          <p className="minigameStakes">${minigame.baseAmount} on the line</p>
+          <p className="minigameContext">{minigame.context === 'buying' ? 'property purchase' : 'rent payment'}</p>
           <div className="minigameTierInfo">
-            <div className="tierRow tier-win">WIN: {minigame.context === 'buying' ? 'FREE PROPERTY!' : 'NO RENT!'}</div>
-            <div className="tierRow tier-close-win">CLOSE: {minigame.context === 'buying' ? `PAY $${Math.floor(minigame.baseAmount * 0.5)}` : `PAY $${Math.floor(minigame.baseAmount * 0.5)} RENT`}</div>
-            <div className="tierRow tier-close-loss">ALMOST: PAY ${Math.floor(minigame.baseAmount * 1.5)}</div>
-            <div className="tierRow tier-loss">LOSS: PAY ${Math.floor(minigame.baseAmount * 2)}</div>
-            <div className="tierRow tier-catastrophic">DISASTER: PAY ${Math.floor(minigame.baseAmount * 5)}</div>
+            <div className="tierRow tier-win">Win — {minigame.context === 'buying' ? 'Free property!' : 'No rent!'}</div>
+            <div className="tierRow tier-close-win">Close — Pay ${Math.floor(minigame.baseAmount * 0.5)}</div>
+            <div className="tierRow tier-close-loss">Almost — Pay ${Math.floor(minigame.baseAmount * 1.5)}</div>
+            <div className="tierRow tier-loss">Loss — Pay ${Math.floor(minigame.baseAmount * 2)}</div>
+            <div className="tierRow tier-catastrophic">Disaster — Pay ${Math.floor(minigame.baseAmount * 5)}</div>
           </div>
         </div>
       </div>
