@@ -614,7 +614,7 @@ export default function Board() {
         {declineWarning && (
           <div className="decline-warning-overlay">
             <div className="decline-warning-content">
-              <div className="decline-warning-icon">⚠️</div>
+              <div className="decline-warning-icon">▲</div>
               <div className="decline-warning-title">WARNING!</div>
               <div className="decline-warning-message">
                 Next player who lands here<br />

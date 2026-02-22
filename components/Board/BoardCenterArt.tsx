@@ -257,7 +257,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         <span>Round {state.roundNumber}</span>
         {getRentMultiplier(state.roundNumber, state.finalRounds) > 1 && (
           <span className="rentMultiplier">
-            {state.finalRounds ? '⚠️ FINAL' : `${getRentMultiplier(state.roundNumber, state.finalRounds)}x rent`}
+            {state.finalRounds ? '▲ FINAL' : `${getRentMultiplier(state.roundNumber, state.finalRounds)}x rent`}
           </span>
         )}
         {state.finalRounds && (
@@ -267,7 +267,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         )}
         {(state.globalHouses < 10 || state.globalHotels < 4) && (
           <span className="housingSupply">
-            🏠{state.globalHouses} 🏨{state.globalHotels}
+            H:{state.globalHouses} ★:{state.globalHotels}
           </span>
         )}
       </div>

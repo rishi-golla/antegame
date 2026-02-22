@@ -13,9 +13,9 @@ function classifyLog(message: string): LogStyle {
   const m = message.toLowerCase();
   
   if (m.includes('rolled') && m.includes('doubles'))
-    return { icon: '🎲', color: '#fbbf24', accent: 'var(--gold-bright)' };
+    return { icon: '⬡', color: '#fbbf24', accent: 'var(--gold-bright)' };
   if (m.includes('rolled'))
-    return { icon: '🎲', color: 'var(--ink-secondary)' };
+    return { icon: '⬡', color: 'var(--ink-secondary)' };
   if (m.includes('bought'))
     return { icon: '◆', color: '#4ade80' };
   if (m.includes('passed go') || m.includes('collected'))

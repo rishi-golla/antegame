@@ -217,7 +217,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
           onClick={handleFindMatch}
           disabled={loading || (isBase && !walletReady) || (isBase && balanceEth < parseFloat(buyIn))}
         >
-          {loading ? status || 'Processing...' : `🎰 Find Match (${buyIn} ETH)`}
+          {loading ? status || 'Processing...' : `Find Match (${buyIn} ETH)`}
         </button>
         <button className="lobbyBackBtn" onClick={onBack} disabled={loading}>Back</button>
       </div>

@@ -556,7 +556,7 @@ input {
   z-index: 1;
   font-size: 0.5rem;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.02em;
   font-family: 'Cinzel', serif;
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
@@ -811,6 +811,11 @@ input {
   white-space: nowrap;
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
   animation: hintFloat 3s ease-in-out infinite, hintGlow 2s ease-in-out infinite;
+  padding: 6px 20px;
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.1), inset 0 0 20px rgba(10, 5, 5, 0.6);
 }
 
 .waitingLabel {
@@ -1395,7 +1400,7 @@ input {
   font-family: 'Cinzel', serif;
   font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 8px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -1432,7 +1437,7 @@ input {
   font-family: 'Cinzel', serif;
   font-size: 1.4rem;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
   text-shadow: 0 0 12px currentColor;
 }
 
@@ -1642,6 +1647,7 @@ input {
   border: 2px solid rgba(212, 175, 55, 0.5);
   border-radius: 10px;
   padding: 6px 12px;
+  font-family: 'Nunito', sans-serif;
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--gold);
@@ -1978,7 +1984,7 @@ input {
   font-size: 13px;
   font-weight: 700;
   color: var(--player-accent, #d4af37);
-  letter-spacing: 1px;
+  letter-spacing: 0.06em;
   line-height: 1.2;
 }
 
@@ -1987,7 +1993,7 @@ input {
   font-size: 9px;
   color: #b89a6a;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
   animation: phasePulse 2s ease-in-out infinite;
   line-height: 1;
 }
@@ -5947,7 +5953,7 @@ input {
 }
 .tradePropCardHouses {
   font-size: 0.6rem;
-  letter-spacing: 1px;
+  letter-spacing: 0.06em;
 }
 .tradePropCardMortgage {
   font-size: 0.6rem;
@@ -6183,20 +6189,7 @@ input {
 
 /* Turn indicator — overrides removed, styles consolidated above */
 
-/* Phase hint styling */
-.rollHint {
-  padding: 6px 20px;
-  border-radius: 20px;
-  backdrop-filter: blur(6px);
-  background: none;
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.1), inset 0 0 20px rgba(10, 5, 5, 0.6);
-}
-
-@keyframes hintFloat {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-3px); }
-}
+/* hintFloat + hintGlow keyframes — rollHint styles consolidated into main block above */
 
 @keyframes hintGlow {
   0%, 100% { text-shadow: 0 0 8px rgba(255, 215, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3); }
@@ -8001,7 +7994,7 @@ img[src*="/assets/"] {
   background: #0d0808;
   border: 1px solid #333;
   color: #ccc;
-  font-family: monospace;
+  font-family: 'Nunito', sans-serif;
   font-size: 0.55rem;
   outline: none;
   min-width: 0;
@@ -8842,7 +8835,7 @@ img[src*="/assets/"] {
 .debtHeaderTitle {
   font-size: 1.2rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.06em;
   margin-bottom: 4px;
 }
 
@@ -10756,7 +10749,7 @@ img[src*="/assets/"] {
   margin-bottom: 0.5rem;
   opacity: 0.8;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 .turn-stat-value {
@@ -11117,7 +11110,7 @@ img[src*="/assets/"] {
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   margin-bottom: 0.5rem;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
 }
 
 .spectator-hype-details {
@@ -11196,7 +11189,7 @@ img[src*="/assets/"] {
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
   margin-bottom: 1rem;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
 }
 
 .result-hype-outcome {
@@ -11975,7 +11968,7 @@ img[src*="/assets/"] {
   opacity: 0.05;
   pointer-events: none;
   line-height: 1;
-  font-family: serif;
+  font-family: 'Cinzel', serif;
 }
 
 /* ===== VIP Casino Badge Overhaul ===== */

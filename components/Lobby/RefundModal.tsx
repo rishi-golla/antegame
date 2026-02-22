@@ -120,7 +120,7 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
   return (
     <div className="setupScreen" style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="setupCard" style={{ maxWidth: 400 }}>
-        <h2 className="setupTitle" style={{ fontSize: '1.4rem' }}>💰 Claim Refund</h2>
+        <h2 className="setupTitle" style={{ fontSize: '1.4rem' }}>$ Claim Refund</h2>
         <p style={{ textAlign: 'center', opacity: 0.8, marginBottom: 16 }}>
           Room <strong>{refund.roomCode}</strong> was cancelled.
           {!done && ' Your deposit is available for refund.'}

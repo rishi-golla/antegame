@@ -306,7 +306,7 @@ export default function ProfileRefunds() {
         className="profileRefundsToggle"
         onClick={() => setExpanded(!expanded)}
       >
-        <span>💰 Refunds{games.length > 0 ? ` (${games.length})` : ''}</span>
+        <span>$ Refunds{games.length > 0 ? ` (${games.length})` : ''}</span>
         <span className="profileRefundsArrow">{expanded ? '▲' : '▼'}</span>
       </button>
 

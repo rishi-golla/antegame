@@ -107,7 +107,7 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
           <p className="menuSubtitle">Stake crypto. Roll dice. Win the pot.</p>
           {balanceStr && (
             <div className="menuStatusRow">
-              <span className="menuBalance">💰 {balanceStr} ETH</span>
+              <span className="menuBalance">$ {balanceStr} ETH</span>
             </div>
           )}
         </div>

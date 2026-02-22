@@ -90,7 +90,7 @@ export default function QuickPlayLobby({ onLeave, onGameStart }: QuickPlayLobbyP
                 </div>
                 <span className="qpPlayerName">{p.name}</span>
                 <span className="qpPlayerStatus">
-                  {p.deposited ? '💰' : '⏳'}
+                  {p.deposited ? '💰' : '...'}
                 </span>
               </div>
             );

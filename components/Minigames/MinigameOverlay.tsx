@@ -255,7 +255,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
       <div className={`minigameOverlay pixelOverlay mg-${minigame.id}`}>
         {spectator && (
           <div className="spectatorBanner">
-            👁️ Watching {currentPlayerName}
+            ◉ Watching {currentPlayerName}
           </div>
         )}
         <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 100 }}>
