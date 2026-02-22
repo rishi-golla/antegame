@@ -387,17 +387,22 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
           display: 'flex', flexDirection: 'column', gap: 1,
           fontFamily: 'Nunito, sans-serif',
           fontSize: 14,
-          color: '#777',
+          color: '#d5c4a1',
           textAlign: 'center',
-          padding: '10px 16px',
-          background: 'rgba(0,0,0,0.3)',
-          borderRadius: 6,
-          border: '1px solid #c9a84c22',
+          padding: '12px 20px',
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: 10,
+          border: '1px solid rgba(212,175,55,0.15)',
+          fontSize: 13,
+          fontWeight: 600,
+          lineHeight: 1.8,
+          textShadow: '0 1px 4px rgba(0,0,0,0.8)',
         }}>
-          <div>3-0 = WIN</div>
-          <div>2-1 = CLOSE WIN</div>
-          <div>TIE = CLOSE LOSS</div>
-          <div>1-2 = LOSS</div>
+          <div>3-0 — <span style={{ color: '#4ade80' }}>Win</span></div>
+          <div>2-1 — <span style={{ color: '#86efac' }}>Close Win</span></div>
+          <div>Tie — <span style={{ color: '#fbbf24' }}>Close Loss</span></div>
+          <div>1-2 — <span style={{ color: '#f87171' }}>Loss</span></div>
         </div>
       </div>
     </>
