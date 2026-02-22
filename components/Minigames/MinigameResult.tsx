@@ -20,7 +20,7 @@ function useCountUp(target: number, duration = 500, startDelay = 400) {
       const start = performance.now();
       const tick = (now: number) => {
         const t = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - t, 3); // decelerate
+        const eased = 1 - Math.pow(1 - t, 3);
         setValue(Math.floor(eased * target));
         if (t < 1) raf = requestAnimationFrame(tick);
       };
@@ -31,26 +31,86 @@ function useCountUp(target: number, duration = 500, startDelay = 400) {
   return value;
 }
 
+const TIER_CONFIG: Record<MinigameTier, {
+  title: string;
+  icon: string;
+  bannerBg: string;
+  bannerText: string;
+  borderColor: string;
+  glowColor: string;
+  amountColor: string;
+  lingo: Record<MinigameContext, string>;
+  stamp?: { text: string; color: string; rotation: number; opacity: number };
+}> = {
+  win: {
+    title: '★ JACKPOT ★',
+    icon: '♛',
+    bannerBg: 'linear-gradient(135deg, #FFD700, #FFF8E1, #FFD700)',
+    bannerText: '#1a0f0f',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(255,215,0,0.4)',
+    amountColor: '#4ade80',
+    lingo: { buying: 'FREE PROPERTY', rent: 'RENT DODGED' },
+  },
+  'close-win': {
+    title: 'CLOSE WIN',
+    icon: '⊙',
+    bannerBg: 'linear-gradient(135deg, #2d6a4f, #40916c, #2d6a4f)',
+    bannerText: '#d8f3dc',
+    borderColor: '#40916c',
+    glowColor: 'rgba(74,222,128,0.3)',
+    amountColor: '#4ade80',
+    lingo: { buying: 'HALF PRICE DEAL', rent: 'LUCKY DISCOUNT' },
+  },
+  'close-loss': {
+    title: 'CLOSE CALL',
+    icon: '▲',
+    bannerBg: 'linear-gradient(135deg, #b45309, #d97706, #b45309)',
+    bannerText: '#fef3c7',
+    borderColor: '#d97706',
+    glowColor: 'rgba(251,191,36,0.3)',
+    amountColor: '#fbbf24',
+    lingo: { buying: 'OVERCHARGED', rent: 'SURCHARGE APPLIED' },
+    stamp: { text: 'PENALTY', color: 'rgba(251,191,36,0.12)', rotation: -12, opacity: 1 },
+  },
+  loss: {
+    title: 'YOU LOST',
+    icon: '▼',
+    bannerBg: 'linear-gradient(135deg, #7f1d1d, #991b1b, #7f1d1d)',
+    bannerText: '#fecaca',
+    borderColor: '#991b1b',
+    glowColor: 'rgba(248,113,113,0.3)',
+    amountColor: '#f87171',
+    lingo: { buying: 'DOUBLE PENALTY', rent: 'DOUBLE RENT' },
+    stamp: { text: 'PENALTY', color: 'rgba(220,38,38,0.15)', rotation: -15, opacity: 1 },
+  },
+  catastrophic: {
+    title: '☠ DISASTER ☠',
+    icon: '☠',
+    bannerBg: 'linear-gradient(135deg, #1a1a1a, #2d0000, #1a1a1a)',
+    bannerText: '#ef4444',
+    borderColor: '#cc0000',
+    glowColor: 'rgba(239,68,68,0.4)',
+    amountColor: '#ef4444',
+    lingo: { buying: 'CATASTROPHIC LOSS', rent: 'RUINOUS RENT' },
+    stamp: { text: 'CONDEMNED', color: 'rgba(200,0,0,0.18)', rotation: -10, opacity: 1 },
+  },
+};
+
 export default function MinigameResult({ tier, baseAmount, context, onDismiss }: MinigameResultProps) {
   const { play } = useAudio();
   const hasPlayed = useRef(false);
   const [revealed, setRevealed] = useState(false);
+  const [flipped, setFlipped] = useState(tier !== 'loss');
 
   const multipliers: Record<MinigameTier, number> = {
     'win': 0, 'close-win': 0.5, 'close-loss': 1.5, 'loss': 2, 'catastrophic': 5
   };
   const amount = Math.floor(baseAmount * multipliers[tier]);
-  const displayAmount = useCountUp(amount, 500, tier === 'loss' ? 800 : 400);
+  const displayAmount = useCountUp(amount, 500, tier === 'loss' ? 800 : 500);
 
-  const info: Record<MinigameTier, { title: string; description: string }> = {
-    'win': { title: 'JACKPOT!', description: context === 'buying' ? 'FREE PROPERTY!' : 'NO RENT!' },
-    'close-win': { title: 'CLOSE WIN!', description: context === 'buying' ? `GOT IT FOR $${amount} (50% OFF)` : `PAID $${amount} RENT (50%)` },
-    'close-loss': { title: 'CLOSE CALL', description: context === 'buying' ? `LOST $${amount} (1.5× PENALTY)` : `PAID $${amount} RENT (1.5×)` },
-    'loss': { title: 'YOU LOST', description: context === 'buying' ? `LOST $${amount} (2× PENALTY)` : `PAID $${amount} RENT (2×)` },
-    'catastrophic': { title: 'DISASTER!', description: context === 'buying' ? `LOST $${amount} (5× PENALTY)` : `PAID $${amount} RENT (5×)` },
-  };
-
-  const { title, description } = info[tier];
+  const config = TIER_CONFIG[tier];
+  const multiplierLabel = tier === 'close-win' ? '×0.5' : tier === 'close-loss' ? '×1.5' : tier === 'loss' ? '×2' : tier === 'catastrophic' ? '×5' : '';
 
   useEffect(() => {
     if (!hasPlayed.current) {
@@ -59,169 +119,151 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
     }
   }, [tier, play]);
 
-  // Dramatic reveal delay
   useEffect(() => {
-    const t = setTimeout(() => setRevealed(true), 500);
+    const t = setTimeout(() => setRevealed(true), 400);
     return () => clearTimeout(t);
   }, []);
 
-  // Auto-dismiss after 8s (from mount)
   useEffect(() => {
     const t = setTimeout(onDismiss, 8000);
     return () => clearTimeout(t);
   }, [onDismiss]);
 
-  // Loss card flip delay
-  const [flipped, setFlipped] = useState(tier !== 'loss');
   useEffect(() => {
     if (tier === 'loss') {
-      const t = setTimeout(() => setFlipped(true), 700); // 500 black + 200 pause
+      const t = setTimeout(() => setFlipped(true), 650);
       return () => clearTimeout(t);
     }
   }, [tier]);
 
   const rng = useCallback((seed: number) => {
-    // deterministic-ish per index for SSR safety
     return ((seed * 9301 + 49297) % 233280) / 233280;
   }, []);
+
+  // Format dollar amount into individual digit boxes
+  const digits = `$${displayAmount}`.split('');
 
   return (
     <>
       <style>{`
         @keyframes mr-fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes mr-blackReveal { 0% { opacity: 1 } 99% { opacity: 1 } 100% { opacity: 0 } }
-        @keyframes mr-progressBar { from { width: 0% } to { width: 100% } }
-        @keyframes mr-btnPulse { 0%,100% { transform: scale(1); box-shadow: 0 0 10px rgba(255,215,0,0.3) } 50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(255,215,0,0.5) } }
+        @keyframes mr-progressRing { from { width: 0% } to { width: 100% } }
 
-        /* WIN */
-        @keyframes mr-winCard { 0% { transform: scale(0); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+        /* Entrances */
+        @keyframes mr-bounceIn { 0% { transform: scale(0); opacity: 0 } 60% { transform: scale(1.08) } 80% { transform: scale(0.97) } 100% { transform: scale(1); opacity: 1 } }
+        @keyframes mr-slideUp { 0% { transform: translateY(120px); opacity: 0 } 60% { transform: translateY(-12px) } 80% { transform: translateY(4px) } 100% { transform: translateY(0); opacity: 1 } }
+        @keyframes mr-dropSlam { 0% { transform: translateY(-120px); opacity: 0 } 70% { transform: translateY(8px) } 85% { transform: translateY(-3px) } 100% { transform: translateY(0); opacity: 1 } }
+        @keyframes mr-flipReveal { 0% { transform: perspective(800px) rotateY(180deg) } 100% { transform: perspective(800px) rotateY(0deg) } }
+        @keyframes mr-slamIn { 0% { transform: scale(2); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+
+        /* Digit roll-in */
+        @keyframes mr-digitIn { 0% { transform: translateY(-20px); opacity: 0 } 100% { transform: translateY(0); opacity: 1 } }
+
+        /* Effects */
         @keyframes mr-goldCycle { 0%,100% { color: #FFD700 } 50% { color: #FFF8E1 } }
+        @keyframes mr-shimmer { 0% { transform: translateX(-100%) } 100% { transform: translateX(200%) } }
+        @keyframes mr-greenPulse { 0%,100% { box-shadow: 0 0 20px rgba(74,222,128,0.2) } 50% { box-shadow: 0 0 40px rgba(74,222,128,0.4), 0 0 80px rgba(74,222,128,0.15) } }
+        @keyframes mr-spotlight { 0%,100% { opacity: 0.05 } 50% { opacity: 0.15 } }
         @keyframes mr-coin { 0% { transform: translate(0,0) scale(1); opacity: 1 } 100% { transform: translate(var(--cx), var(--cy)) scale(0.3); opacity: 0 } }
-        @keyframes mr-confetti { 0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 1 } 100% { transform: translateY(100vh) translateX(var(--drift)) rotate(var(--rot)); opacity: 0.6 } }
-        @keyframes mr-spotlight { 0% { transform: translateX(-200%) rotate(25deg) } 100% { transform: translateX(200%) rotate(25deg) } }
-        @keyframes mr-chase { 0% { offset-distance: 0% } 100% { offset-distance: 100% } }
-
-        /* CLOSE WIN */
-        @keyframes mr-slideUp { 0% { transform: translateY(100vh) } 60% { transform: translateY(-20px) } 80% { transform: translateY(5px) } 100% { transform: translateY(0) } }
-        @keyframes mr-greenGlow { 0%,100% { box-shadow: 0 0 30px rgba(74,222,128,0.3), 0 0 60px rgba(74,222,128,0.1); transform: scale(1) } 50% { box-shadow: 0 0 50px rgba(74,222,128,0.5), 0 0 100px rgba(74,222,128,0.2); transform: scale(1.03) } }
-        @keyframes mr-shimmer { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
-        @keyframes mr-sparkle { 0%,100% { opacity: 0; transform: scale(0.5) } 50% { opacity: 1; transform: scale(1.2) } }
-
-        /* CLOSE LOSS */
-        @keyframes mr-dropIn { 0% { transform: translateY(-100vh) } 70% { transform: translateY(10px) } 85% { transform: translateY(-3px) } 100% { transform: translateY(0) } }
-        @keyframes mr-amberFlash { 0% { opacity: 1 } 100% { opacity: 0 } }
+        @keyframes mr-confetti { 0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.9 } 100% { transform: translateY(100vh) translateX(var(--drift)) rotate(var(--rot)); opacity: 0 } }
+        @keyframes mr-amberFlash { 0% { opacity: 0.8 } 100% { opacity: 0 } }
         @keyframes mr-tiltSnap { 0% { transform: rotate(1.5deg) } 100% { transform: rotate(0deg) } }
-        @keyframes mr-crackFade { 0% { opacity: 0.6 } 100% { opacity: 0 } }
-
-        /* LOSS */
-        @keyframes mr-cardFlip { 0% { transform: perspective(800px) rotateY(180deg) } 100% { transform: perspective(800px) rotateY(0deg) } }
         @keyframes mr-redVignette { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes mr-floatUp { 0% { opacity: 0.8; transform: translateY(0) } 100% { opacity: 0; transform: translateY(-60px) } }
-        @keyframes mr-vhsGlitch { 0%,100% { transform: translateX(0); clip-path: inset(0) } 25% { transform: translateX(-3px); clip-path: inset(10% 0 80% 0) } 50% { transform: translateX(2px); clip-path: inset(40% 0 30% 0) } 75% { transform: translateX(-2px); clip-path: inset(70% 0 5% 0) } }
-
-        /* CATASTROPHIC */
+        @keyframes mr-floatUp { 0% { opacity: 0.8; transform: translateY(0) } 100% { opacity: 0; transform: translateY(-50px) } }
+        @keyframes mr-glitch { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-3px) } 50% { transform: translateX(2px) } 75% { transform: translateX(-2px) } }
         @keyframes mr-redFlash { 0% { opacity: 0 } 30% { opacity: 0.6 } 100% { opacity: 0 } }
-        @keyframes mr-screenShake { 0%,100% { transform: translate(0,0) } 10% { transform: translate(-4px,2px) } 20% { transform: translate(3px,-3px) } 30% { transform: translate(-2px,4px) } 40% { transform: translate(4px,-1px) } 50% { transform: translate(-3px,3px) } 60% { transform: translate(2px,-4px) } 70% { transform: translate(-4px,1px) } 80% { transform: translate(3px,3px) } 90% { transform: translate(-1px,-2px) } }
-        @keyframes mr-slamIn { 0% { transform: scale(2.5); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
-        @keyframes mr-warningStripe { from { background-position-x: 0px } to { background-position-x: 40px } }
-        @keyframes mr-flicker { 0%,100% { opacity: 1 } 5% { opacity: 0.3 } 10% { opacity: 1 } 15% { opacity: 0.5 } 20% { opacity: 1 } }
-        @keyframes mr-fire { 0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.9 } 100% { transform: translateY(-120px) translateX(var(--fx)) scale(0.2); opacity: 0 } }
-        @keyframes mr-skullSlam { 0% { transform: scale(3) translateY(-50px); opacity: 0 } 50% { transform: scale(1) translateY(10px); opacity: 1 } 70% { transform: scale(1.1) translateY(-5px) } 100% { transform: scale(1) translateY(0) } }
+        @keyframes mr-screenShake { 0%,100% { transform: translate(0,0) } 10% { transform: translate(-4px,2px) } 30% { transform: translate(3px,-3px) } 50% { transform: translate(-3px,3px) } 70% { transform: translate(4px,-1px) } 90% { transform: translate(-1px,-2px) } }
+        @keyframes mr-fire { 0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.9 } 100% { transform: translateY(-100px) translateX(var(--fx)) scale(0.2); opacity: 0 } }
+        @keyframes mr-warningStripe { from { background-position-x: 0 } to { background-position-x: 40px } }
+        @keyframes mr-flicker { 0%,100% { opacity: 1 } 5% { opacity: 0.3 } 15% { opacity: 0.5 } 20% { opacity: 1 } }
+        @keyframes mr-skullSlam { 0% { transform: scale(3) translateY(-30px); opacity: 0 } 50% { transform: scale(1) translateY(5px); opacity: 1 } 70% { transform: scale(1.1) translateY(-3px) } 100% { transform: scale(1) translateY(0) } }
+        @keyframes mr-sparkle { 0%,100% { opacity: 0; transform: scale(0.5) } 50% { opacity: 1; transform: scale(1.2) } }
+        @keyframes mr-chipFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
+        @keyframes mr-borderShimmer { 0% { border-color: rgba(255,215,0,0.4) } 50% { border-color: rgba(255,215,0,1) } 100% { border-color: rgba(255,215,0,0.4) } }
+        @keyframes mr-crackLine { 0% { opacity: 0; transform: scaleX(0) } 100% { opacity: 0.4; transform: scaleX(1) } }
       `}</style>
 
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        backdropFilter: revealed ? 'blur(8px)' : 'none',
-        backgroundColor: revealed ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+        backdropFilter: revealed ? 'blur(10px)' : 'none',
+        backgroundColor: revealed ? 'rgba(0,0,0,0.75)' : '#000',
         transition: 'background-color 0.3s, backdrop-filter 0.3s',
-        animation: tier === 'close-loss' && revealed ? 'mr-tiltSnap 0.4s ease-out forwards' : undefined,
+        animation: tier === 'close-loss' && revealed ? 'mr-tiltSnap 0.4s ease-out forwards' : tier === 'catastrophic' && revealed ? 'mr-screenShake 0.5s ease-out' : undefined,
       }}>
-        {/* Black screen overlay */}
-        {!revealed && (
-          <div style={{ position: 'absolute', inset: 0, backgroundColor: '#000', zIndex: 10000 }} />
+        {/* Black reveal */}
+        {!revealed && <div style={{ position: 'absolute', inset: 0, backgroundColor: '#000', zIndex: 10000 }} />}
+
+        {/* === Spotlight cone from above (all tiers) === */}
+        {revealed && (
+          <div style={{
+            position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+            width: '500px', height: '60%',
+            background: `linear-gradient(180deg, ${config.glowColor} 0%, transparent 100%)`,
+            clipPath: 'polygon(40% 0%, 60% 0%, 75% 100%, 25% 100%)',
+            opacity: 0.3, pointerEvents: 'none', zIndex: 1,
+            animation: 'mr-spotlight 3s ease-in-out infinite',
+          }} />
         )}
 
-        {/* === CATASTROPHIC effects === */}
+        {/* === CATASTROPHIC ambient effects === */}
         {tier === 'catastrophic' && revealed && (
           <>
-            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'red', animation: 'mr-redFlash 0.2s ease-out forwards', pointerEvents: 'none', zIndex: 1 }} />
-            <div style={{ position: 'absolute', inset: 0, animation: 'mr-screenShake 0.5s ease-out', pointerEvents: 'none', zIndex: 1 }} />
-            {/* Fire particles */}
-            {Array.from({ length: 15 }).map((_, i) => (
+            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'red', animation: 'mr-redFlash 0.3s ease-out forwards', pointerEvents: 'none', zIndex: 2 }} />
+            {['top', 'bottom'].map(pos => (
+              <div key={pos} style={{
+                position: 'absolute', [pos]: 0, left: 0, right: 0, height: '20px',
+                background: 'repeating-linear-gradient(45deg, #000 0px, #000 10px, #cc0000 10px, #cc0000 20px)',
+                backgroundSize: '40px 40px',
+                animation: 'mr-warningStripe 0.5s linear infinite',
+                pointerEvents: 'none', zIndex: 3, opacity: 0.7,
+              }} />
+            ))}
+            {Array.from({ length: 12 }).map((_, i) => (
               <div key={`fire-${i}`} style={{
-                position: 'absolute', bottom: '10%',
+                position: 'absolute', bottom: '5%',
                 left: `${10 + rng(i * 7) * 80}%`,
-                width: `${6 + rng(i * 3) * 8}px`, height: `${6 + rng(i * 3) * 8}px`,
+                width: `${6 + rng(i * 3) * 6}px`, height: `${6 + rng(i * 3) * 6}px`,
                 borderRadius: '50%',
                 background: `radial-gradient(circle, ${rng(i) > 0.5 ? '#FF6B00' : '#FF2020'}, transparent)`,
                 animation: `mr-fire ${1.5 + rng(i * 5) * 1.5}s ease-out ${rng(i * 2) * 0.8}s infinite`,
                 ['--fx' as string]: `${(rng(i * 11) - 0.5) * 40}px`,
-                pointerEvents: 'none', zIndex: 2,
-                willChange: 'transform, opacity',
+                pointerEvents: 'none', zIndex: 2, willChange: 'transform, opacity',
               } as React.CSSProperties} />
-            ))}
-            {/* Warning stripes top/bottom */}
-            {['top', 'bottom'].map(pos => (
-              <div key={pos} style={{
-                position: 'absolute', [pos]: 0, left: 0, right: 0, height: '24px',
-                background: 'repeating-linear-gradient(45deg, #000 0px, #000 10px, #cc0000 10px, #cc0000 20px)',
-                backgroundSize: '40px 40px',
-                animation: 'mr-warningStripe 0.5s linear infinite',
-                pointerEvents: 'none', zIndex: 3, opacity: 0.8,
-              }} />
             ))}
           </>
         )}
 
-        {/* === WIN effects === */}
+        {/* === WIN ambient effects === */}
         {tier === 'win' && revealed && (
           <>
-            {/* Spotlight beams */}
-            {[0, 1].map(i => (
-              <div key={`spot-${i}`} style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden', opacity: 0.15,
-              }}>
-                <div style={{
-                  position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%',
-                  background: `linear-gradient(${i ? '25deg' : '-25deg'}, transparent 40%, rgba(255,215,0,0.4) 50%, transparent 60%)`,
-                  animation: `mr-spotlight ${3 + i}s ease-in-out ${i * 1.5}s infinite`,
-                  willChange: 'transform',
-                }} />
-              </div>
-            ))}
-            {/* Gold coin particles */}
             {Array.from({ length: 20 }).map((_, i) => {
               const angle = (i / 20) * Math.PI * 2;
-              const dist = 100 + rng(i * 13) * 150;
+              const dist = 80 + rng(i * 13) * 120;
               return (
                 <div key={`coin-${i}`} style={{
-                  position: 'absolute', width: '12px', height: '12px', borderRadius: '50%',
+                  position: 'absolute', width: '10px', height: '10px', borderRadius: '50%',
                   background: 'radial-gradient(circle at 30% 30%, #FFE066, #B8860B)',
                   boxShadow: '0 0 4px rgba(255,215,0,0.6)',
                   ['--cx' as string]: `${Math.cos(angle) * dist}px`,
                   ['--cy' as string]: `${Math.sin(angle) * dist}px`,
-                  animation: `mr-coin ${1 + rng(i * 7) * 0.8}s cubic-bezier(0.25,0.46,0.45,0.94) ${0.5 + rng(i * 3) * 0.5}s forwards`,
-                  opacity: 0, pointerEvents: 'none', zIndex: 2,
-                  willChange: 'transform, opacity',
+                  animation: `mr-coin ${0.8 + rng(i * 7) * 0.6}s cubic-bezier(0.25,0.46,0.45,0.94) ${0.4 + rng(i * 3) * 0.4}s forwards`,
+                  opacity: 0, pointerEvents: 'none', zIndex: 2, willChange: 'transform, opacity',
                 } as React.CSSProperties} />
               );
             })}
-            {/* Confetti ribbons */}
-            {Array.from({ length: 35 }).map((_, i) => {
+            {Array.from({ length: 30 }).map((_, i) => {
               const colors = ['#FFD700', '#FF6B6B', '#4ade80', '#60a5fa', '#f59e0b', '#c084fc', '#fb7185', '#34d399'];
               return (
                 <div key={`conf-${i}`} style={{
                   position: 'absolute', top: '-10px',
-                  left: `${(i / 35) * 100}%`,
-                  width: `${3 + rng(i * 2) * 4}px`, height: `${15 + rng(i * 5) * 15}px`,
-                  backgroundColor: colors[i % colors.length],
-                  borderRadius: '1px',
+                  left: `${(i / 30) * 100}%`,
+                  width: `${3 + rng(i * 2) * 4}px`, height: `${12 + rng(i * 5) * 12}px`,
+                  backgroundColor: colors[i % colors.length], borderRadius: '1px',
                   ['--drift' as string]: `${(rng(i * 9) - 0.5) * 80}px`,
                   ['--rot' as string]: `${rng(i * 4) * 720}deg`,
-                  animation: `mr-confetti ${2.5 + rng(i * 6) * 2}s linear ${rng(i * 8) * 1.5}s infinite`,
-                  pointerEvents: 'none', zIndex: 2, opacity: 0,
-                  willChange: 'transform, opacity',
+                  animation: `mr-confetti ${2 + rng(i * 6) * 2}s linear ${rng(i * 8) * 1}s infinite`,
+                  pointerEvents: 'none', zIndex: 2, willChange: 'transform, opacity',
                 } as React.CSSProperties} />
               );
             })}
@@ -230,225 +272,349 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
 
         {/* === CLOSE WIN sparkles === */}
         {tier === 'close-win' && revealed && (
-          <>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={`sp-${i}`} style={{
-                position: 'absolute',
-                left: `${10 + rng(i * 7) * 80}%`,
-                top: `${10 + rng(i * 11) * 80}%`,
-                width: '8px', height: '8px',
-                clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
-                backgroundColor: '#e5e7eb',
-                animation: `mr-sparkle ${1 + rng(i * 3) * 1}s ease-in-out ${rng(i * 5) * 1.5}s infinite`,
-                pointerEvents: 'none', zIndex: 2,
-                willChange: 'transform, opacity',
-              }} />
-            ))}
-          </>
+          Array.from({ length: 8 }).map((_, i) => (
+            <div key={`sp-${i}`} style={{
+              position: 'absolute',
+              left: `${10 + rng(i * 7) * 80}%`, top: `${10 + rng(i * 11) * 80}%`,
+              width: '8px', height: '8px',
+              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+              backgroundColor: '#e5e7eb',
+              animation: `mr-sparkle ${1 + rng(i * 3) * 1}s ease-in-out ${rng(i * 5) * 1.5}s infinite`,
+              pointerEvents: 'none', zIndex: 2, willChange: 'transform, opacity',
+            }} />
+          ))
         )}
 
-        {/* === CLOSE LOSS crack + amber flash === */}
+        {/* === CLOSE LOSS amber flash === */}
         {tier === 'close-loss' && revealed && (
-          <>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'rgba(255,176,0,1)',
-              animation: 'mr-amberFlash 0.3s ease-out forwards',
-              pointerEvents: 'none', zIndex: 3,
-            }} />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: [
-                'linear-gradient(0deg, transparent 49.5%, rgba(255,255,255,0.3) 49.5%, rgba(255,255,255,0.3) 50.5%, transparent 50.5%)',
-                'linear-gradient(45deg, transparent 49.5%, rgba(255,255,255,0.2) 49.5%, rgba(255,255,255,0.2) 50.5%, transparent 50.5%)',
-                'linear-gradient(-45deg, transparent 49.5%, rgba(255,255,255,0.2) 49.5%, rgba(255,255,255,0.2) 50.5%, transparent 50.5%)',
-                'linear-gradient(90deg, transparent 49.5%, rgba(255,255,255,0.15) 49.5%, rgba(255,255,255,0.15) 50.5%, transparent 50.5%)',
-                'linear-gradient(22deg, transparent 49.5%, rgba(255,255,255,0.15) 49.5%, rgba(255,255,255,0.15) 50.5%, transparent 50.5%)',
-                'linear-gradient(-22deg, transparent 49.5%, rgba(255,255,255,0.1) 49.5%, rgba(255,255,255,0.1) 50.5%, transparent 50.5%)',
-              ].join(', '),
-              animation: 'mr-crackFade 3s ease-out 0.3s forwards',
-              pointerEvents: 'none', zIndex: 2, opacity: 0.6,
-            }} />
-          </>
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(255,176,0,0.8)',
+            animation: 'mr-amberFlash 0.3s ease-out forwards',
+            pointerEvents: 'none', zIndex: 3,
+          }} />
         )}
 
-        {/* === LOSS red vignette === */}
+        {/* === LOSS vignette === */}
         {tier === 'loss' && revealed && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(139,0,0,0.6) 100%)',
+            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(139,0,0,0.5) 100%)',
             animation: 'mr-redVignette 1s ease-out forwards',
             pointerEvents: 'none', zIndex: 1,
           }} />
         )}
 
-        {/* === RESULT CARD === */}
+        {/* ============== THE TICKET CARD ============== */}
         {revealed && (
           <div style={{
             position: 'relative', zIndex: 10,
-            width: '340px', maxWidth: '90vw',
-            perspective: tier === 'loss' ? '800px' : undefined,
+            width: '380px', maxWidth: '92vw',
+            opacity: 0,
+            animation: tier === 'win' ? 'mr-bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' :
+              tier === 'close-win' ? `mr-slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards` :
+              tier === 'close-loss' ? 'mr-dropSlam 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' :
+              tier === 'loss' && !flipped ? undefined :
+              tier === 'loss' ? 'mr-flipReveal 0.5s ease-out forwards' :
+              tier === 'catastrophic' ? 'mr-slamIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards' : 'mr-fadeIn 0.3s forwards',
+            ...(!flipped && tier === 'loss' ? { opacity: 1, transform: 'perspective(800px) rotateY(180deg)' } : {}),
           }}>
-            {/* Catastrophic skull */}
-            {tier === 'catastrophic' && (
-              <div style={{
-                textAlign: 'center', fontSize: '48px', color: '#cc0000',
-                animation: 'mr-skullSlam 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-                marginBottom: '8px', filter: 'drop-shadow(0 0 10px rgba(200,0,0,0.6))',
-                willChange: 'transform, opacity',
-              }}>☠</div>
-            )}
-
             <div style={{
               position: 'relative',
-              backgroundColor: '#1a1a2e',
+              background: `
+                repeating-linear-gradient(135deg, transparent, transparent 20px, rgba(212,175,55,0.02) 20px, rgba(212,175,55,0.02) 21px),
+                linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 100%)
+              `,
               borderRadius: '16px',
-              padding: '32px 24px 20px',
-              border: tier === 'win' ? '2px solid #FFD700' : tier === 'catastrophic' ? '2px solid #cc0000' : '1px solid rgba(255,255,255,0.1)',
+              border: `2px solid ${config.borderColor}`,
               overflow: 'hidden',
-              transformStyle: tier === 'loss' ? 'preserve-3d' : undefined,
-              animation: !flipped && tier === 'loss' ? undefined :
-                tier === 'win' ? 'mr-winCard 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' :
-                tier === 'close-win' ? 'mr-slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' :
-                tier === 'close-loss' ? 'mr-dropIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' :
-                tier === 'loss' ? 'mr-cardFlip 0.6s ease-out forwards' :
-                tier === 'catastrophic' ? 'mr-slamIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards' : undefined,
-              willChange: 'transform, opacity',
-              ...(tier === 'close-win' ? {
-                animation: `mr-slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, mr-greenGlow 2s ease-in-out 0.7s infinite`,
-              } : {}),
-              // Loss card back (before flip)
-              ...(!flipped && tier === 'loss' ? {
-                background: `repeating-linear-gradient(45deg, #1a1a2e 0px, #1a1a2e 15px, #222244 15px, #222244 16px), repeating-linear-gradient(-45deg, #1a1a2e 0px, #1a1a2e 15px, #222244 15px, #222244 16px)`,
-                transform: 'perspective(800px) rotateY(180deg)',
-              } : {}),
-              // VHS glitch on loss reveal
-              ...(flipped && tier === 'loss' ? {
-                animation: 'mr-cardFlip 0.6s ease-out forwards, mr-vhsGlitch 0.3s linear 0.6s',
-              } : {}),
+              boxShadow: `0 0 40px ${config.glowColor}, 0 20px 60px rgba(0,0,0,0.6)`,
+              animation: tier === 'win' ? 'mr-borderShimmer 2s ease-in-out infinite' :
+                tier === 'close-win' ? 'mr-greenPulse 2s ease-in-out infinite' : undefined,
             }}>
-              {/* Close-win shimmer overlay */}
+              {/* Perforated top edge */}
+              <div style={{
+                position: 'absolute', top: -1, left: 0, right: 0, height: '6px',
+                background: `radial-gradient(circle at 8px 0, transparent 4px, ${config.borderColor}22 4px)`,
+                backgroundSize: '16px 6px',
+                pointerEvents: 'none', zIndex: 10,
+              }} />
+
+              {/* Corner ornaments */}
+              {[{ top: 8, left: 8 }, { top: 8, right: 8 }, { bottom: 8, left: 8 }, { bottom: 8, right: 8 }].map((pos, i) => (
+                <div key={`corner-${i}`} style={{
+                  position: 'absolute', ...pos,
+                  width: '12px', height: '12px',
+                  border: `1px solid ${config.borderColor}`,
+                  transform: 'rotate(45deg)',
+                  opacity: 0.4, pointerEvents: 'none', zIndex: 5,
+                }} />
+              ))}
+
+              {/* Gold foil watermark */}
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: '120px', color: '#d4af37', opacity: 0.06,
+                fontFamily: 'Cinzel, serif', pointerEvents: 'none', zIndex: 0,
+                lineHeight: 1,
+              }}>✦</div>
+
+              {/* === TOP BANNER === */}
+              <div style={{
+                background: config.bannerBg,
+                padding: '14px 24px 12px',
+                textAlign: 'center',
+                position: 'relative',
+              }}>
+                <h2 style={{
+                  fontFamily: 'Cinzel, serif',
+                  fontSize: tier === 'win' || tier === 'catastrophic' ? '28px' : '22px',
+                  fontWeight: 900,
+                  margin: 0,
+                  color: config.bannerText,
+                  letterSpacing: '3px',
+                  animation: tier === 'win' ? 'mr-goldCycle 2s ease-in-out infinite' :
+                    tier === 'catastrophic' ? 'mr-flicker 2s infinite' : undefined,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                }}>{config.title}</h2>
+              </div>
+
+              {/* === CARD BODY === */}
+              <div style={{
+                padding: '24px 28px 20px',
+                textAlign: 'center',
+                position: 'relative',
+                zIndex: 2,
+              }}>
+                {/* Context label */}
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  color: '#b89a6a',
+                  marginBottom: '4px',
+                  textTransform: 'uppercase',
+                }}>
+                  {context === 'buying' ? 'PROPERTY PURCHASE' : 'RENT PAYMENT'}
+                </div>
+
+                {/* Casino lingo */}
+                <div style={{
+                  fontFamily: 'Cinzel, serif',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  letterSpacing: '1px',
+                  color: config.amountColor,
+                  marginBottom: '20px',
+                  textShadow: `0 0 10px ${config.glowColor}`,
+                }}>
+                  {config.lingo[context]}
+                </div>
+
+                {/* === TIER ICON === */}
+                <div style={{
+                  fontSize: '48px',
+                  lineHeight: 1,
+                  marginBottom: '12px',
+                  color: config.amountColor,
+                  filter: `drop-shadow(0 0 8px ${config.glowColor})`,
+                  animation: tier === 'catastrophic' ? 'mr-flicker 1.5s infinite' : undefined,
+                }}>
+                  {config.icon}
+                </div>
+
+                {/* === DOLLAR AMOUNT — ODOMETER === */}
+                {tier !== 'win' && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '3px', marginBottom: '8px',
+                  }}>
+                    {digits.map((d, i) => (
+                      <div key={i} style={{
+                        width: d === '$' ? '24px' : '22px',
+                        height: '38px',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(212,175,55,0.2)',
+                        borderRadius: '4px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'Cinzel, serif',
+                        fontSize: d === '$' ? '22px' : '20px',
+                        fontWeight: 900,
+                        color: d === '$' ? '#d4af37' : config.amountColor,
+                        textShadow: `0 0 6px ${config.glowColor}`,
+                        animation: `mr-digitIn 0.3s ease-out ${0.4 + i * 0.08}s both`,
+                        willChange: 'transform, opacity',
+                      }}>{d}</div>
+                    ))}
+
+                    {/* Multiplier chip */}
+                    {multiplierLabel && (
+                      <div style={{
+                        width: '32px', height: '32px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #2a0f1f, #1a0f0f)',
+                        border: `2px solid ${config.borderColor}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'Nunito, sans-serif',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        color: config.amountColor,
+                        marginLeft: '6px',
+                        boxShadow: `0 0 8px ${config.glowColor}`,
+                        position: 'relative',
+                      }}>
+                        {/* Chip inner ring */}
+                        <div style={{
+                          position: 'absolute', inset: '3px',
+                          borderRadius: '50%',
+                          border: `1px dashed ${config.borderColor}55`,
+                          pointerEvents: 'none',
+                        }} />
+                        {multiplierLabel}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* WIN special: no amount, just big text */}
+                {tier === 'win' && (
+                  <div style={{
+                    fontFamily: 'Cinzel, serif',
+                    fontSize: '24px',
+                    fontWeight: 900,
+                    color: '#FFD700',
+                    textShadow: '0 0 15px rgba(255,215,0,0.5)',
+                    marginBottom: '8px',
+                  }}>
+                    {context === 'buying' ? 'FREE' : '$0'}
+                  </div>
+                )}
+
+                {/* Base amount struck through */}
+                {tier !== 'win' && (
+                  <div style={{
+                    fontFamily: 'Nunito, sans-serif',
+                    fontSize: '12px',
+                    color: '#b89a6a',
+                    marginBottom: '20px',
+                    opacity: 0.7,
+                  }}>
+                    <span style={{ textDecoration: 'line-through', marginRight: '8px' }}>${baseAmount}</span>
+                    <span style={{ color: config.amountColor }}>→ ${amount}</span>
+                  </div>
+                )}
+
+                {/* Loss floating dollar signs */}
+                {tier === 'loss' && flipped && (
+                  <div style={{ position: 'absolute', top: '40%', left: '50%', pointerEvents: 'none', zIndex: 20 }}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={`ds-${i}`} style={{
+                        position: 'absolute',
+                        left: `${(rng(i * 17) - 0.5) * 60}px`,
+                        fontFamily: 'Cinzel, serif', fontSize: '16px',
+                        color: 'rgba(248,113,113,0.6)',
+                        animation: `mr-floatUp 1.2s ease-out ${i * 0.15}s forwards`,
+                        opacity: 0, willChange: 'transform, opacity',
+                      }}>$</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* === CONTINUE CHIP-BUTTON === */}
+                <button onClick={onDismiss} style={{
+                  fontFamily: 'Cinzel, serif',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  padding: '10px 36px',
+                  border: '2px solid #d4af37',
+                  borderRadius: '24px',
+                  background: 'linear-gradient(180deg, #d4af37, #8b7320)',
+                  color: '#1a0f0f',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 5,
+                  boxShadow: '0 0 12px rgba(212,175,55,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  animation: 'mr-chipFloat 2s ease-in-out 1s infinite',
+                  willChange: 'transform',
+                  transition: 'box-shadow 0.2s',
+                }}>
+                  {/* Inner dashed ring */}
+                  <div style={{
+                    position: 'absolute', inset: '4px',
+                    borderRadius: '20px',
+                    border: '1px dashed rgba(255,255,255,0.2)',
+                    pointerEvents: 'none',
+                  }} />
+                  CONTINUE ▸
+                </button>
+              </div>
+
+              {/* Stamp overlay */}
+              {config.stamp && (
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: `translate(-50%, -50%) rotate(${config.stamp.rotation}deg)`,
+                  fontFamily: 'Cinzel, serif',
+                  fontSize: '42px',
+                  fontWeight: 900,
+                  letterSpacing: '8px',
+                  color: config.stamp.color,
+                  pointerEvents: 'none',
+                  zIndex: 3,
+                  whiteSpace: 'nowrap',
+                  userSelect: 'none',
+                }}>
+                  {config.stamp.text}
+                </div>
+              )}
+
+              {/* Close loss hairline crack */}
+              {tier === 'close-loss' && (
+                <div style={{
+                  position: 'absolute', top: '35%', left: '10%', right: '10%',
+                  height: '1px',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                  transform: 'rotate(-5deg)',
+                  animation: 'mr-crackLine 0.5s ease-out 0.5s both',
+                  pointerEvents: 'none', zIndex: 4,
+                }} />
+              )}
+
+              {/* Shimmer sweep (close-win) */}
               {tier === 'close-win' && (
                 <div style={{
-                  position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: '16px', pointerEvents: 'none', zIndex: 1,
+                  position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: '16px', pointerEvents: 'none', zIndex: 4,
                 }}>
                   <div style={{
                     position: 'absolute', inset: 0,
-                    background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%)',
+                    background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)',
                     animation: 'mr-shimmer 2.5s ease-in-out 1s infinite',
                     willChange: 'transform',
                   }} />
                 </div>
               )}
 
-              {/* Win chase lights border */}
-              {tier === 'win' && (
-                <div style={{ position: 'absolute', inset: '-2px', borderRadius: '18px', overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-                  {Array.from({ length: 16 }).map((_, i) => {
-                    const total = 16;
-                    const pct = (i / total) * 100;
-                    // Place dots around perimeter
-                    const perim = 2 * (340 + 200); // approx perimeter
-                    const pos = (i / total) * perim;
-                    let x = 0, y = 0;
-                    if (pos < 340) { x = pos; y = 0; }
-                    else if (pos < 340 + 200) { x = 340; y = pos - 340; }
-                    else if (pos < 680 + 200) { x = 340 - (pos - 540); y = 200; }
-                    else { x = 0; y = 200 - (pos - 880); }
-                    return (
-                      <div key={`cl-${i}`} style={{
-                        position: 'absolute',
-                        left: `${(x / 344) * 100}%`, top: `${(y / 204) * 100}%`,
-                        width: '4px', height: '4px', borderRadius: '50%',
-                        backgroundColor: '#FFD700',
-                        opacity: 0.8,
-                        animation: `mr-sparkle 1s ease-in-out ${(i / total) * 1}s infinite`,
-                      }} />
-                    );
-                  })}
-                </div>
+              {/* Loss VHS glitch */}
+              {tier === 'loss' && flipped && (
+                <div style={{
+                  position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
+                  animation: 'mr-glitch 0.3s linear 0.5s',
+                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)',
+                }} />
               )}
 
-              {/* Card content */}
-              <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
-                <h2 style={{
-                  fontFamily: 'Cinzel, serif',
-                  fontSize: tier === 'win' || tier === 'catastrophic' ? '32px' : '26px',
-                  margin: '0 0 8px',
-                  color: tier === 'win' ? '#FFD700' : tier === 'close-win' ? '#4ade80' : tier === 'close-loss' ? '#fbbf24' : tier === 'loss' ? '#f87171' : '#ef4444',
-                  textShadow: tier === 'win' ? '0 0 20px rgba(255,215,0,0.6)' : tier === 'catastrophic' ? '0 0 15px rgba(255,0,0,0.5)' : undefined,
-                  animation: tier === 'win' ? 'mr-goldCycle 2s ease-in-out infinite' : tier === 'catastrophic' ? 'mr-flicker 2s infinite' : undefined,
-                  letterSpacing: '2px',
-                }}>{title}</h2>
-
-                <p style={{
-                  fontFamily: 'Nunito, sans-serif',
-                  fontSize: '15px',
-                  color: 'rgba(255,255,255,0.8)',
-                  margin: '0 0 16px',
-                  lineHeight: 1.5,
-                }}>
-                  {tier === 'win' ? description : (
-                    context === 'buying'
-                      ? `${tier === 'close-win' ? 'GOT IT FOR' : 'LOST'} $${displayAmount}${tier === 'close-win' ? ' (50% OFF)' : tier === 'close-loss' ? ' (1.5× PENALTY)' : tier === 'loss' ? ' (2× PENALTY)' : ' (5× PENALTY)'}`
-                      : `PAID $${displayAmount} RENT (${tier === 'close-win' ? '50%' : tier === 'close-loss' ? '1.5×' : tier === 'loss' ? '2×' : '5×'})`
-                  )}
-                </p>
-
-                {/* Loss floating dollar signs */}
-                {tier === 'loss' && flipped && (
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', pointerEvents: 'none' }}>
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <span key={`ds-${i}`} style={{
-                        position: 'absolute',
-                        left: `${(rng(i * 17) - 0.5) * 80}px`,
-                        fontFamily: 'Cinzel, serif',
-                        fontSize: '18px',
-                        color: 'rgba(248,113,113,0.7)',
-                        animation: `mr-floatUp 1.5s ease-out ${i * 0.2}s forwards`,
-                        opacity: 0,
-                        willChange: 'transform, opacity',
-                      }}>$</span>
-                    ))}
-                  </div>
-                )}
-
-                {tier !== 'win' && (
-                  <div style={{
-                    fontFamily: 'Nunito, sans-serif',
-                    fontSize: '12px',
-                    color: 'rgba(255,255,255,0.4)',
-                    marginBottom: '16px',
-                  }}>BASE: ${baseAmount}</div>
-                )}
-
-                <button onClick={onDismiss} style={{
-                  fontFamily: 'Cinzel, serif',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  letterSpacing: '2px',
-                  padding: '10px 32px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #B8860B, #FFD700, #B8860B)',
-                  color: '#1a1a2e',
-                  cursor: 'pointer',
-                  animation: 'mr-btnPulse 2s ease-in-out 1s infinite',
-                  willChange: 'transform, box-shadow',
-                  position: 'relative',
-                  zIndex: 5,
-                }}>CONTINUE</button>
-              </div>
-
-              {/* Auto-dismiss progress bar */}
+              {/* Auto-dismiss progress */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px',
-                backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '0 0 16px 16px', overflow: 'hidden',
+                backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden',
               }}>
                 <div style={{
                   height: '100%',
-                  background: 'linear-gradient(90deg, #B8860B, #FFD700)',
-                  animation: 'mr-progressBar 8s linear forwards',
+                  background: `linear-gradient(90deg, ${config.borderColor}, ${config.amountColor})`,
+                  animation: 'mr-progressRing 8s linear forwards',
                   willChange: 'width',
                 }} />
               </div>
