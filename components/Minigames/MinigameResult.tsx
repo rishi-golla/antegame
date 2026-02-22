@@ -186,8 +186,8 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
-        backdropFilter: revealed ? 'blur(10px)' : 'none',
-        backgroundColor: revealed ? 'rgba(0,0,0,0.75)' : '#000',
+        backdropFilter: (revealed && (tier !== 'loss' || flipped)) ? 'blur(10px)' : 'none',
+        backgroundColor: (revealed && (tier !== 'loss' || flipped)) ? 'rgba(0,0,0,0.75)' : '#000',
         transition: 'background-color 0.3s, backdrop-filter 0.3s',
         animation: tier === 'close-loss' && revealed ? 'mr-tiltSnap 0.4s ease-out forwards' : tier === 'catastrophic' && revealed ? 'mr-screenShake 0.5s ease-out' : undefined,
       }}>
