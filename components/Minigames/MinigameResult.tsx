@@ -164,9 +164,10 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
         @keyframes mr-floatUp { 0% { opacity: 0.8; transform: translateY(0) } 100% { opacity: 0; transform: translateY(-50px) } }
         @keyframes mr-glitch { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-3px) } 50% { transform: translateX(2px) } 75% { transform: translateX(-2px) } }
         @keyframes mr-redFlash { 0% { opacity: 0 } 30% { opacity: 0.6 } 100% { opacity: 0 } }
+        @keyframes mr-redPulse { 0%, 100% { opacity: 0.6 } 50% { opacity: 1 } }
         @keyframes mr-screenShake { 0%,100% { transform: translate(0,0) } 10% { transform: translate(-4px,2px) } 30% { transform: translate(3px,-3px) } 50% { transform: translate(-3px,3px) } 70% { transform: translate(4px,-1px) } 90% { transform: translate(-1px,-2px) } }
         @keyframes mr-fire { 0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.9 } 100% { transform: translateY(-100px) translateX(var(--fx)) scale(0.2); opacity: 0 } }
-        @keyframes mr-warningStripe { from { background-position-x: 0 } to { background-position-x: 40px } }
+        /* warningStripe removed — replaced with vignette */
         @keyframes mr-flicker { 0%,100% { opacity: 1 } 5% { opacity: 0.3 } 15% { opacity: 0.5 } 20% { opacity: 1 } }
         @keyframes mr-skullSlam { 0% { transform: scale(3) translateY(-30px); opacity: 0 } 50% { transform: scale(1) translateY(5px); opacity: 1 } 70% { transform: scale(1.1) translateY(-3px) } 100% { transform: scale(1) translateY(0) } }
         @keyframes mr-sparkle { 0%,100% { opacity: 0; transform: scale(0.5) } 50% { opacity: 1; transform: scale(1.2) } }
@@ -201,21 +202,20 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
         {/* === CATASTROPHIC ambient effects === */}
         {tier === 'catastrophic' && revealed && (
           <>
-            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'red', animation: 'mr-redFlash 0.3s ease-out forwards', pointerEvents: 'none', zIndex: 2 }} />
-            {['top', 'bottom'].map(pos => (
-              <div key={pos} style={{
-                position: 'absolute', [pos]: 0, left: 0, right: 0, height: '20px',
-                background: 'repeating-linear-gradient(45deg, #000 0px, #000 10px, #cc0000 10px, #cc0000 20px)',
-                backgroundSize: '40px 40px',
-                animation: 'mr-warningStripe 0.5s linear infinite',
-                pointerEvents: 'none', zIndex: 3, opacity: 0.7,
-              }} />
-            ))}
-            {Array.from({ length: 12 }).map((_, i) => (
+            {/* Brief red flash */}
+            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(180,0,0,0.4)', animation: 'mr-redFlash 0.4s ease-out forwards', pointerEvents: 'none', zIndex: 2 }} />
+            {/* Red vignette border */}
+            <div style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3,
+              boxShadow: 'inset 0 0 60px rgba(200,0,0,0.4), inset 0 0 120px rgba(100,0,0,0.2)',
+              animation: 'mr-redPulse 2s ease-in-out infinite',
+            }} />
+            {/* Ember particles */}
+            {Array.from({ length: 8 }).map((_, i) => (
               <div key={`fire-${i}`} style={{
                 position: 'absolute', bottom: '5%',
                 left: `${10 + rng(i * 7) * 80}%`,
-                width: `${6 + rng(i * 3) * 6}px`, height: `${6 + rng(i * 3) * 6}px`,
+                width: `${4 + rng(i * 3) * 4}px`, height: `${4 + rng(i * 3) * 4}px`,
                 borderRadius: '50%',
                 background: `radial-gradient(circle, ${rng(i) > 0.5 ? '#FF6B00' : '#FF2020'}, transparent)`,
                 animation: `mr-fire ${1.5 + rng(i * 5) * 1.5}s ease-out ${rng(i * 2) * 0.8}s infinite`,
