@@ -45,10 +45,10 @@ const TIER_CONFIG: Record<MinigameTier, {
   win: {
     title: '★ JACKPOT ★',
     icon: '♛',
-    bannerBg: 'linear-gradient(135deg, #FFD700, #FFF8E1, #FFD700)',
-    bannerText: '#1a0f0f',
+    bannerBg: 'linear-gradient(135deg, #1a0f0f, #2a1520, #1a0f0f)',
+    bannerText: '#FFD700',
     borderColor: '#FFD700',
-    glowColor: 'rgba(255,215,0,0.4)',
+    glowColor: 'rgba(255,215,0,0.6)',
     amountColor: '#4ade80',
     lingo: { buying: 'FREE PROPERTY', rent: 'RENT DODGED' },
   },

@@ -584,7 +584,8 @@ input {
 /* Railroad & Utility tiles — smaller text for longer names */
 .tile[data-type="railroad"] span,
 .tile[data-type="utility"] span {
-  font-size: 0.48rem;
+  font-size: 0.4rem;
+  letter-spacing: 0;
 }
 
 .tile-corner {

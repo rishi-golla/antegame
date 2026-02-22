@@ -31,7 +31,7 @@ function randomCard(): CardData {
 }
 
 function suitColor(suit: string): string {
-  return suit === '♥' || suit === '♦' ? '#dc2626' : '#e8e8e8';
+  return suit === '♥' || suit === '♦' ? '#dc2626' : '#1a1a2e';
 }
 
 const STYLES = `
