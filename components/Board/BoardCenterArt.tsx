@@ -75,10 +75,15 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
   // Countdown timer config per phase
   const timerPhases: Record<string, number> = {
+    'pre-roll': 15,
     buying: 30,
     rolling: 15,
     'paying-rent': 20,
     'in-debt': 30,
+    'drawing-card': 10,
+    'applying-card': 10,
+    'turn-end': 10,
+    'in-jail': 20,
   };
   const timerDuration = timerPhases[state.phase] ?? 0;
   const showTimer = isMyTurn && timerDuration > 0 && !isRolling && !isAnimating;
@@ -101,6 +106,22 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       case 'in-debt':
         play('sfx/bankruptcy');
         dispatch({ type: 'BANKRUPTCY' });
+        break;
+      case 'pre-roll':
+        play('sfx/dice-shake');
+        dispatch({ type: 'ROLL' });
+        break;
+      case 'drawing-card':
+        dispatch({ type: 'APPLY_CARD' });
+        break;
+      case 'applying-card':
+        dispatch({ type: 'APPLY_CARD' });
+        break;
+      case 'turn-end':
+        dispatch({ type: 'END_TURN' });
+        break;
+      case 'in-jail':
+        dispatch({ type: 'JAIL_ESCAPE', method: 'roll' });
         break;
     }
   };
