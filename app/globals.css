@@ -7957,104 +7957,117 @@ img[src*="/assets/"] {
   margin-top: 6px;
   background: var(--burgundy);
   border: 2px solid var(--gold);
-  padding: 16px;
-  min-width: 300px;
-  max-width: 340px;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 380px;
+  max-width: 420px;
   z-index: 1001;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.1);
 }
 
 .referralPanelTitle {
   font-family: 'Cinzel', serif;
-  font-size: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--gold-bright);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  letter-spacing: 0.06em;
 }
 
 .referralPanelDesc {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.35rem;
+  font-size: 0.85rem;
   color: #ccc;
   line-height: 1.6;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .referralPanelDesc strong {
   color: var(--gold-bright);
+  font-weight: 800;
 }
 
 .referralLinkRow {
   display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
 .referralLinkInput {
   flex: 1;
-  padding: 6px 8px;
+  padding: 10px 12px;
   background: #0d0808;
-  border: 1px solid #333;
-  color: #ccc;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  color: #e0d8c8;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.55rem;
+  font-size: 0.8rem;
   outline: none;
   min-width: 0;
 }
 
 .referralLinkInput:focus {
   border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
 }
 
 .referralCopyBtn {
-  padding: 6px 12px;
+  padding: 10px 18px;
   background: var(--gold);
   border: none;
+  border-radius: 8px;
   color: #1a0f0f;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.4rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 800;
   white-space: nowrap;
+  transition: background 0.2s, transform 0.1s;
 }
 
 .referralCopyBtn:hover {
   background: var(--gold-bright);
+  transform: translateY(-1px);
 }
 
 .referralStats {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .referralStatRow {
   display: flex;
   justify-content: space-between;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.35rem;
-  color: #aaa;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #bbb;
 }
 
 .referralStatVal {
   color: var(--gold-bright);
+  font-weight: 800;
 }
 
 .referralLoading {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.35rem;
+  font-size: 0.85rem;
   color: #666;
   text-align: center;
-  padding: 8px;
+  padding: 12px;
 }
 
 .referralDisclaimer {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.28rem;
-  color: #666;
+  font-size: 0.7rem;
+  color: #777;
   line-height: 1.5;
-  border-top: 1px solid #333;
-  padding-top: 8px;
+  border-top: 1px solid rgba(212, 175, 55, 0.15);
+  padding-top: 12px;
   margin: 0;
+  font-style: italic;
 }
 
 /* ===== QUICK PLAY / FEE CHIPS ===== */
