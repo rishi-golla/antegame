@@ -160,7 +160,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
       background: 'linear-gradient(180deg, #1a0a0a 0%, #0d0505 100%)',
-      borderRadius: '16px', padding: '20px 16px', border: '1px solid #3d2a0a',
+      borderRadius: '16px', padding: '20px 24px', border: '1px solid #3d2a0a', maxWidth: '95%', margin: '0 auto',
       boxShadow: '0 0 40px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
       fontFamily: "'Nunito', sans-serif",
     }}>

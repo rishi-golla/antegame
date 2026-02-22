@@ -205,13 +205,15 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
       setTimeout(() => onResult(tier), 2000);
     }
 
-    setTimeout(() => {
-      setRound(newRound);
-      setRoundRevealed(false);
-      setRoundResult(null);
-      setPlayerCard(null);
-      setHouseCard(null);
-    }, 1500);
+    if (newRound < 3) {
+      setTimeout(() => {
+        setRound(newRound);
+        setRoundRevealed(false);
+        setRoundResult(null);
+        setPlayerCard(null);
+        setHouseCard(null);
+      }, 1500);
+    }
   }, [round, playerWins, houseWins, onResult, play]);
 
   useEffect(() => {

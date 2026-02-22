@@ -340,10 +340,10 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
           <div style={{ fontSize: '13px', color: 'rgba(212,175,55,0.6)', marginBottom: '12px', letterSpacing: '1px' }}>
             Will the next card be higher or lower?
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', padding: '0 16px' }}>
             <button onClick={() => makeGuess(true)} disabled={spectator} style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
-              padding: '14px 36px', borderRadius: '50px',
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '15px',
+              padding: '12px 28px', borderRadius: '12px',
               background: 'linear-gradient(180deg, #d4af37 0%, #a68628 100%)',
               color: '#1a0f0f', border: '2px solid #ffd700',
               cursor: spectator ? 'not-allowed' : 'pointer',
@@ -352,8 +352,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
               transition: 'transform 0.1s',
             }}>▲ HIGHER</button>
             <button onClick={() => makeGuess(false)} disabled={spectator} style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
-              padding: '14px 36px', borderRadius: '50px',
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '15px',
+              padding: '12px 28px', borderRadius: '12px',
               background: 'linear-gradient(180deg, #8b6914 0%, #5a4a20 100%)',
               color: '#fff8e7', border: '2px solid #d4af37',
               cursor: spectator ? 'not-allowed' : 'pointer',

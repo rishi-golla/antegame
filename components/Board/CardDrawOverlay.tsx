@@ -473,7 +473,7 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
                 <div style={{
                   height: '100%',
                   background: `linear-gradient(90deg, ${isRisk ? '#991b1b' : '#4a1942'}, ${isRisk ? '#ef4444' : '#8b5cf6'})`,
-                  animation: 'cdo-progress 1.8s linear forwards',
+                  animation: 'cdo-progress 1.2s linear forwards',
                   willChange: 'width',
                 }} />
               </div>
