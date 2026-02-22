@@ -30,7 +30,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
       applyCardTimerRef.current = setTimeout(() => {
         dispatch({ type: 'APPLY_CARD' });
-      }, 3400);
+      }, 1800);
     }
     return () => {
       if (applyCardTimerRef.current) clearTimeout(applyCardTimerRef.current);

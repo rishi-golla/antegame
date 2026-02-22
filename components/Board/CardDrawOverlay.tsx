@@ -219,10 +219,10 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
   const effectCfg = EFFECT_ICONS[card.effect.kind] || EFFECT_ICONS['collect'];
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('lift'), 200);
-    const t2 = setTimeout(() => setPhase('flip'), 500);
-    const t3 = setTimeout(() => setPhase('reveal'), 900);
-    const t4 = setTimeout(onDismiss, 3400); // 0.9s animation + 2.5s read time
+    const t1 = setTimeout(() => setPhase('lift'), 150);
+    const t2 = setTimeout(() => setPhase('flip'), 350);
+    const t3 = setTimeout(() => setPhase('reveal'), 600);
+    const t4 = setTimeout(onDismiss, 1800);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [onDismiss]);
 
@@ -473,7 +473,7 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
                 <div style={{
                   height: '100%',
                   background: `linear-gradient(90deg, ${isRisk ? '#991b1b' : '#4a1942'}, ${isRisk ? '#ef4444' : '#8b5cf6'})`,
-                  animation: 'cdo-progress 3.4s linear forwards',
+                  animation: 'cdo-progress 1.8s linear forwards',
                   willChange: 'width',
                 }} />
               </div>
