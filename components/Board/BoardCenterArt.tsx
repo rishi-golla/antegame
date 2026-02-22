@@ -6,6 +6,7 @@ import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
 import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
+import CardDrawOverlay from '@/components/Board/CardDrawOverlay';
 
 interface BoardCenterArtProps {
   isRolling: boolean;
@@ -29,7 +30,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
       applyCardTimerRef.current = setTimeout(() => {
         dispatch({ type: 'APPLY_CARD' });
-      }, 800);
+      }, 3400);
     }
     return () => {
       if (applyCardTimerRef.current) clearTimeout(applyCardTimerRef.current);
@@ -214,47 +215,10 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
 
       {/* Full-screen card overlay (renders via portal-style positioning) */}
       {state.drawnCard && !isRolling && (
-        <div className="cardOverlayFullscreen">
-          <div className="cardOverlayBackdrop" />
-          <div className={`cardOverlayCard ${state.drawnCard.deckType === 'chance' ? 'cardRisk' : 'cardBlind'}`}>
-            <div className="cardOverlayCorner cardCornerTL" />
-            <div className="cardOverlayCorner cardCornerTR" />
-            <div className="cardOverlayCorner cardCornerBL" />
-            <div className="cardOverlayCorner cardCornerBR" />
-            <div className="cardOverlayDeckLabel">
-              {state.drawnCard.deckType === 'chance' ? 'RISK' : 'BLIND CHEST'}
-            </div>
-            <div className="cardOverlayDivider" />
-            <div className="cardOverlayIcon">
-              {state.drawnCard.effect.kind === 'collect' && '💰'}
-              {state.drawnCard.effect.kind === 'pay' && '🔥'}
-              {state.drawnCard.effect.kind === 'move-to' && '🚀'}
-              {state.drawnCard.effect.kind === 'move-relative' && '↩️'}
-              {state.drawnCard.effect.kind === 'go-to-jail' && '⛓️'}
-              {state.drawnCard.effect.kind === 'get-out-of-jail' && '🗝️'}
-              {state.drawnCard.effect.kind === 'collect-from-each' && '🎂'}
-              {state.drawnCard.effect.kind === 'pay-each-player' && '💸'}
-              {state.drawnCard.effect.kind === 'repairs' && '🔧'}
-              {state.drawnCard.effect.kind === 'nearest-railroad' && '🚂'}
-              {state.drawnCard.effect.kind === 'nearest-utility' && '⚡'}
-            </div>
-            <p className="cardOverlayText">{state.drawnCard.text}</p>
-            <div className="cardOverlayDivider" />
-            <div className="cardOverlayFooter">
-              {state.drawnCard.effect.kind === 'collect' && `+$${state.drawnCard.effect.amount}`}
-              {state.drawnCard.effect.kind === 'pay' && `-$${state.drawnCard.effect.amount}`}
-              {state.drawnCard.effect.kind === 'move-to' && 'MOVE'}
-              {state.drawnCard.effect.kind === 'move-relative' && 'MOVE'}
-              {state.drawnCard.effect.kind === 'go-to-jail' && 'JAIL'}
-              {state.drawnCard.effect.kind === 'get-out-of-jail' && 'FREE'}
-              {state.drawnCard.effect.kind === 'collect-from-each' && `+$${state.drawnCard.effect.amount} EACH`}
-              {state.drawnCard.effect.kind === 'pay-each-player' && `-$${state.drawnCard.effect.amount} EACH`}
-              {state.drawnCard.effect.kind === 'repairs' && 'REPAIRS'}
-              {state.drawnCard.effect.kind === 'nearest-railroad' && 'MOVE'}
-              {state.drawnCard.effect.kind === 'nearest-utility' && 'MOVE'}
-            </div>
-          </div>
-        </div>
+        <CardDrawOverlay
+          card={state.drawnCard}
+          onDismiss={() => dispatch({ type: 'APPLY_CARD' })}
+        />
       )}
 
       {/* Buy/Gamble/Decline buttons */}
