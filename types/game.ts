@@ -25,7 +25,7 @@ export interface PropertyTile {
   type: 'property';
   colorGroup: ColorGroup;
   price: number;
-  rent: [number, number, number, number, number, number]; // base, set, 1h, 2h, 3h, 4h/hotel
+  rent: [number, number, number, number, number, number, number]; // base, set, 1h, 2h, 3h, 4h, hotel
   houseCost: number;
   mortgageValue: number;
 }

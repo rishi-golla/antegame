@@ -120,6 +120,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+  background: #0a0a0a;
 }
 
 body {
@@ -197,7 +198,15 @@ input {
   display: flex;
   flex-direction: column;
   padding: 12px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.leftPanel::-webkit-scrollbar,
+.rightPanel::-webkit-scrollbar {
+  display: none;
 }
 
 .leftPanel {
@@ -303,6 +312,7 @@ input {
 .bubbleAvatar {
   width: 48px;
   height: 48px;
+  flex-shrink: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -693,11 +703,14 @@ input {
   left: 4px;
   top: 4px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
   z-index: 2;
+  max-width: calc(100% - 8px);
 }
 
 .tokenStack .token + .token {
-  margin-left: -8px;
+  margin-left: 0;
 }
 
 .token {
@@ -751,12 +764,13 @@ input {
 
 .deckStack {
   position: absolute;
-  width: clamp(98px, 12vw, 132px);
+  width: clamp(72px, 9vw, 100px);
   transition: transform 180ms ease, filter 180ms ease;
 }
 
 .deckStack .deckImg {
   width: 100%;
+  border-radius: 8px;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
 }
 
@@ -813,7 +827,7 @@ input {
   margin: 0;
   position: absolute;
   left: 50%;
-  bottom: 14%;
+  bottom: 8%;
   transform: translateX(-50%);
   font-size: 0.75rem;
   letter-spacing: 0.12em;
@@ -1060,9 +1074,18 @@ input {
   animation: fadeUp 280ms ease both;
 }
 
+.bubbleText {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 .bubbleText p {
   margin: 2px 0 0;
   color: var(--ink-secondary);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .logFeed {
@@ -1121,7 +1144,8 @@ input {
   overflow: hidden;
 }
 
-.inputRow input {
+.inputRow input,
+.inputRow textarea {
   flex: 1;
   min-width: 0;
   border-radius: 10px;
@@ -1132,14 +1156,18 @@ input {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
   outline: none;
   font-size: 0.8rem;
+  font-family: 'Nunito', sans-serif;
+  line-height: 1.3;
 }
 
 .inputRow button {
   flex-shrink: 0;
   white-space: nowrap;
+  align-self: flex-end;
 }
 
-.inputRow input:focus {
+.inputRow input:focus,
+.inputRow textarea:focus {
   border-color: var(--gold);
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 8px rgba(212, 175, 55, 0.2);
 }
@@ -1493,8 +1521,8 @@ input {
   z-index: 10;
   display: flex;
   align-items: stretch;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: 14px;
   background: rgba(8, 4, 6, 0.7);
   backdrop-filter: blur(16px);
@@ -1529,10 +1557,10 @@ input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 120px;
-  padding: 12px 24px;
+  min-width: 100px;
+  padding: 9px 20px;
   font-family: 'Cinzel', serif;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #fff !important;
@@ -1577,9 +1605,9 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 9px 20px;
   font-family: 'Nunito', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1609,7 +1637,7 @@ input {
 .jailActions {
   position: absolute;
   left: 50%;
-  bottom: 6%;
+  bottom: 1%;
   transform: translateX(-50%);
   display: flex;
   gap: 8px;
@@ -1707,10 +1735,11 @@ input {
 /* ===== SETUP SCREEN ===== */
 
 .setupScreen {
-  height: 100vh;
+  min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 20px;
+  overflow-y: auto;
   background: url('/assets/ui/lobby-bg.webp') center/cover no-repeat fixed;
   position: relative;
 }
@@ -1726,6 +1755,10 @@ input {
 .setupCard {
   width: 100%;
   max-width: 680px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border-radius: 20px;
   border: 1px solid rgba(212, 175, 55, 0.35);
   background: linear-gradient(180deg, rgba(26, 15, 15, 0.97), rgba(18, 10, 10, 0.95));
@@ -1737,6 +1770,10 @@ input {
   text-align: center;
   position: relative;
   z-index: 1;
+}
+
+.setupCard::-webkit-scrollbar {
+  display: none;
 }
 
 .setupTitle {
@@ -2316,6 +2353,10 @@ input {
 .gameOverCard {
   width: 100%;
   max-width: 400px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border-radius: var(--radius-xl);
   border: 2px solid rgba(212, 175, 55, 0.6);
   background: linear-gradient(180deg, rgba(30, 15, 22, 0.97), rgba(18, 10, 15, 0.97));
@@ -2326,6 +2367,10 @@ input {
   padding: 36px;
   text-align: center;
   animation: gameOverPop 0.4s var(--ease-bounce);
+}
+
+.gameOverCard::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes gameOverPop {
@@ -2482,6 +2527,10 @@ input {
 .lobbyCard {
   width: 100%;
   max-width: 700px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border-radius: 20px;
   border: 1px solid rgba(212, 175, 55, 0.35);
   background: linear-gradient(180deg, rgba(26, 15, 15, 0.95), rgba(18, 10, 10, 0.92));
@@ -2490,6 +2539,10 @@ input {
     inset 0 1px 0 rgba(212, 175, 55, 0.15),
     0 20px 40px rgba(0, 0, 0, 0.55);
   padding: 28px;
+}
+
+.lobbyCard::-webkit-scrollbar {
+  display: none;
 }
 
 .lobbyHeader {
@@ -2658,10 +2711,10 @@ input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 130px;
-  padding: 12px 26px;
+  min-width: 110px;
+  padding: 9px 22px;
   font-family: 'Cinzel', serif;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #2a1800 !important;
@@ -5855,10 +5908,22 @@ input {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 220px;
+  max-height: min(45vh, 360px);
   overflow-y: auto;
   margin-bottom: 12px;
   padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,175,55,0.3) transparent;
+}
+.tradePropsGrid::-webkit-scrollbar {
+  width: 4px;
+}
+.tradePropsGrid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tradePropsGrid::-webkit-scrollbar-thumb {
+  background: rgba(212,175,55,0.3);
+  border-radius: 2px;
 }
 
 .tradeEmpty {
@@ -6842,7 +6907,8 @@ button:active:not(:disabled) {
   justify-content: center;
   min-height: 100vh;
   background: #0d0608;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
 }
 
@@ -7855,32 +7921,38 @@ img[src*="/assets/"] {
 
 .walletDropdownName {
   font-family: 'Cinzel', serif;
-  font-size: 0.55rem;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--gold-bright);
   margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .walletDropdownAddr {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.35rem;
-  color: #999;
+  font-size: 11px;
+  color: #aaa;
   word-break: break-all;
   margin-bottom: 12px;
 }
 
 .walletDropdownBtn {
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.45rem;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
   background: transparent;
   border: 1px solid var(--neon-red);
   color: var(--neon-red);
-  padding: 6px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .walletDropdownBtn:hover {
-  background: rgba(255,0,0,0.1);
+  background: rgba(255,0,0,0.15);
 }
 
 /* ===== REFERRAL BUTTON + PANEL ===== */
@@ -8181,12 +8253,23 @@ img[src*="/assets/"] {
 
 .profileHistoryRow {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.4rem;
+  font-size: 0.7rem;
   color: #ccc;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,215,0,0.15);
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+  border-left: 3px solid rgba(212,175,55,0.3);
+}
+
+.profileHistoryRow.historyWin {
+  border-left-color: #22c55e;
+}
+
+.profileHistoryRow.historyLoss {
+  border-left-color: #ff4444;
 }
 
 .profileHistoryWinner {
@@ -12136,6 +12219,13 @@ img[src*="/assets/"] {
 }
 
 /* ── Countdown Timer ── */
+.minigameTimerWrapper {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+}
+
 .countdownTimer {
   position: absolute;
   top: 1%;
@@ -12144,9 +12234,16 @@ img[src*="/assets/"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   z-index: 4;
+}
+
+.minigameTimerWrapper .countdownTimer {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
 }
 
 .countdownRing {

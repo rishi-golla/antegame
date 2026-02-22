@@ -30,8 +30,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" style={{ background: '#0a0a0a' }}>
+      <body style={{ background: '#0a0a0a' }}>
         <AudioProvider>
           {children}
         </AudioProvider>

@@ -278,8 +278,8 @@ export function calculateRent(state: GameState, ownerIndex: number): number {
   if (tile.type === 'property') {
     const houseCount = state.players[ownerIndex].houses[tile.index] || 0;
     if (houseCount > 0) {
-      // rent: [0:base, 1:set, 2:1house, 3:2houses, 4:3houses, 5:4houses/hotel]
-      rent = tile.rent[Math.min(houseCount + 1, 5)];
+      // rent: [0:base, 1:set, 2:1house, 3:2houses, 4:3houses, 5:4houses, 6:hotel]
+      rent = tile.rent[Math.min(houseCount + 1, 6)];
     } else if (ownsFullGroup(state, ownerIndex, tile.colorGroup)) {
       rent = tile.rent[1]; // double rent for color set
     } else {
@@ -488,11 +488,14 @@ export function applyCardEffect(state: GameState, card: Card): GameState {
       const amount = effect.amount!;
       const activePlayers = state.players.filter((p) => !p.bankrupt && p.id !== player.id);
       let s = state;
+      let totalCollected = 0;
       for (const other of activePlayers) {
-        s = updatePlayer(s, other.id, { money: s.players[other.id].money - amount });
+        // Each player pays what they can (minimum $0)
+        const payment = Math.min(amount, Math.max(0, s.players[other.id].money));
+        s = updatePlayer(s, other.id, { money: s.players[other.id].money - payment });
+        totalCollected += payment;
       }
-      const totalCollect = amount * activePlayers.length;
-      s = updateCurrentPlayer(s, { money: s.players[state.currentPlayerIndex].money + totalCollect });
+      s = updateCurrentPlayer(s, { money: s.players[state.currentPlayerIndex].money + totalCollected });
       return { ...s, phase: 'turn-end' };
     }
     case 'get-out-of-jail': {
@@ -584,8 +587,8 @@ export function attemptJailEscape(
   }
 
   // Roll for doubles
-  const d1 = Math.ceil(Math.random() * 6);
-  const d2 = Math.ceil(Math.random() * 6);
+  const d1 = cryptoRoll();
+  const d2 = cryptoRoll();
   let s: GameState = { ...state, dice: [d1, d2] };
   s = addLog(s, `${player.name} rolled ${d1} + ${d2} in jail.`, state.currentPlayerIndex);
 
@@ -598,8 +601,13 @@ export function attemptJailEscape(
   const newJailTurns = player.jailTurns + 1;
   if (newJailTurns >= MAX_JAIL_TURNS) {
     // Forced to pay bail after 3 failed attempts
+    const currentMoney = currentPlayer(s).money;
+    if (currentMoney < JAIL_BAIL) {
+      s = addLog(s, `${player.name} spent 3 turns in jail but can't afford $${JAIL_BAIL} bail!`, state.currentPlayerIndex);
+      return enterDebtOrBankrupt(s, JAIL_BAIL, null);
+    }
     s = updateCurrentPlayer(s, {
-      money: currentPlayer(s).money - JAIL_BAIL,
+      money: currentMoney - JAIL_BAIL,
       inJail: false,
       jailTurns: 0,
     });
@@ -678,6 +686,26 @@ export function endTurn(state: GameState): GameState {
       state = addLog(state, `📈 Round 36: Rents increased to 2x! GO salary reduced to $50.`);
     } else if (roundNumber === 46) {
       state = addLog(state, `📈 Round 46: Rents increased to 3x!`);
+    }
+
+    // Activate final rounds endgame mode
+    if (roundNumber >= FINAL_ROUNDS_START && !finalRounds) {
+      finalRounds = true;
+      state = addLog(state, `🔥 FINAL ROUNDS! No building, no GO salary, 4x rent!`);
+    }
+
+    // Force game-over at FINAL_ROUNDS_END — highest net worth wins
+    if (roundNumber >= FINAL_ROUNDS_END) {
+      state = addLog(state, `⏰ Round ${FINAL_ROUNDS_END} reached — game over!`);
+      const activePlayers = state.players.filter((p) => !p.bankrupt);
+      let bestIdx = activePlayers[0]?.id ?? null;
+      let bestWorth = -Infinity;
+      for (const p of activePlayers) {
+        const nw = getNetWorth({ ...state, roundNumber, finalRounds }, p.id);
+        if (nw > bestWorth) { bestWorth = nw; bestIdx = p.id; }
+      }
+      state = addLog(state, bestIdx !== null ? `${state.players[bestIdx].name} wins by net worth ($${bestWorth})!` : 'Game over!');
+      return { ...state, phase: 'game-over', winner: bestIdx, roundNumber, finalRounds };
     }
   }
 
@@ -1025,12 +1053,15 @@ export function resolveMinigame(state: GameState, tier: MinigameTier): GameState
     s = { ...s, pendingRent: null };
   }
   
-  // Clear minigame and check for bankruptcy
+  // Clear minigame and check for negative money → debt/bankruptcy
   s = { ...s, activeMinigame: null };
   
   if (s.players[state.currentPlayerIndex].money < 0) {
-    const creditor = context === 'rent' && state.pendingRent ? state.pendingRent.toPlayer : undefined;
-    return declareBankruptcy(s, state.currentPlayerIndex, creditor);
+    const deficit = Math.abs(s.players[state.currentPlayerIndex].money);
+    // Restore money to 0, then enter debt for the deficit amount
+    s = updateCurrentPlayer(s, { money: 0 });
+    const creditor = context === 'rent' && state.pendingRent ? state.pendingRent.toPlayer : null;
+    return enterDebtOrBankrupt(s, deficit, creditor);
   }
   
   return { ...s, phase: 'turn-end' };

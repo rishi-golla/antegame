@@ -79,6 +79,11 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_referral_earnings_unpaid ON referral_earnings(paid_out) WHERE paid_out = 0;
 `);
 
+// Migrations
+try {
+  db.prepare(`ALTER TABLE game_history ADD COLUMN room_code TEXT DEFAULT ''`).run();
+} catch { /* column already exists */ }
+
 // Session cleanup
 function cleanExpiredSessions() {
   const now = Math.floor(Date.now() / 1000);

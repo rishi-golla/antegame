@@ -2,7 +2,7 @@
 aptPkgs = ["python3", "make", "g++"]
 
 [phases.build]
-cmds = ["npm ci --legacy-peer-deps", "npx next build", "mkdir -p data"]
+cmds = ["npm ci --legacy-peer-deps", "npx next build", "mkdir -p data data/backups"]
 
 [start]
 cmd = "NODE_ENV=production npx tsx server/index.ts"

@@ -34,7 +34,12 @@ export function getAddresses(): ContractAddresses {
 }
 
 export function getRpcUrl(): string {
-  return process.env.NEXT_PUBLIC_BASE_RPC_URL ?? (
+  // Use server-side proxy to avoid exposing API keys in client bundle
+  if (typeof window !== 'undefined') {
+    return '/api/rpc';
+  }
+  // Server-side: use the actual RPC URL
+  return process.env.BASE_RPC_URL ?? (
     getChainEnv() === 'base-mainnet'
       ? 'https://mainnet.base.org'
       : 'https://sepolia.base.org'

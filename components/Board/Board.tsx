@@ -54,6 +54,9 @@ export default function Board() {
   const [isDiceFocus, setIsDiceFocus] = useState(false);
   const [rollPhase, setRollPhase] = useState('idle');
   const [impactPulse, setImpactPulse] = useState(false);
+  const pendingPositionKeyRef = useRef<string | null>(null);
+  const diceAnimatingRef = useRef(false);
+  const [moveTrigger, setMoveTrigger] = useState(0);
   const [activeTile, setActiveTile] = useState(0);
   const [boardSize, setBoardSize] = useState(0);
   const [popupTile, setPopupTile] = useState<number | null>(null);
@@ -104,7 +107,7 @@ export default function Board() {
             // Near miss: almost sent to jail (always dramatic)
             if (almostTileData.type === 'corner' && almostTileData.cornerKind === 'go-to-jail') {
               setNearMissAlert({ type: 'bad', tile: almostIndex, message: 'Dodged Go To Jail!' });
-              play('sfx/dice-roll', { volume: 0.3, pitch: 0.7 });
+              play('sfx/dice-roll', { volume: 0.15, pitch: 0.7 });
               setTimeout(() => setNearMissAlert(null), 1800);
               break;
             }
@@ -116,7 +119,7 @@ export default function Board() {
               const rent = almostTileData.rent[houses > 0 ? houses : 0];
               if (rent >= 300) {
                 setNearMissAlert({ type: 'bad', tile: almostIndex, message: `Dodged $${rent} rent!` });
-                play('sfx/dice-roll', { volume: 0.3, pitch: 0.7 });
+                play('sfx/dice-roll', { volume: 0.15, pitch: 0.7 });
                 setTimeout(() => setNearMissAlert(null), 1800);
                 break;
               }
@@ -149,9 +152,24 @@ export default function Board() {
     }
   }, [state.players.length, playAmbient, playMusic]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Animate token movement step-by-step
+  // Animate token movement step-by-step (waits for dice animation to finish)
   useEffect(() => {
     if (displayPositions.length === 0) return;
+
+    // If dice animation is in progress, defer movement
+    if (diceAnimatingRef.current) {
+      pendingPositionKeyRef.current = positionKey;
+      return;
+    }
+
+    // Check if dice changed in this same render (effects fire in order, dice effect hasn't run yet)
+    const prevDice = prevDiceRef.current || [0, 0];
+    const diceChanged = prevDice[0] !== state.dice[0] || prevDice[1] !== state.dice[1];
+    if (diceChanged && state.dice[0] > 0 && state.dice[1] > 0) {
+      // Dice animation will start momentarily — defer movement
+      pendingPositionKeyRef.current = positionKey;
+      return;
+    }
 
     const currentPositions = state.players.map((p) => p.position);
     let cancelled = false;
@@ -220,7 +238,7 @@ export default function Board() {
     prevPositionsRef.current = currentPositions;
 
     return () => { cancelled = true; };
-  }, [positionKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [positionKey, moveTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track money changes for floats and sounds
   const prevMoneyRef = useRef<number[]>([]);
@@ -306,6 +324,7 @@ export default function Board() {
 
     if (newPurchases.size > 0) {
       setRecentPurchases(newPurchases);
+      play('sfx/buy-property', { volume: 0.5 });
 
       // Spawn burst particles for each purchased tile
       const GROUP_COLOR_MAP: Record<string, string> = {
@@ -349,6 +368,7 @@ export default function Board() {
         const curr = currentPositions[i];
         if (prev !== undefined && prev > curr && curr !== 10 && !state.players[i].inJail && !state.players[i].bankrupt) {
           setGoShockwave(true);
+          play('sfx/collect-money', { volume: 0.3, pitch: 1.2 });
           setTimeout(() => setGoShockwave(false), 800);
           break;
         }
@@ -377,6 +397,7 @@ export default function Board() {
       if (!prevCompletedGroupsRef.current.has(g)) {
         setMonopolyFlash({ color: GROUP_COLOR_MAP[g] || '#d4af37' });
         setShakeBoard(true);
+        play('sfx/full-set', { volume: 0.6 });
         setTimeout(() => setMonopolyFlash(null), 600);
         setTimeout(() => setShakeBoard(false), 100);
       }
@@ -409,6 +430,53 @@ export default function Board() {
     prevPhaseRef.current = state.phase;
   }, [state.phase, state.currentPlayerIndex, state.players, play]);
 
+  // Phase-change sound effects
+  const prevPhaseForSfxRef = useRef(state.phase);
+  const prevPlayerIdxRef = useRef(state.currentPlayerIndex);
+  useEffect(() => {
+    const prev = prevPhaseForSfxRef.current;
+    const phase = state.phase;
+    const playerChanged = state.currentPlayerIndex !== prevPlayerIdxRef.current;
+
+    // Card draw
+    if (phase === 'drawing-card' && prev !== 'drawing-card') {
+      play('sfx/card-draw', { volume: 0.5 });
+    }
+    // Card result (good vs bad)
+    if (prev === 'drawing-card' && phase === 'applying-card' && state.drawnCard) {
+      const kind = state.drawnCard.effect.kind;
+      const isGood = ['collect', 'collect-from-each', 'get-out-of-jail'].includes(kind);
+      const isJail = kind === 'go-to-jail';
+      if (isJail) play('sfx/card-jail', { volume: 0.5 });
+      else if (isGood) play('sfx/card-good', { volume: 0.5 });
+      else play('sfx/card-bad', { volume: 0.5 });
+    }
+    // Go to jail
+    if (phase === 'in-jail' && prev !== 'in-jail') {
+      const player = state.players[state.currentPlayerIndex];
+      if (player?.inJail) play('sfx/go-to-jail', { volume: 0.5 });
+    }
+    // Jail escape success
+    if (prev === 'in-jail' && phase === 'rolling') {
+      play('sfx/jail-escape', { volume: 0.5 });
+    }
+    // Jail escape fail (stayed in jail after rolling)
+    if (prev === 'in-jail' && phase === 'in-jail' && state.dice[0] !== state.dice[1] && state.dice[0] > 0) {
+      play('sfx/jail-fail', { volume: 0.4 });
+    }
+    // Opponent's turn
+    if (playerChanged && phase === 'rolling') {
+      play('sfx/turn-opponent', { volume: 0.25 });
+    }
+    // Game over
+    if (phase === 'game-over' && prev !== 'game-over') {
+      play('sfx/game-over', { volume: 0.6 });
+    }
+
+    prevPhaseForSfxRef.current = phase;
+    prevPlayerIdxRef.current = state.currentPlayerIndex;
+  }, [state.phase, state.currentPlayerIndex, state.dice, state.drawnCard, state.players, play]);
+
   useEffect(() => {
     if (!frameRef.current) return;
     const updateSize = () => {
@@ -425,9 +493,10 @@ export default function Board() {
   }, []);
 
   const animateRoll = useCallback((finalDice: [number, number]) => {
+    diceAnimatingRef.current = true;
     setIsDiceFocus(true);
     setRollPhase('charge');
-    play('sfx/dice-shake', { volume: 0.4 });
+    play('sfx/dice-shake', { volume: 0.2 });
 
     const jitter = setInterval(() => {
       setDisplayDice([Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)]);
@@ -437,7 +506,7 @@ export default function Board() {
     setTimeout(() => {
       setImpactPulse(true);
       setRollPhase('impact');
-      play('sfx/dice-roll', { volume: 0.5 });
+      play('sfx/dice-roll', { volume: 0.25 });
       setTimeout(() => setImpactPulse(false), 180);
     }, 520);
 
@@ -445,6 +514,12 @@ export default function Board() {
       clearInterval(jitter);
       setDisplayDice(finalDice);
       setRollPhase('result');
+      // Allow token movement now that dice result is shown
+      diceAnimatingRef.current = false;
+      if (pendingPositionKeyRef.current) {
+        pendingPositionKeyRef.current = null;
+        setMoveTrigger(c => c + 1);
+      }
       setTimeout(() => {
         setIsDiceFocus(false);
         setRollPhase('idle');
@@ -600,20 +675,9 @@ export default function Board() {
           )}
         </div>
 
-        {/* Phase 3: Near-Miss Alert Overlay */}
-        {nearMissAlert && (
-          <div className={`near-miss-overlay near-miss-${nearMissAlert.type}`}>
-            <div className="near-miss-content">
-              <div className="near-miss-title">
-                {nearMissAlert.type === 'good' ? '😱 CLOSE CALL!' : '😅 JUST MISSED!'}
-              </div>
-              <div className="near-miss-message">{nearMissAlert.message}</div>
-            </div>
-          </div>
-        )}
+        {/* Near-Miss Alert Overlay — removed */}
 
         {/* Phase 3: Property Decline Warning — removed */}
-        )}
 
         {isDiceFocus && (
           <div className={`diceFocusLayer phase-${rollPhase} ${impactPulse ? 'impact' : ''}`}>

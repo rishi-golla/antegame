@@ -1,6 +1,7 @@
 import { db, getReferrer, recordReferralEarning } from './db';
 
 export interface GameResultData {
+  roomCode?: string;
   durationMs: number;
   playerCount: number;
   players: Array<{ walletAddress: string; name: string; placing: number }>;
@@ -13,8 +14,8 @@ export interface GameResultData {
 
 export function recordGameResult(data: GameResultData): number {
   const insertHistory = db.prepare(`
-    INSERT INTO game_history (finished_at, duration_ms, player_count, players, winner_wallet, winner_name, entry_fee_lamports, winner_payout_lamports, house_profit_lamports)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO game_history (finished_at, duration_ms, player_count, players, winner_wallet, winner_name, entry_fee_lamports, winner_payout_lamports, house_profit_lamports, room_code)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const updateStats = db.prepare(`
@@ -39,7 +40,8 @@ export function recordGameResult(data: GameResultData): number {
       data.winnerName,
       data.entryFeeLamports,
       data.winnerPayoutLamports,
-      data.houseProfitLamports
+      data.houseProfitLamports,
+      data.roomCode ?? ''
     );
 
     for (const player of data.players) {
@@ -56,7 +58,8 @@ export function recordGameResult(data: GameResultData): number {
     const gameId = result.lastInsertRowid as number;
 
     // Credit referral earnings (10% of house profit per referred player)
-    if (data.houseProfitLamports > 0) {
+    // M7: Only credit referrals for games with 3+ players to prevent gaming
+    if (data.houseProfitLamports > 0 && data.playerCount >= 3) {
       const referralRate = 0.10; // 10% of house profit
       const perPlayerShare = Math.floor(data.houseProfitLamports * referralRate / data.playerCount);
       if (perPlayerShare > 0) {

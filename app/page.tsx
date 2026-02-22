@@ -392,9 +392,13 @@ function AuthGate() {
       );
 
     case 'free-play-game': {
-      const cfg = freePlayConfig || { names: ['Player 1', 'Player 2'], sprites: ['', ''], colors: ['#ff6b6b', '#5cd6c0'] };
+      if (!freePlayConfig) {
+        // No config (page was refreshed) — redirect to setup
+        navigate('free-play-setup');
+        return null;
+      }
       return (
-        <GameProvider playerNames={cfg.names} playerSprites={cfg.sprites} playerColors={cfg.colors}>
+        <GameProvider playerNames={freePlayConfig.names} playerSprites={freePlayConfig.sprites} playerColors={freePlayConfig.colors}>
           <FreePlayScreen onPlayAgain={() => navigate('menu')} />
         </GameProvider>
       );

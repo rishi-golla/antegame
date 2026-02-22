@@ -390,7 +390,6 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
         <div style={{
           display: 'flex', flexDirection: 'column', gap: 1,
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 14,
           color: '#d5c4a1',
           textAlign: 'center',
           padding: '12px 20px',

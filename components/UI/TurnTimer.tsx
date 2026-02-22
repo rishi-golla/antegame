@@ -1,24 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {} from 'react';
 import { useSocket } from '@/context/SocketContext';
 
 export default function TurnTimer() {
-  const { socket } = useSocket();
-  const [remaining, setRemaining] = useState<number | null>(null);
-  const [total, setTotal] = useState(45000);
+  const { turnTimer } = useSocket();
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleTimer = (data: { remaining: number; total: number }) => {
-      setRemaining(data.remaining);
-      setTotal(data.total);
-    };
-
-    socket.on('turn:timer', handleTimer);
-    return () => { socket.off('turn:timer', handleTimer); };
-  }, [socket]);
+  const remaining = turnTimer?.remaining ?? null;
+  const total = turnTimer?.total ?? 45000;
 
   if (remaining === null || remaining <= 0) return null;
 

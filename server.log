@@ -1,0 +1,335 @@
+[keys] Loaded secure keys from /Users/shamdoo/.config/ante/keys.json
+> Ready on http://localhost:3000
+ ○ Compiling / ...
+ ⚠ ./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/pino/lib/tools.js
+Module not found: Can't resolve 'pino-pretty' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/pino/lib'
+
+Import trace for requested module:
+./node_modules/pino/lib/tools.js
+./node_modules/pino/pino.js
+./node_modules/@walletconnect/logger/dist/index.es.js
+./node_modules/@walletconnect/universal-provider/dist/index.es.js
+./node_modules/@walletconnect/solana-adapter/dist/core.js
+./node_modules/@walletconnect/solana-adapter/dist/adapter.js
+./node_modules/@solana/wallet-adapter-walletconnect/lib/esm/index.js
+./node_modules/@solana/wallet-adapter-wallets/lib/esm/index.js
+./context/WalletContext.tsx
+./app/page.tsx
+[EVMWallet] connectors configured: [
+  'Injected',
+  'WalletConnect',
+  'Coinbase Wallet',
+  'WalletConnect',
+  'WalletConnect'
+]
+Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.
+WalletConnect Core is already initialized. This is probably a mistake and can lead to unexpected behavior. Init() was called 2 times.
+ ⨯ unhandledRejection: ReferenceError: indexedDB is not defined
+    at getDB (webpack://monopolygame/node_modules/idb-keyval/dist/index.js?20df:14:1)
+    at eval (webpack://monopolygame/node_modules/idb-keyval/dist/index.js?20df:24:1)
+    at get (webpack://monopolygame/node_modules/idb-keyval/dist/index.js?20df:40:1)
+    at getItem (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:495)
+    at asyncCall (webpack://monopolygame/node_modules/unstorage/dist/shared/unstorage.zVDD2mZo.mjs?3b10:9:1)
+    at Object.getItem (webpack://monopolygame/node_modules/unstorage/dist/index.mjs?6091:151:23)
+    at _.getItem (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:934)
+    at O (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:2314)
+    at new h (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:2917)
+    at new Te (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/core/dist/index.es.js?834c:1:89193)
+    at new Ee (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/sign-client/dist/index.es.js?86d8:1:63016)
+    at Ee.init (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/sign-client/dist/index.es.js?86d8:1:63296)
+    at B.createClient (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js?552e:1:36315)
+    at B.initialize (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js?552e:1:36122)
+    at B.init (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js?552e:1:32973)
+    at b.initialize (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/dist/index.es.js?df14:1:8105)
+    at b.init (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/dist/index.es.js?df14:1:2773)
+    at initProvider (webpack://monopolygame/node_modules/@wagmi/connectors/dist/esm/walletConnect.js?e120:211:1)
+ ⨯ unhandledRejection: ReferenceError: indexedDB is not defined
+    at getDB (webpack://monopolygame/node_modules/idb-keyval/dist/index.js?20df:14:1)
+    at eval (webpack://monopolygame/node_modules/idb-keyval/dist/index.js?20df:24:1)
+    at get (webpack://monopolygame/node_modules/idb-keyval/dist/index.js?20df:40:1)
+    at getItem (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:495)
+    at asyncCall (webpack://monopolygame/node_modules/unstorage/dist/shared/unstorage.zVDD2mZo.mjs?3b10:9:1)
+    at Object.getItem (webpack://monopolygame/node_modules/unstorage/dist/index.mjs?6091:151:23)
+    at _.getItem (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:934)
+    at O (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:2314)
+    at new h (webpack://monopolygame/node_modules/@walletconnect/keyvaluestorage/dist/index.es.js?3161:1:2917)
+    at new Te (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/core/dist/index.es.js?834c:1:89193)
+    at new Ee (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/sign-client/dist/index.es.js?86d8:1:63016)
+    at Ee.init (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/sign-client/dist/index.es.js?86d8:1:63296)
+    at B.createClient (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js?552e:1:36315)
+    at B.initialize (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js?552e:1:36122)
+    at B.init (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js?552e:1:32973)
+    at b.initialize (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/dist/index.es.js?df14:1:8105)
+    at b.init (webpack://monopolygame/node_modules/@walletconnect/ethereum-provider/dist/index.es.js?df14:1:2773)
+    at initProvider (webpack://monopolygame/node_modules/@wagmi/connectors/dist/esm/walletConnect.js?e120:211:1)
+ GET / 200 in 8651ms
+ ⚠ ./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/pino/lib/tools.js
+Module not found: Can't resolve 'pino-pretty' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/pino/lib'
+
+Import trace for requested module:
+./node_modules/pino/lib/tools.js
+./node_modules/pino/pino.js
+./node_modules/@walletconnect/logger/dist/index.es.js
+./node_modules/@walletconnect/universal-provider/dist/index.es.js
+./node_modules/@walletconnect/solana-adapter/dist/core.js
+./node_modules/@walletconnect/solana-adapter/dist/adapter.js
+./node_modules/@solana/wallet-adapter-walletconnect/lib/esm/index.js
+./node_modules/@solana/wallet-adapter-wallets/lib/esm/index.js
+./context/WalletContext.tsx
+./app/page.tsx
+ ⚠ ./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/pino/lib/tools.js
+Module not found: Can't resolve 'pino-pretty' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/pino/lib'
+
+Import trace for requested module:
+./node_modules/pino/lib/tools.js
+./node_modules/pino/pino.js
+./node_modules/@walletconnect/logger/dist/index.es.js
+./node_modules/@walletconnect/universal-provider/dist/index.es.js
+./node_modules/@walletconnect/solana-adapter/dist/core.js
+./node_modules/@walletconnect/solana-adapter/dist/adapter.js
+./node_modules/@solana/wallet-adapter-walletconnect/lib/esm/index.js
+./node_modules/@solana/wallet-adapter-wallets/lib/esm/index.js
+./context/WalletContext.tsx
+./app/page.tsx
+ ⚠ ./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/pino/lib/tools.js
+Module not found: Can't resolve 'pino-pretty' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/pino/lib'
+
+Import trace for requested module:
+./node_modules/pino/lib/tools.js
+./node_modules/pino/pino.js
+./node_modules/@walletconnect/logger/dist/index.es.js
+./node_modules/@walletconnect/universal-provider/dist/index.es.js
+./node_modules/@walletconnect/solana-adapter/dist/core.js
+./node_modules/@walletconnect/solana-adapter/dist/adapter.js
+./node_modules/@solana/wallet-adapter-walletconnect/lib/esm/index.js
+./node_modules/@solana/wallet-adapter-wallets/lib/esm/index.js
+./context/WalletContext.tsx
+./app/page.tsx
+ ⚠ ./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/pino/lib/tools.js
+Module not found: Can't resolve 'pino-pretty' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/pino/lib'
+
+Import trace for requested module:
+./node_modules/pino/lib/tools.js
+./node_modules/pino/pino.js
+./node_modules/@walletconnect/logger/dist/index.es.js
+./node_modules/@walletconnect/universal-provider/dist/index.es.js
+./node_modules/@walletconnect/solana-adapter/dist/core.js
+./node_modules/@walletconnect/solana-adapter/dist/adapter.js
+./node_modules/@solana/wallet-adapter-walletconnect/lib/esm/index.js
+./node_modules/@solana/wallet-adapter-wallets/lib/esm/index.js
+./context/WalletContext.tsx
+./app/page.tsx
+ ⨯ TypeError: Response body object should not be disturbed or locked
+    at extractBody (node:internal/deps/undici/undici:6745:17)
+    at new Request (node:internal/deps/undici/undici:11215:48)
+    at new constructor (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/request.ts:29:10)
+    at NextRequestAdapter.fromNodeNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:98:12)
+    at NextRequestAdapter.fromBaseNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:65:31)
+    at doRender (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2246:48)
+    at cacheEntry.responseCache.get.routeKind (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2569:30)
+    at ResponseCache.get (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/response-cache/index.ts:60:22)
+    at DevServer.renderToResponseWithComponentsImpl (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2432:49)
+ POST /api/rpc 500 in 1439ms
+[EVMWallet] connectors configured: [
+  'Injected',
+  'WalletConnect',
+  'Coinbase Wallet',
+  'WalletConnect',
+  'WalletConnect'
+]
+Multiple versions of Lit loaded. Loading multiple versions is not recommended. See https://lit.dev/msg/multiple-versions for more information.
+WalletConnect Core is already initialized. This is probably a mistake and can lead to unexpected behavior. Init() was called 3 times.
+WalletConnect Core is already initialized. This is probably a mistake and can lead to unexpected behavior. Init() was called 4 times.
+ HEAD / 200 in 1169ms
+ ⨯ TypeError: Response body object should not be disturbed or locked
+    at extractBody (node:internal/deps/undici/undici:6745:17)
+    at new Request (node:internal/deps/undici/undici:11215:48)
+    at new constructor (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/request.ts:29:10)
+    at NextRequestAdapter.fromNodeNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:98:12)
+    at NextRequestAdapter.fromBaseNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:65:31)
+    at doRender (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2246:48)
+    at cacheEntry.responseCache.get.routeKind (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2569:30)
+    at ResponseCache.get (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/response-cache/index.ts:60:22)
+    at DevServer.renderToResponseWithComponentsImpl (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2432:49)
+ POST /api/rpc 500 in 5ms
+ ⨯ TypeError: Response body object should not be disturbed or locked
+    at extractBody (node:internal/deps/undici/undici:6745:17)
+    at new Request (node:internal/deps/undici/undici:11215:48)
+    at new constructor (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/request.ts:29:10)
+    at NextRequestAdapter.fromNodeNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:98:12)
+    at NextRequestAdapter.fromBaseNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:65:31)
+    at doRender (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2246:48)
+    at cacheEntry.responseCache.get.routeKind (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2569:30)
+    at ResponseCache.get (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/response-cache/index.ts:60:22)
+    at DevServer.renderToResponseWithComponentsImpl (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2432:49)
+ POST /api/rpc 500 in 4ms
+ ⨯ TypeError: Response body object should not be disturbed or locked
+    at extractBody (node:internal/deps/undici/undici:6745:17)
+    at new Request (node:internal/deps/undici/undici:11215:48)
+    at new constructor (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/request.ts:29:10)
+    at NextRequestAdapter.fromNodeNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:98:12)
+    at NextRequestAdapter.fromBaseNextRequest (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/web/spec-extension/adapters/next-request.ts:65:31)
+    at doRender (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2246:48)
+    at cacheEntry.responseCache.get.routeKind (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2569:30)
+    at ResponseCache.get (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/response-cache/index.ts:60:22)
+    at DevServer.renderToResponseWithComponentsImpl (/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/next/src/server/base-server.ts:2432:49)
+ POST /api/rpc 500 in 4ms
+ ⚠ ./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx
+
+./node_modules/pino/lib/tools.js
+Module not found: Can't resolve 'pino-pretty' in '/Users/shamdoo/.openclaw/workspace/monopolygame/node_modules/pino/lib'
+
+Import trace for requested module:
+./node_modules/pino/lib/tools.js
+./node_modules/pino/pino.js
+./node_modules/@walletconnect/logger/dist/index.es.js
+./node_modules/@walletconnect/ethereum-provider/node_modules/@walletconnect/universal-provider/dist/index.es.js
+./node_modules/@walletconnect/ethereum-provider/dist/index.es.js
+./node_modules/@wagmi/connectors/dist/esm/walletConnect.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./context/EVMWalletContext.tsx
+./app/page.tsx

@@ -4,11 +4,17 @@ import type { DbUser } from './db';
 
 const SESSION_DURATION_DAYS = 30;
 
+/** Hash a token for storage — raw token never stored in DB */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 export function createSession(walletAddress: string): string {
-  const token = crypto.randomBytes(32).toString('hex'); // 64-char hex
+  const token = crypto.randomBytes(32).toString('hex'); // 64-char hex — sent to client
+  const hashed = hashToken(token); // stored in DB
   const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_DAYS * 24 * 60 * 60;
   db.prepare('INSERT INTO sessions (token, wallet_address, expires_at) VALUES (?, ?, ?)').run(
-    token,
+    hashed,
     walletAddress,
     expiresAt
   );
@@ -16,13 +22,14 @@ export function createSession(walletAddress: string): string {
 }
 
 export function validateSession(token: string): DbUser | null {
+  const hashed = hashToken(token);
   const now = Math.floor(Date.now() / 1000);
   const row = db
     .prepare(
       `SELECT u.* FROM sessions s JOIN users u ON s.wallet_address = u.wallet_address
        WHERE s.token = ? AND s.expires_at > ?`
     )
-    .get(token, now) as DbUser | undefined;
+    .get(hashed, now) as DbUser | undefined;
 
   if (row) {
     updateLastSeen(row.wallet_address);
@@ -31,7 +38,8 @@ export function validateSession(token: string): DbUser | null {
 }
 
 export function destroySession(token: string): void {
-  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+  const hashed = hashToken(token);
+  db.prepare('DELETE FROM sessions WHERE token = ?').run(hashed);
 }
 
 export function getSessionFromCookie(cookieHeader?: string): string | null {

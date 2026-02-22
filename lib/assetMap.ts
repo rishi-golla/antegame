@@ -96,7 +96,7 @@ export const CHARACTERS: CharacterDef[] = [
   },
   {
     id: 'card-shark', name: 'Card Shark', sprite: '/assets/sprites/card-shark.webp', color: '#c084fc',
-    buff: { type: 'minigame-boost', name: 'Stacked Deck', description: 'Minigame payouts are 20% higher', modifier: 0.20 },
+    buff: { type: 'minigame-boost', name: 'Stacked Deck', description: 'Minigame penalties reduced by 20%', modifier: 0.20 },
   },
   {
     id: 'vip', name: 'VIP', sprite: '/assets/sprites/vip.webp', color: '#f472b6',

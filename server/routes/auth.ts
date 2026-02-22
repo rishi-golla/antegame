@@ -205,6 +205,11 @@ router.patch('/profile', (req: Request, res: Response) => {
       res.status(400).json({ error: 'Display name too short' });
       return;
     }
+    // H4: Validate display name content
+    if (!/^[a-zA-Z0-9 _\-\.]{1,20}$/.test(name)) {
+      res.status(400).json({ error: 'Display name can only contain letters, numbers, spaces, hyphens, underscores, and dots' });
+      return;
+    }
     db.prepare('UPDATE users SET display_name = ? WHERE wallet_address = ?').run(name, user.wallet_address);
   }
 

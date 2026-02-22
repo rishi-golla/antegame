@@ -2,8 +2,15 @@ import type { GameState, TradeOffer } from '@/types/game';
 import { COLOR_GROUPS } from './gameData';
 
 export function proposeTrade(state: GameState, offer: TradeOffer): GameState {
+  if (offer.fromPlayer === offer.toPlayer) {
+    throw new Error('Cannot trade with yourself');
+  }
+
   const from = state.players[offer.fromPlayer];
   const to = state.players[offer.toPlayer];
+
+  if (from.bankrupt) throw new Error('Proposer is bankrupt');
+  if (to.bankrupt) throw new Error('Recipient is bankrupt');
 
   // Validate offered properties
   for (const idx of offer.offerProperties) {
@@ -48,11 +55,29 @@ export function acceptTrade(state: GameState): GameState {
   const fromIdx = offer.fromPlayer;
   const toIdx = offer.toPlayer;
 
+  // Calculate 10% mortgage transfer interest for each side
+  let fromInterest = 0; // interest fromPlayer pays on mortgaged properties received from toPlayer
+  for (const idx of offer.requestProperties) {
+    if (state.players[toIdx].mortgaged.includes(idx)) {
+      const tile = state.tiles[idx];
+      const mv = 'mortgageValue' in tile ? (tile as any).mortgageValue : 0;
+      fromInterest += Math.ceil(mv * 0.1);
+    }
+  }
+  let toInterest = 0; // interest toPlayer pays on mortgaged properties received from fromPlayer
+  for (const idx of offer.offerProperties) {
+    if (state.players[fromIdx].mortgaged.includes(idx)) {
+      const tile = state.tiles[idx];
+      const mv = 'mortgageValue' in tile ? (tile as any).mortgageValue : 0;
+      toInterest += Math.ceil(mv * 0.1);
+    }
+  }
+
   const newPlayers = state.players.map((p, i) => {
     if (i === fromIdx) {
       return {
         ...p,
-        money: p.money - offer.offerMoney + offer.requestMoney,
+        money: p.money - offer.offerMoney + offer.requestMoney - fromInterest,
         properties: [
           ...p.properties.filter((idx) => !offer.offerProperties.includes(idx)),
           ...offer.requestProperties,
@@ -67,7 +92,7 @@ export function acceptTrade(state: GameState): GameState {
     if (i === toIdx) {
       return {
         ...p,
-        money: p.money + offer.offerMoney - offer.requestMoney,
+        money: p.money + offer.offerMoney - offer.requestMoney - toInterest,
         properties: [
           ...p.properties.filter((idx) => !offer.requestProperties.includes(idx)),
           ...offer.offerProperties,
@@ -99,12 +124,43 @@ export function acceptTrade(state: GameState): GameState {
     activeTradeOffer: null,
   };
 
-  // Check if either player went bankrupt from the trade
-  // (giving away all money + properties leaving them at 0 or below)
+  // Check if either player went negative from mortgage interest or bankrupt from trade
   for (const idx of [fromIdx, toIdx]) {
     const p = s.players[idx];
-    if (p.money <= 0 && p.properties.length === 0 && !p.bankrupt) {
-      // Import-free inline bankruptcy: mark bankrupt, check game over
+    if (p.money < 0 && !p.bankrupt) {
+      // Negative money from mortgage interest — clamp to 0, enter debt if current player
+      // or go bankrupt if no assets to cover it
+      const deficit = Math.abs(p.money);
+      s = {
+        ...s,
+        players: s.players.map((pl, i) =>
+          i === idx ? { ...pl, money: 0 } : pl
+        ),
+      };
+      // If they have properties they can liquidate, and it's the current player, enter debt
+      // Otherwise mark bankrupt
+      const hasAssets = s.players[idx].properties.length > 0;
+      if (!hasAssets) {
+        s = {
+          ...s,
+          players: s.players.map((pl, i) =>
+            i === idx
+              ? { ...pl, bankrupt: true, money: 0, properties: [], houses: {}, mortgaged: [], getOutOfJailCards: 0, inJail: false }
+              : pl
+          ),
+        };
+        const activePlayers = s.players.filter(pl => !pl.bankrupt);
+        if (activePlayers.length <= 1) {
+          const winner = activePlayers[0]?.id ?? null;
+          s = { ...s, phase: 'game-over' as const, winner };
+        } else if (idx === s.currentPlayerIndex) {
+          s = { ...s, phase: 'turn-end' as const, activeMinigame: null, pendingRent: null };
+        }
+      }
+      // If they have assets but negative, they'll need to sell on their turn
+      // Money is clamped to 0 — not ideal but prevents negative money state
+    } else if (p.money === 0 && p.properties.length === 0 && !p.bankrupt) {
+      // Zero money and no properties — bankrupt
       s = {
         ...s,
         players: s.players.map((pl, i) =>
@@ -118,7 +174,6 @@ export function acceptTrade(state: GameState): GameState {
         const winner = activePlayers[0]?.id ?? null;
         s = { ...s, phase: 'game-over' as const, winner };
       } else if (idx === s.currentPlayerIndex) {
-        // Current player went bankrupt via trade — end their turn
         s = { ...s, phase: 'turn-end' as const, activeMinigame: null, pendingRent: null };
       }
     }

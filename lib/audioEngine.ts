@@ -59,6 +59,7 @@ class AudioEngine {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = this._muted ? 0 : 1;
       this.masterGain.connect(this.ctx.destination);
 
       // Music chain with filters
@@ -270,12 +271,16 @@ class AudioEngine {
 
   mute(): void {
     this._muted = true;
-    if (this.masterGain) this.masterGain.gain.value = 0;
+    if (this.masterGain) {
+      this.masterGain.gain.setValueAtTime(0, this.ctx?.currentTime ?? 0);
+    }
   }
 
   unmute(): void {
     this._muted = false;
-    if (this.masterGain) this.masterGain.gain.value = 1;
+    if (this.masterGain) {
+      this.masterGain.gain.setValueAtTime(1, this.ctx?.currentTime ?? 0);
+    }
   }
 
   toggleMute(): void {
@@ -339,7 +344,7 @@ class AudioEngine {
     }
   }
 
-  /** Play procedural ambient casino sounds */
+  /** Play real ambient casino sounds — looping base layer + random one-shots */
   playAmbient(): void {
     if (this.ambientActive) return;
     this.ambientActive = true;
@@ -347,48 +352,8 @@ class AudioEngine {
     const ctx = this.ensureContext();
     if (ctx.state === 'suspended') ctx.resume();
 
-    // Background hum using filtered noise
-    const noise = this.createNoise();
-    const humFilter = ctx.createBiquadFilter();
-    humFilter.type = 'lowpass';
-    humFilter.frequency.value = 120;
-    humFilter.Q.value = 2;
-    const humGain = ctx.createGain();
-    humGain.gain.value = 0.05;
-    noise.connect(humFilter);
-    humFilter.connect(humGain);
-    humGain.connect(this.ambientGain!);
-    this.ambientSources.push(noise);
-    noise.start();
-
-    // Random distant slot jingles (every 8-15 seconds)
-    const scheduleSlotJingle = () => {
-      if (!this.ambientActive) return;
-      const delay = 8000 + Math.random() * 7000;
-      const timer = window.setTimeout(() => {
-        if (this.ambientActive) {
-          this.play('sfx/collect-money', { volume: 0.15, pitch: 0.8 + Math.random() * 0.4 });
-          scheduleSlotJingle();
-        }
-      }, delay);
-      this.ambientIntervals.push(timer);
-    };
-    scheduleSlotJingle();
-
-    // Random distant cheers (every 12-25 seconds)
-    const scheduleCheer = () => {
-      if (!this.ambientActive) return;
-      const delay = 12000 + Math.random() * 13000;
-      const timer = window.setTimeout(() => {
-        if (this.ambientActive) {
-          // Create a brief cheer sound using oscillators
-          this.createDistantCheer();
-          scheduleCheer();
-        }
-      }, delay);
-      this.ambientIntervals.push(timer);
-    };
-    scheduleCheer();
+    // Ambient system disabled — random real-world casino sounds don't fit a digital board game.
+    // If we want ambient later, use synthesized/designed sounds instead of field recordings.
   }
 
   /** Stop ambient sounds */
@@ -404,48 +369,6 @@ class AudioEngine {
     // Clear intervals
     this.ambientIntervals.forEach(id => clearTimeout(id));
     this.ambientIntervals = [];
-  }
-
-  /** Create procedural noise for ambient hum */
-  private createNoise(): AudioBufferSourceNode {
-    const ctx = this.ctx!;
-    const bufferSize = ctx.sampleRate * 2; // 2 seconds of noise
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2) - 1;
-    }
-    
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    return source;
-  }
-
-  /** Create a procedural distant cheer sound */
-  private createDistantCheer(): void {
-    const ctx = this.ctx!;
-    const now = ctx.currentTime;
-    
-    // Create a brief burst of filtered noise to simulate distant crowd
-    const cheerNoise = this.createNoise();
-    const cheerFilter = ctx.createBiquadFilter();
-    cheerFilter.type = 'bandpass';
-    cheerFilter.frequency.value = 800 + Math.random() * 400;
-    cheerFilter.Q.value = 3;
-    
-    const envelope = ctx.createGain();
-    envelope.gain.value = 0;
-    envelope.gain.linearRampToValueAtTime(0.04, now + 0.1);
-    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-    
-    cheerNoise.connect(cheerFilter);
-    cheerFilter.connect(envelope);
-    envelope.connect(this.ambientGain!);
-    
-    cheerNoise.start(now);
-    cheerNoise.stop(now + 1);
   }
 
   /** Play money transaction sound based on amount */
@@ -469,7 +392,7 @@ class AudioEngine {
     }, Math.random() * 200);
     
     setTimeout(() => {
-      this.createDistantCheer();
+      this.play('ambient/crowd-cheer', { volume: 0.15, pan: (Math.random() * 2 - 1) * 0.6 });
     }, 300 + Math.random() * 200);
   }
 }

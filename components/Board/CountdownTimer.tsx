@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSocket } from '@/context/SocketContext';
 
 interface CountdownTimerProps {
-  /** Total seconds for this phase */
+  /** Total seconds for this phase (fallback if no server data) */
   duration: number;
   /** Called when timer hits 0 */
   onExpire: () => void;
@@ -12,36 +13,36 @@ interface CountdownTimerProps {
 }
 
 export default function CountdownTimer({ duration, onExpire, resetKey }: CountdownTimerProps) {
-  const [remaining, setRemaining] = useState(duration);
+  const { turnTimer } = useSocket();
   const onExpireRef = useRef(onExpire);
   onExpireRef.current = onExpire;
   const expiredRef = useRef(false);
 
-  // Reset when key changes
-  useEffect(() => {
-    setRemaining(duration);
-    expiredRef.current = false;
-  }, [resetKey, duration]);
+  // Derive remaining from server turn timer (seconds), fallback to duration
+  const serverSeconds = turnTimer ? Math.ceil(turnTimer.remaining / 1000) : null;
+  const serverTotal = turnTimer ? Math.ceil(turnTimer.total / 1000) : null;
+  const [remaining, setRemaining] = useState(duration);
 
+  // Sync with server timer ticks
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRemaining(prev => {
-        const next = prev - 1;
-        if (next <= 0 && !expiredRef.current) {
-          expiredRef.current = true;
-          // Fire on next tick to avoid state update during render
-          setTimeout(() => onExpireRef.current(), 0);
-          return 0;
-        }
-        return Math.max(0, next);
-      });
-    }, 1000);
-    return () => clearInterval(interval);
+    if (serverSeconds !== null) {
+      setRemaining(serverSeconds);
+      if (serverSeconds <= 0 && !expiredRef.current) {
+        expiredRef.current = true;
+        setTimeout(() => onExpireRef.current(), 0);
+      }
+    }
+  }, [serverSeconds]);
+
+  // Reset expired flag when resetKey changes
+  useEffect(() => {
+    expiredRef.current = false;
   }, [resetKey]);
 
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const progress = remaining / duration;
+  const total = serverTotal ?? duration;
+  const progress = total > 0 ? remaining / total : 0;
   const dashOffset = circumference * (1 - progress);
   const isWarning = remaining <= 5 && remaining > 0;
 

@@ -1,38 +1,68 @@
 /**
  * REST endpoints for contract signature requests.
- *
- * POST /api/contracts/settlement-signature
- *   Body: { roomCode: string, winnerAddress: string }
- *   Returns: { nonce, signature, gameId } or error
- *
- * POST /api/contracts/cancellation-signature
- *   Body: { roomCode: string }
- *   Returns: { nonce, signature, gameId } or error
- *
- * GET /api/contracts/signer
- *   Returns: { address } -- the gameSigner public address
- *
- * These are called by the frontend when a game ends and the winner
- * needs a signature to call claimWinnings() on-chain.
- *
- * TODO: Add auth middleware (session check) and verify caller is actually
- * the winner / a player in the game before handing out signatures.
+ * All endpoints require session auth. Cancellation-by-ID is admin-only.
  */
 
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
+import { getSessionFromCookie, validateSession } from '../auth';
 import type { RoomManager } from '../roomManager';
 
 let _rm: RoomManager | null = null;
 
-/** Call once at startup to give routes access to the room manager */
 export function setRoomManager(rm: RoomManager) {
   _rm = rm;
 }
 
+// --- Rate limiting for contract endpoints ---
+const contractRateLimits = new Map<string, number[]>();
+function contractRateLimit(key: string, maxReqs: number, windowMs: number): boolean {
+  const now = Date.now();
+  const hits = contractRateLimits.get(key) ?? [];
+  const recent = hits.filter((t) => now - t < windowMs);
+  if (recent.length >= maxReqs) return false;
+  recent.push(now);
+  contractRateLimits.set(key, recent);
+  return true;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, hits] of contractRateLimits) {
+    const recent = hits.filter((t) => now - t < 60000);
+    if (recent.length === 0) contractRateLimits.delete(key);
+    else contractRateLimits.set(key, recent);
+  }
+}, 60000);
+
+/** Require authenticated session. Attaches user to req. */
+function requireAuth(req: Request, res: Response): ReturnType<typeof validateSession> {
+  const token = getSessionFromCookie(req.headers.cookie);
+  if (!token) {
+    res.status(401).json({ error: 'Authentication required' });
+    return null;
+  }
+  const user = validateSession(token);
+  if (!user) {
+    res.status(401).json({ error: 'Session expired' });
+    return null;
+  }
+  return user;
+}
+
+const ADMIN_WALLETS = (process.env.ADMIN_WALLET ?? '').toLowerCase().split(',').filter(Boolean);
+
 const router = Router();
 
-router.post('/settlement-signature', async (req, res) => {
+router.post('/settlement-signature', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`settlement:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
   const { roomCode, winnerAddress } = req.body ?? {};
 
   if (!roomCode || !winnerAddress) {
@@ -40,16 +70,24 @@ router.post('/settlement-signature', async (req, res) => {
     return;
   }
 
-  // Validate: room exists, game is finished, and requester is the winner
+  // Verify caller is the winner
+  if (user.wallet_address.toLowerCase() !== winnerAddress.toLowerCase()) {
+    res.status(403).json({ error: 'You can only request settlement for your own address' });
+    return;
+  }
+
   if (_rm) {
     const room = _rm.getRoom(roomCode);
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
       return;
     }
-    if (room.phase !== 'finished') {
+    if (room.phase !== 'finished' && room.gameState?.phase !== 'game-over') {
       res.status(400).json({ error: 'Game is not finished' });
       return;
+    }
+    if (room.gameState?.phase === 'game-over' && room.phase !== 'finished') {
+      room.phase = 'finished';
     }
     if (room.gameState?.winner !== null && room.gameState?.winner !== undefined) {
       const winnerPlayer = room.players[room.gameState.winner];
@@ -70,7 +108,16 @@ router.post('/settlement-signature', async (req, res) => {
   res.json({ nonce: result.nonce, signature: result.signature, gameId });
 });
 
-router.post('/cancellation-signature', async (req, res) => {
+router.post('/cancellation-signature', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`cancel:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
   const { roomCode } = req.body ?? {};
 
   if (!roomCode) {
@@ -78,8 +125,29 @@ router.post('/cancellation-signature', async (req, res) => {
     return;
   }
 
-  // TODO: Verify the caller is a player in this game
-  // TODO: Verify the game is in a cancellable state
+  // Verify caller is a player in this game and game is cancellable
+  if (_rm) {
+    const room = _rm.getRoom(roomCode);
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    // Verify caller is a player in the room
+    const isPlayer = room.players.some(
+      (p) => p.walletAddress?.toLowerCase() === user.wallet_address.toLowerCase()
+    );
+    if (!isPlayer) {
+      res.status(403).json({ error: 'You are not a player in this game' });
+      return;
+    }
+
+    // Only allow cancellation in lobby or finished state, NOT during active gameplay
+    if (room.phase === 'playing' && room.gameState?.phase !== 'game-over') {
+      res.status(400).json({ error: 'Cannot cancel an active game' });
+      return;
+    }
+  }
 
   const result = await signCancellation(roomCode);
   if (!result) {
@@ -91,7 +159,22 @@ router.post('/cancellation-signature', async (req, res) => {
   res.json({ nonce: result.nonce, signature: result.signature, gameId });
 });
 
-router.post('/cancellation-signature-by-id', async (req, res) => {
+router.post('/cancellation-signature-by-id', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  // Admin-only endpoint
+  if (!ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+    res.status(403).json({ error: 'Forbidden — admin only' });
+    return;
+  }
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`cancel-id:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
   const { gameId } = req.body ?? {};
 
   if (!gameId || typeof gameId !== 'string' || !gameId.startsWith('0x') || gameId.length !== 66) {

@@ -18,7 +18,7 @@ import {
 import '@rainbow-me/rainbowkit/styles.css';
 
 const CHAIN_ENV = process.env.NEXT_PUBLIC_CHAIN_ENV ?? 'base-sepolia';
-const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC_URL;
+const RPC_URL = '/api/rpc'; // Proxy to avoid exposing API keys
 const PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'placeholder';
 
 const activeChain = CHAIN_ENV === 'base-mainnet' ? base : baseSepolia;

@@ -145,10 +145,10 @@ export function GameProvider({
     createGameWithSprites,
   );
 
-  // Auto-advance turn after 1.5s when turn-end phase (no doubles)
+  // Auto-advance turn after 2.5s when turn-end phase (no doubles)
   useEffect(() => {
     if (state.phase === 'turn-end' && state.doublesCount === 0) {
-      const timer = setTimeout(() => dispatch({ type: 'END_TURN' }), 1500);
+      const timer = setTimeout(() => dispatch({ type: 'END_TURN' }), 2500);
       return () => clearTimeout(timer);
     }
   }, [state.phase, state.doublesCount]);

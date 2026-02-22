@@ -49,7 +49,8 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         sendGameAction('decline');
         break;
       case 'END_TURN':
-        sendGameAction('end-turn');
+        // Server handles turn-end auto-advance (2.5s delay) — don't send from client
+        // to avoid double-advancing turns
         break;
       case 'DRAW_CARD':
         sendGameAction('draw-card');

@@ -2,22 +2,44 @@ import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConf
 import fs from 'fs';
 import path from 'path';
 
+import os from 'os';
+
 const RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
-const KEYPAIR_PATH = path.join(process.cwd(), 'data', 'escrow-keypair.json');
+const KEYPAIR_PATH = path.join(os.homedir(), '.config', 'ante', 'solana-escrow.json');
+const LEGACY_KEYPAIR_PATH = path.join(process.cwd(), 'data', 'escrow-keypair.json');
 const WINNER_MULTIPLIER = Number(process.env.WINNER_MULTIPLIER || '2');
 
 const connection = new Connection(RPC_URL, 'confirmed');
 
-// Load or generate escrow keypair
+// Load or generate escrow keypair (H7: secure location with permission check)
 function loadKeypair(): Keypair {
+  // Try new secure location first
   if (fs.existsSync(KEYPAIR_PATH)) {
+    // Check file permissions
+    const stat = fs.statSync(KEYPAIR_PATH);
+    const mode = stat.mode & 0o777;
+    if (mode !== 0o600) {
+      console.warn(`[solana] WARNING: ${KEYPAIR_PATH} has permissions ${mode.toString(8)}, expected 600. Run: chmod 600 ${KEYPAIR_PATH}`);
+    }
     const data = JSON.parse(fs.readFileSync(KEYPAIR_PATH, 'utf-8'));
     return Keypair.fromSecretKey(Uint8Array.from(data));
   }
+
+  // Migrate from legacy location if exists
+  if (fs.existsSync(LEGACY_KEYPAIR_PATH)) {
+    console.log(`[solana] Migrating escrow keypair from ${LEGACY_KEYPAIR_PATH} to ${KEYPAIR_PATH}`);
+    const data = fs.readFileSync(LEGACY_KEYPAIR_PATH, 'utf-8');
+    const dir = path.dirname(KEYPAIR_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(KEYPAIR_PATH, data, { mode: 0o600 });
+    return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(data)));
+  }
+
+  // Generate new keypair
   const kp = Keypair.generate();
   const dir = path.dirname(KEYPAIR_PATH);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(KEYPAIR_PATH, JSON.stringify(Array.from(kp.secretKey)));
+  fs.writeFileSync(KEYPAIR_PATH, JSON.stringify(Array.from(kp.secretKey)), { mode: 0o600 });
   console.log(`Generated escrow keypair: ${kp.publicKey.toBase58()}`);
   return kp;
 }

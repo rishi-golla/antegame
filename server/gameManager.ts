@@ -50,6 +50,23 @@ export function applyGameAction(
     return { ok: false, error: 'Not your turn' };
   }
 
+  // Phase validation: each action is only valid in specific game phases
+  const phase = room.gameState.phase;
+  const VALID_PHASES: Record<GameAction, string[]> = {
+    'roll':         ['rolling'],
+    'buy':          ['buying'],
+    'decline':      ['buying'],
+    'end-turn':     ['turn-end'],
+    'draw-card':    ['drawing-card'],
+    'apply-card':   ['applying-card'],
+    'resolve-card': ['applying-card', 'drawing-card'],
+    'resolve-debt': ['in-debt'],
+  };
+  const validPhases = VALID_PHASES[action];
+  if (validPhases && !validPhases.includes(phase)) {
+    return { ok: false, error: `Cannot ${action} during ${phase} phase` };
+  }
+
   let newState: GameState;
 
   try {
@@ -85,10 +102,7 @@ export function applyGameAction(
     return { ok: false, error: 'Action failed' };
   }
 
-  // Auto-advance turn-end when no doubles (skip the "Next Player" click)
-  if (newState.phase === 'turn-end' && newState.doublesCount === 0) {
-    newState = endTurn(newState);
-  }
+  // turn-end auto-advance is handled by the server setTimeout (2.5s delay)
 
   room.gameState = newState;
   room.lastActivity = Date.now();
@@ -106,14 +120,13 @@ export function applyJailEscape(
   method: 'bail' | 'card' | 'roll'
 ): { ok: boolean; state?: GameState; error?: string } {
   if (!room.gameState) return { ok: false, error: 'Game not started' };
+  if (room.phase !== 'playing') return { ok: false, error: 'Game not in progress' };
   if (!isCurrentPlayer(room, socketId)) return { ok: false, error: 'Not your turn' };
+  if (room.gameState.phase !== 'in-jail') return { ok: false, error: 'Not in jail phase' };
 
   let newState = attemptJailEscape(room.gameState, method);
 
-  // Auto-advance turn-end when no doubles
-  if (newState.phase === 'turn-end' && newState.doublesCount === 0) {
-    newState = endTurn(newState);
-  }
+  // turn-end auto-advance is handled by the server setTimeout (2.5s delay)
 
   room.gameState = newState;
   room.lastActivity = Date.now();

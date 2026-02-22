@@ -61,11 +61,17 @@ export default function ChatView({ messages, onSend }: ChatViewProps) {
         ))}
       </div>
       <div className="inputRow">
-        <input
+        <textarea
           placeholder="Drop a message..."
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          rows={1}
+          onChange={(e) => {
+            setInput(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
+          }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); e.currentTarget.style.height = 'auto'; } }}
+          style={{ resize: 'none', overflow: 'auto', maxHeight: '60px' }}
         />
         <button onClick={handleSend}>Send</button>
       </div>

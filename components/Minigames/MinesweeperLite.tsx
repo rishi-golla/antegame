@@ -219,7 +219,6 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
                 disabled={gameEnded || cell.state !== 'hidden' || spectator}
                 style={{
                   width: 90, height: 90,
-                  border: 'none',
                   borderRadius: 6,
                   cursor: cell.state === 'hidden' && !gameEnded && !spectator ? 'pointer' : 'default',
                   position: 'relative',

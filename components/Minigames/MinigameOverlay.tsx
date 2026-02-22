@@ -236,11 +236,23 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
           <p className="minigameStakes">${minigame.baseAmount} on the line</p>
           <p className="minigameContext">{minigame.context === 'buying' ? 'property purchase' : 'rent payment'}</p>
           <div className="minigameTierInfo">
-            <div className="tierRow tier-win">Win — {minigame.context === 'buying' ? 'Free property!' : 'No rent!'}</div>
-            <div className="tierRow tier-close-win">Close — Pay ${Math.floor(minigame.baseAmount * 0.5)}</div>
-            <div className="tierRow tier-close-loss">Almost — Pay ${Math.floor(minigame.baseAmount * 1.5)}</div>
-            <div className="tierRow tier-loss">Loss — Pay ${Math.floor(minigame.baseAmount * 2)}</div>
-            <div className="tierRow tier-catastrophic">Disaster — Pay ${Math.floor(minigame.baseAmount * 5)}</div>
+            {minigame.context === 'buying' ? (
+              <>
+                <div className="tierRow tier-win">Win — Get it FREE!</div>
+                <div className="tierRow tier-close-win">Close — Buy for ${Math.floor(minigame.baseAmount * 0.5)} (half off)</div>
+                <div className="tierRow tier-close-loss">Almost — Lose ${Math.floor(minigame.baseAmount * 1.5)}, no property</div>
+                <div className="tierRow tier-loss">Loss — Lose ${Math.floor(minigame.baseAmount * 2)}, no property</div>
+                <div className="tierRow tier-catastrophic">Disaster — Lose ${Math.floor(minigame.baseAmount * 5)}, no property</div>
+              </>
+            ) : (
+              <>
+                <div className="tierRow tier-win">Win — No rent!</div>
+                <div className="tierRow tier-close-win">Close — Pay ${Math.floor(minigame.baseAmount * 0.5)} rent</div>
+                <div className="tierRow tier-close-loss">Almost — Pay ${Math.floor(minigame.baseAmount * 1.5)} rent</div>
+                <div className="tierRow tier-loss">Loss — Pay ${Math.floor(minigame.baseAmount * 2)} rent</div>
+                <div className="tierRow tier-catastrophic">Disaster — Pay ${Math.floor(minigame.baseAmount * 5)} rent</div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -258,7 +270,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
             ◉ Watching {currentPlayerName}
           </div>
         )}
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 100 }}>
+        <div className="minigameTimerWrapper">
           <CountdownTimer
             duration={30}
             onExpire={() => {

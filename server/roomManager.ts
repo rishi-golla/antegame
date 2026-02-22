@@ -1,11 +1,13 @@
+import crypto from 'crypto';
 import type { Room, ServerPlayer, ChatMessage } from './types';
 import { createGame } from '@/lib/gameEngine';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.randomBytes(6);
   let code = '';
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[bytes[i] % chars.length];
   }
   return code;
 }

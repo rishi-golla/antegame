@@ -10,9 +10,21 @@ router.get('/leaderboard', (_req: Request, res: Response) => {
   res.json({ leaderboard: data });
 });
 
-// GET /api/stats/profile/:wallet
+// GET /api/stats/profile/:wallet — requires auth, only your own profile
 router.get('/profile/:wallet', (req: Request, res: Response) => {
+  const token = getSessionFromCookie(req.headers.cookie);
+  if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  const user = validateSession(token);
+  if (!user) { res.status(401).json({ error: 'Session expired' }); return; }
+
   const wallet = req.params.wallet as string;
+  // Only allow viewing your own profile (or admin)
+  const ADMIN_WALLETS = (process.env.ADMIN_WALLET ?? '').toLowerCase().split(',').filter(Boolean);
+  if (user.wallet_address.toLowerCase() !== wallet.toLowerCase() && !ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+    res.status(403).json({ error: 'Can only view your own profile' });
+    return;
+  }
+
   const stats = getPlayerStats(wallet);
   if (!stats) {
     res.status(404).json({ error: 'Player not found' });

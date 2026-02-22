@@ -128,7 +128,6 @@ export default function GameLogView() {
                 borderLeftColor: style.accent || 'transparent',
               }}
             >
-              <span className="logIcon" style={{ color: style.color }}>{style.icon}</span>
               <span className="logText" style={{ color: style.color }}>
                 {highlightMessage(entry.message, players)}
               </span>

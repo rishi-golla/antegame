@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /game
+Disallow: /lobby
+
+Sitemap: https://ante.wtf/sitemap.xml

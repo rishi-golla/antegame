@@ -56,14 +56,14 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
       // Player just dropped below $100 - screen flash
       if (prevMoney >= 100 && currentMoney < 100 && !player.bankrupt) {
         setScreenFlash(true);
-        play('sfx/danger-alert', { volume: 0.35 });
+        play('sfx/countdown', { volume: 0.35 });
         setTimeout(() => setScreenFlash(false), 200);
       }
       
       // Player just dropped below $50 - red vignette for everyone
       if (prevMoney >= 50 && currentMoney < 50 && !player.bankrupt) {
         setRedVignette(true);
-        play('sfx/critical-alert', { volume: 0.4 });
+        play('sfx/bankruptcy', { volume: 0.3 });
       }
       
       // Check if anyone is still below $50 for continuous vignette

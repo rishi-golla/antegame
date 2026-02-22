@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
@@ -18,6 +18,20 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   const { state, dispatch } = useGame();
   const { play } = useAudio();
   const { isMyTurn } = useMultiplayerTurn();
+
+  // Block actions while turn announcement is playing
+  const [turnAnnouncing, setTurnAnnouncing] = useState(false);
+  const announceIndexRef = useRef(state.currentPlayerIndex);
+  const announceMountRef = useRef(false);
+  useEffect(() => {
+    if (!announceMountRef.current) { announceMountRef.current = true; announceIndexRef.current = state.currentPlayerIndex; return; }
+    if (announceIndexRef.current !== state.currentPlayerIndex) {
+      setTurnAnnouncing(true);
+      const t = setTimeout(() => setTurnAnnouncing(false), 1800);
+      announceIndexRef.current = state.currentPlayerIndex;
+      return () => clearTimeout(t);
+    }
+  }, [state.currentPlayerIndex]);
 
   // Eagerly preload all minigame backgrounds on game start
   useEffect(() => {
@@ -56,72 +70,33 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   }, [state.phase, isAnimating, dispatch]);
 
   // Auto-advance turn-end (server handles this for multiplayer;
-  // for free-play/local, auto-click after 1s)
+  // for free-play/local, auto-advance after 2.5s)
   const turnEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (state.phase === 'turn-end') {
       turnEndTimerRef.current = setTimeout(() => {
         play('sfx/turn-start');
         dispatch({ type: 'END_TURN' });
-      }, 1000);
+      }, 2500);
     }
     return () => {
       if (turnEndTimerRef.current) clearTimeout(turnEndTimerRef.current);
     };
   }, [state.phase, dispatch, play]);
   const player = state.players[state.currentPlayerIndex];
-  const disabled = isRolling || isAnimating || state.phase === 'game-over';
+  const disabled = isRolling || isAnimating || turnAnnouncing || state.phase === 'game-over';
 
   // Countdown timer config per phase
-  const timerPhases: Record<string, number> = {
-    'pre-roll': 15,
-    buying: 30,
-    rolling: 15,
-    'paying-rent': 20,
-    'in-debt': 30,
-    'drawing-card': 10,
-    'applying-card': 10,
-    'turn-end': 10,
-    'in-jail': 20,
-  };
-  const timerDuration = timerPhases[state.phase] ?? 0;
-  const showTimer = isMyTurn && timerDuration > 0 && !isRolling && !isAnimating;
-  const timerResetKey = `${state.phase}-${state.currentPlayerIndex}-${state.turnCount ?? state.roundNumber}`;
+  // Server bankrupts idle players after 45s — show visual countdown
+  // Timer resets each time the player changes (server restarts its timer on actions)
+  const timerDuration = (state.phase !== 'game-over' && state.phase !== 'minigame') ? 45 : 0;
+  const showTimer = timerDuration > 0 && !isRolling && !isAnimating && !turnAnnouncing;
+  const timerResetKey = `${state.currentPlayerIndex}-${state.roundNumber}`;
 
   const handleTimerExpire = () => {
-    switch (state.phase) {
-      case 'buying':
-        play('sfx/decline-property');
-        dispatch({ type: 'DECLINE' });
-        break;
-      case 'rolling':
-        play('sfx/dice-shake');
-        dispatch({ type: 'ROLL' });
-        break;
-      case 'paying-rent':
-        play('sfx/pay-rent');
-        dispatch({ type: 'PAY_RENT' });
-        break;
-      case 'in-debt':
-        play('sfx/bankruptcy');
-        dispatch({ type: 'BANKRUPTCY' });
-        break;
-      case 'pre-roll':
-        play('sfx/dice-shake');
-        dispatch({ type: 'ROLL' });
-        break;
-      case 'drawing-card':
-        dispatch({ type: 'APPLY_CARD' });
-        break;
-      case 'applying-card':
-        dispatch({ type: 'APPLY_CARD' });
-        break;
-      case 'turn-end':
-        dispatch({ type: 'END_TURN' });
-        break;
-      case 'in-jail':
-        dispatch({ type: 'JAIL_ESCAPE', method: 'roll' });
-        break;
+    // Client timer is visual only — server handles idle bankruptcy after 45s
+    // No auto-play actions; idle players get bankrupted by the server
+    if (false) {
     }
   };
 
@@ -129,10 +104,10 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     if (disabled) return;
 
     if (state.phase === 'in-jail') {
-      play('sfx/dice-shake');
+      play('sfx/button-click');
       dispatch({ type: 'JAIL_ESCAPE', method: 'roll' });
-    } else if (state.phase === 'rolling' || state.phase === 'pre-roll') {
-      play('sfx/dice-shake');
+    } else if (state.phase === 'rolling') {
+      play('sfx/button-click');
       dispatch({ type: 'ROLL' });
     } else if (state.phase === 'drawing-card' && !state.drawnCard) {
       dispatch({ type: 'DRAW_CARD' });
@@ -148,7 +123,6 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     if (isRolling) return 'Rolling...';
     if (isAnimating) return 'Moving...';
     switch (state.phase) {
-      case 'pre-roll':
       case 'rolling':
         return `Roll Dice`;
       case 'in-jail':
@@ -403,11 +377,11 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       {/* Jail escape options */}
       {state.phase === 'in-jail' && !isRolling && !isAnimating && (
         <div className="jailActions">
-          <button className="jailBtn" onClick={() => dispatch({ type: 'JAIL_ESCAPE', method: 'bail' })}>
+          <button className="jailBtn" onClick={() => { play('sfx/collect-money'); dispatch({ type: 'JAIL_ESCAPE', method: 'bail' }); }}>
             Pay $50 Bail
           </button>
           {player.getOutOfJailCards > 0 && (
-            <button className="jailBtn" onClick={() => dispatch({ type: 'JAIL_ESCAPE', method: 'card' })}>
+            <button className="jailBtn" onClick={() => { play('sfx/card-good'); dispatch({ type: 'JAIL_ESCAPE', method: 'card' }); }}>
               Use Card
             </button>
           )}

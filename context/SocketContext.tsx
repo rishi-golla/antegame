@@ -284,7 +284,6 @@ const FALLBACK: SocketContextValue = {
   sendGameAction: noop,
   sendPropertyAction: noop,
   sendTradeAction: noop,
-  socket: null as any,
   quickPlay: noopAsync as any,
   sendDeposit: noopAsync as any,
   pendingRefund: null,

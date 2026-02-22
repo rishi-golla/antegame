@@ -101,6 +101,11 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
           </defs>
         </svg>
 
+        {roomCode && (
+          <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', color: 'rgba(212,175,55,0.5)', letterSpacing: '0.15em', marginBottom: 4 }}>
+            ROOM {roomCode}
+          </div>
+        )}
         <div className="jackpotLabel">WINNER</div>
         <h1 className="gameOverTitle jackpotWinner">{winner.name}</h1>
         <p className="gameOverWinnerWorth">${getNetWorth(state, winner.id).toLocaleString()}</p>

@@ -20,8 +20,11 @@ interface HistoryEntry {
   duration_ms: number;
   player_count: number;
   winner_name: string;
+  winner_wallet: string;
   entry_fee_lamports: number;
   winner_payout_lamports: number;
+  room_code: string;
+  players: string; // JSON string
 }
 
 interface ProfileScreenProps {
@@ -99,15 +102,31 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
 
         {history.length > 0 && (
           <div className="profileHistory">
-            <h3 className="profileHistoryTitle">Recent Games</h3>
-            {history.slice(0, 5).map((h) => (
-              <div key={h.id} className="profileHistoryRow">
-                <span>{new Date(h.finished_at * 1000).toLocaleDateString()}</span>
-                <span>{h.player_count}P</span>
-                <span className="profileHistoryWinner">{h.winner_name}</span>
-                <span>{(h.entry_fee_lamports / 1e9).toFixed(2)} ETH</span>
-              </div>
-            ))}
+            <h3 className="profileHistoryTitle">Game History</h3>
+            {history.map((h) => {
+              const isWinner = h.winner_wallet === user?.walletAddress;
+              const dur = h.duration_ms > 0 ? `${Math.floor(h.duration_ms / 60000)}m` : '';
+              return (
+                <div key={h.id} className={`profileHistoryRow ${isWinner ? 'historyWin' : 'historyLoss'}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    <span style={{ fontSize: '0.65rem', color: 'rgba(212,175,55,0.5)' }}>
+                      {h.room_code ? `#${h.room_code}` : `#${h.id}`}
+                    </span>
+                    <span style={{ fontSize: '0.65rem', color: 'rgba(212,175,55,0.5)' }}>
+                      {new Date(h.finished_at * 1000).toLocaleDateString()} {dur && `· ${dur}`}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 4 }}>
+                    <span>
+                      {h.player_count}P · Winner: <strong className="profileHistoryWinner">{h.winner_name}</strong>
+                    </span>
+                    <span style={{ color: isWinner ? '#22c55e' : '#ff4444', fontWeight: 700 }}>
+                      {isWinner ? '+' : '-'}{(h.entry_fee_lamports / 1e9).toFixed(4)} ETH
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 

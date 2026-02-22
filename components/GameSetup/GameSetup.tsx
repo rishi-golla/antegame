@@ -40,7 +40,10 @@ export default function GameSetup({ onStart }: GameSetupProps) {
     .map((p) => p.characterId)
     .filter(Boolean) as string[];
 
+  const allHaveCharacter = players.slice(0, playerCount).every((p) => p.characterId !== null);
+
   const handleStart = () => {
+    if (!allHaveCharacter) return;
     const activePlayers = players.slice(0, playerCount);
     const finalNames = activePlayers.map((p, i) => p.name.trim() || `Player ${i + 1}`);
     const finalSprites = activePlayers.map((p) => {
@@ -142,8 +145,9 @@ export default function GameSetup({ onStart }: GameSetupProps) {
           })}
         </div>
 
-        <button className="setupStartBtn" onClick={handleStart}>
-          Start Game
+        <button className="setupStartBtn" onClick={handleStart} disabled={!allHaveCharacter}
+          style={{ opacity: allHaveCharacter ? 1 : 0.4, cursor: allHaveCharacter ? 'pointer' : 'not-allowed' }}>
+          {allHaveCharacter ? 'Start Game' : `Pick characters for all ${playerCount} players`}
         </button>
       </div>
     </div>
