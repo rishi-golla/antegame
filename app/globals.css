@@ -96,6 +96,19 @@
   /* Transitions */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* GPU compositing for animated overlays */
+.minigameOverlay,
+.minigameCurtain,
+.curtainLeft,
+.curtainRight,
+.minigameResult,
+.minigameResultCard {
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 * {
@@ -810,7 +823,7 @@ input {
   color: #ffd700;
   white-space: nowrap;
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
-  animation: hintFloat 3s ease-in-out infinite, hintGlow 2s ease-in-out infinite;
+  animation: hintGlow 3s ease-in-out infinite;
   padding: 6px 20px;
   border-radius: 20px;
   backdrop-filter: blur(6px);
@@ -1505,8 +1518,8 @@ input {
   text-shadow: 0 0 8px rgba(255, 200, 100, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
   overflow: visible;
   z-index: 1;
-  animation: buyPulse 1.5s ease-in-out infinite, buyGlow 2s ease-in-out infinite !important;
-  transition: filter 0.2s;
+  animation: buyGlow 3s ease-in-out infinite !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
 }
 
 /* Spinning conic-gradient border */
@@ -1517,7 +1530,7 @@ input {
   border-radius: 14px;
   background: conic-gradient(from var(--buy-angle, 0deg), #d4af37, #8b1a2b, #d4af37, #3d0a15, #d4af37);
   z-index: -1;
-  animation: buyBorderSpin 3s linear infinite;
+  animation: buyBorderSpin 6s linear infinite;
 }
 
 /* Inner mask to show border only */
@@ -1542,17 +1555,17 @@ input {
 
 @keyframes buyPulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.07); }
+  50% { transform: scale(1.02); }
 }
 
 @keyframes buyGlow {
-  0%, 100% { box-shadow: 0 0 15px rgba(139, 26, 43, 0.4), 0 0 30px rgba(139, 26, 43, 0.2); }
-  50% { box-shadow: 0 0 25px rgba(139, 26, 43, 0.8), 0 0 50px rgba(212, 175, 55, 0.3), 0 0 80px rgba(139, 26, 43, 0.2); }
+  0%, 100% { box-shadow: 0 0 12px rgba(139, 26, 43, 0.3), 0 0 24px rgba(139, 26, 43, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(139, 26, 43, 0.5), 0 0 40px rgba(212, 175, 55, 0.2); }
 }
 
 .buyButton:hover:not(:disabled) {
   filter: brightness(1.2);
-  animation: buyPulse 0.8s ease-in-out infinite, buyGlow 1s ease-in-out infinite !important;
+  animation: buyGlow 1.5s ease-in-out infinite !important;
 }
 
 .buyButton:active:not(:disabled) {
@@ -1584,7 +1597,7 @@ input {
   text-shadow: 0 0 6px rgba(184, 154, 106, 0.3);
   min-width: auto;
   overflow: hidden;
-  animation: passBreathe 2.5s ease-in-out infinite, passSmoke 4s ease-in-out infinite !important;
+  animation: passBreathe 3.5s ease-in-out infinite !important;
 }
 
 /* Drifting smoke overlay */
@@ -1600,8 +1613,8 @@ input {
 }
 
 @keyframes passBreathe {
-  0%, 100% { opacity: 0.7; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.04); }
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.01); }
 }
 
 @keyframes passSmoke {
@@ -2699,9 +2712,9 @@ input {
   letter-spacing: 0.1em;
   z-index: 1;
   animation:
-    gambleGoldShift 2s ease infinite,
-    gambleWobble 1.8s ease-in-out infinite,
-    gambleBloom 1.2s ease-in-out infinite !important;
+    gambleGoldShift 4s ease-in-out infinite,
+    gambleBloom 3s ease-in-out infinite !important;
+  will-change: background-position, box-shadow;
 }
 
 /* Spinning dashed border ring */
@@ -2711,7 +2724,7 @@ input {
   inset: -3px;
   border-radius: 16px;
   border: 2px dashed #ffd700;
-  animation: gambleDashMarch 2s linear infinite, gambleRingPulse 1.5s ease-in-out infinite;
+  animation: gambleDashMarch 6s linear infinite;
   pointer-events: none;
 }
 
@@ -2725,7 +2738,8 @@ input {
   color: #3d1a00;
   letter-spacing: 0.2em;
   margin-top: 3px;
-  animation: gambleSubWave 1.5s ease-in-out infinite;
+  letter-spacing: 0.25em;
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -2737,7 +2751,7 @@ input {
   opacity: 0.5;
   pointer-events: none;
   filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.6));
-  animation: gambleSuitPulse 2s ease-in-out infinite;
+  animation: gambleSuitPulse 3s ease-in-out infinite;
 }
 .gambleSuitTL { top: 5px; left: 7px; animation-delay: 0s; }
 .gambleSuitTR { top: 5px; right: 7px; animation-delay: -0.5s; }
@@ -2745,8 +2759,8 @@ input {
 .gambleSuitBR { bottom: 5px; right: 7px; animation-delay: -1.5s; }
 
 @keyframes gambleSuitPulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.3); }
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
 }
 
 @keyframes gambleGoldShift {
@@ -2757,25 +2771,20 @@ input {
 
 @keyframes gambleWobble {
   0%, 100% { transform: scale(1) rotate(0deg); }
-  15% { transform: scale(1.05) rotate(-1.2deg); }
-  30% { transform: scale(1.03) rotate(1.2deg); }
-  45% { transform: scale(1.06) rotate(-0.8deg); }
-  60% { transform: scale(1.03) rotate(0.8deg); }
-  75% { transform: scale(1.05) rotate(-0.4deg); }
+  50% { transform: scale(1.02) rotate(0.5deg); }
 }
 
 @keyframes gambleBloom {
   0%, 100% {
     box-shadow:
-      0 0 15px rgba(255, 215, 0, 0.4),
-      0 0 30px rgba(212, 175, 55, 0.2);
+      0 0 12px rgba(255, 215, 0, 0.3),
+      0 0 24px rgba(212, 175, 55, 0.15);
   }
   50% {
     box-shadow:
-      0 0 30px rgba(255, 215, 0, 0.8),
-      0 0 60px rgba(255, 215, 0, 0.4),
-      0 0 100px rgba(212, 175, 55, 0.2),
-      inset 0 0 15px rgba(255, 255, 200, 0.1);
+      0 0 20px rgba(255, 215, 0, 0.5),
+      0 0 40px rgba(255, 215, 0, 0.25),
+      0 0 60px rgba(212, 175, 55, 0.1);
   }
 }
 
@@ -2796,10 +2805,9 @@ input {
 
 .gambleBtn:hover:not(:disabled) {
   animation:
-    gambleGoldShift 1s ease infinite,
-    gambleWobble 0.8s ease-in-out infinite,
-    gambleBloom 0.6s ease-in-out infinite !important;
-  filter: brightness(1.15) saturate(1.2);
+    gambleGoldShift 2s ease-in-out infinite,
+    gambleBloom 1.5s ease-in-out infinite !important;
+  filter: brightness(1.1) saturate(1.1);
 }
 
 .gambleBtn:active:not(:disabled) {
@@ -2839,6 +2847,13 @@ input {
   box-shadow: 
     inset 0 2px 0 rgba(212, 175, 55, 0.2),
     0 0 30px rgba(212, 175, 55, 0.3);
+  animation: overlayFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+  will-change: opacity;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ===== Per-Minigame Themed Backgrounds ===== */
@@ -3084,7 +3099,8 @@ input {
 .curtainLeft, .curtainRight {
   flex: 1;
   background: #0a0505;
-  transition: transform 1s steps(8);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .curtainLeft { transform-origin: left; }
@@ -3102,7 +3118,7 @@ input {
   z-index: 10;
   position: relative;
   opacity: 0;
-  transition: opacity 0.5s steps(5);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .minigameIntro.visible {
@@ -3117,7 +3133,7 @@ input {
     0 0 10px var(--gold),
     0 0 20px rgba(255, 215, 0, 0.4),
     0 0 40px rgba(255, 215, 0, 0.2);
-  animation: neonTextPulse 1.5s steps(4) infinite;
+  animation: neonTextPulse 2.5s ease-in-out infinite;
   margin: 0 0 16px;
 }
 
@@ -3462,7 +3478,7 @@ input {
 }
 
 .cardRevealAnim {
-  animation: pixelCardReveal 0.5s steps(6);
+  animation: pixelCardReveal 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes pixelCardReveal {
@@ -3687,7 +3703,7 @@ input {
 
 /* Rolling: shake + rotate with stepped pixelated feel */
 .diceRolling {
-  animation: diceShake 0.08s steps(2) infinite, diceSpin 0.15s steps(4) infinite;
+  animation: diceShake 0.12s ease-in-out infinite, diceSpin 0.25s linear infinite;
 }
 
 @keyframes diceShake {
@@ -3708,7 +3724,7 @@ input {
 
 /* Bounce on landing */
 .diceBounce {
-  animation: diceLand 0.4s steps(6) forwards !important;
+  animation: diceLand 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
 }
 
 @keyframes diceLand {
@@ -4096,7 +4112,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: tileReveal 0.3s steps(4);
+  animation: tileReveal 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .msTileGem {
@@ -4117,7 +4133,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: mineExplode 0.5s steps(6);
+  animation: mineExplode 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .msTileBomb {
@@ -4126,7 +4142,7 @@ input {
 }
 
 .msCellExplode {
-  animation: cellShake 0.5s steps(6);
+  animation: cellShake 0.4s ease-in-out;
 }
 
 @keyframes tileReveal {
@@ -4278,7 +4294,7 @@ input {
     inset 0 2px 4px rgba(255, 255, 255, 0.3),
     inset 0 -3px 5px rgba(0, 0, 0, 0.3),
     0 4px 8px rgba(0, 0, 0, 0.4);
-  transition: transform 0.1s steps(2);
+  transition: transform 0.15s ease-out;
 }
 
 .luckyChip:hover {
@@ -4292,7 +4308,7 @@ input {
     inset 0 -3px 5px rgba(0, 0, 0, 0.3),
     0 0 20px rgba(255, 215, 0, 0.6),
     0 0 40px rgba(255, 215, 0, 0.3);
-  animation: chipGlow 1s steps(4) infinite;
+  animation: chipGlow 1.5s ease-in-out infinite;
 }
 
 @keyframes chipGlow {
@@ -4313,7 +4329,7 @@ input {
   font-size: 4rem;
   color: var(--gold-bright);
   text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-  animation: countdownPulse 0.8s steps(4);
+  animation: countdownPulse 1s ease-in-out;
 }
 
 @keyframes countdownPulse {
@@ -4352,7 +4368,7 @@ input {
   place-items: center;
   border: 3px dashed rgba(255, 255, 255, 0.6);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-  animation: revealPop 0.5s steps(6);
+  animation: revealPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes revealPop {
@@ -4504,7 +4520,7 @@ input {
 }
 
 .cardSlideIn {
-  animation: pixelCardSlide 0.3s steps(5);
+  animation: pixelCardSlide 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes pixelCardSlide {
@@ -4597,7 +4613,7 @@ input {
 }
 
 .coinFlipping {
-  animation: pixelCoinFlip 0.15s steps(2) infinite;
+  animation: pixelCoinFlip 0.4s ease-in-out infinite;
 }
 
 @keyframes pixelCoinFlip {
@@ -4783,7 +4799,7 @@ input {
   height: 100%;
   object-fit: contain;
   opacity: 0.3;
-  transition: transform 0.2s steps(6);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dialDigit {
@@ -7502,14 +7518,14 @@ button:active:not(:disabled) {
     0 0 10px rgba(212, 175, 55, 0.6),
     0 0 20px rgba(212, 175, 55, 0.3),
     0 0 30px rgba(212, 175, 55, 0.15);
-  animation: tokenPulse 1.5s ease-in-out infinite;
+  animation: tokenPulse 2.5s ease-in-out infinite;
   z-index: 10;
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 @keyframes tokenPulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3), 0 0 30px rgba(212, 175, 55, 0.15); }
-  50% { box-shadow: 0 0 16px rgba(212, 175, 55, 0.9), 0 0 32px rgba(212, 175, 55, 0.5), 0 0 44px rgba(212, 175, 55, 0.25); }
+  0%, 100% { box-shadow: 0 0 8px rgba(212, 175, 55, 0.4), 0 0 16px rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 0 14px rgba(212, 175, 55, 0.6), 0 0 28px rgba(212, 175, 55, 0.3); }
 }
 
 /* ===== CHARACTER SELECT GRID ===== */
@@ -8088,7 +8104,7 @@ img[src*="/assets/"] {
   border: 2px solid var(--gold);
   color: var(--gold);
   cursor: pointer;
-  transition: all 0.1s steps(2);
+  transition: all 0.15s ease-out;
 }
 
 .feeChip:hover {
