@@ -381,7 +381,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                     background: 'linear-gradient(180deg, #3a2020, #2a0f1f)',
                     border: '1px solid #d4af37',
                     borderRadius: 4,
-                    color: '#ccc',
+                    color: '#fff8e7',
                     fontSize: 14,
                     fontWeight: 900,
                     cursor: spectator ? 'default' : 'pointer',
@@ -421,7 +421,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                     background: 'linear-gradient(180deg, #2a0f1f, #3a2020)',
                     border: '1px solid #d4af37',
                     borderRadius: 4,
-                    color: '#ccc',
+                    color: '#fff8e7',
                     fontSize: 14,
                     fontWeight: 900,
                     cursor: spectator ? 'default' : 'pointer',
@@ -502,7 +502,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
             fontFamily: 'Nunito, sans-serif',
             fontSize: 11,
             fontWeight: 700,
-            color: '#888',
+            color: '#d5c4a1',
             letterSpacing: 1,
           }}>PREVIOUS ATTEMPTS:</div>
           {attempts.map((attempt, index) => (
@@ -511,16 +511,16 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
               padding: '4px 8px',
               background: 'rgba(0,0,0,0.3)',
               borderRadius: 4,
-              border: '1px solid #333',
+              border: '1px solid rgba(212,175,55,0.2)',
             }}>
-              <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#666' }}>#{index + 1}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#b89a6a' }}>#{index + 1}</span>
               <span style={{ fontFamily: 'monospace', fontSize: 14, color: '#e0e0e0', letterSpacing: 3 }}>[{attempt.guess.join('')}]</span>
               <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#d4af37' }}>●×{attempt.correctPosition}</span>
               <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#b89a6a' }}>◐×{attempt.correctDigit}</span>
             </div>
           ))}
           {attempts.length === 0 && (
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: '#555', fontStyle: 'italic' }}>NO ATTEMPTS YET</div>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: '#9a8462', fontStyle: 'italic' }}>NO ATTEMPTS YET</div>
           )}
         </div>
 
@@ -529,7 +529,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           fontFamily: 'Nunito, sans-serif',
           fontSize: 11,
           fontWeight: 600,
-          color: '#888',
+          color: '#d5c4a1',
           textAlign: 'center',
           maxWidth: 280,
         }}>

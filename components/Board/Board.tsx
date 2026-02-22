@@ -339,19 +339,22 @@ export default function Board() {
     prevPropertiesRef.current = currentProperties;
   }, [state.players]);
 
-  // Effect 3: Pass GO shockwave
+  // Effect 3: Pass GO shockwave — needs own ref since prevPositionsRef is updated by animation effect first
+  const goShockPrevRef = useRef<number[]>([]);
   useEffect(() => {
-    if (prevPositionsRef.current.length === 0) return;
     const currentPositions = state.players.map(p => p.position);
-    for (let i = 0; i < currentPositions.length; i++) {
-      const prev = prevPositionsRef.current[i];
-      const curr = currentPositions[i];
-      if (prev !== undefined && prev > curr && curr !== 10 && !state.players[i].inJail && !state.players[i].bankrupt) {
-        setGoShockwave(true);
-        setTimeout(() => setGoShockwave(false), 800);
-        break;
+    if (goShockPrevRef.current.length > 0) {
+      for (let i = 0; i < currentPositions.length; i++) {
+        const prev = goShockPrevRef.current[i];
+        const curr = currentPositions[i];
+        if (prev !== undefined && prev > curr && curr !== 10 && !state.players[i].inJail && !state.players[i].bankrupt) {
+          setGoShockwave(true);
+          setTimeout(() => setGoShockwave(false), 800);
+          break;
+        }
       }
     }
+    goShockPrevRef.current = currentPositions;
   }, [positionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Effect 4: Monopoly lightning (color group complete)
