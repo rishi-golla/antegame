@@ -311,7 +311,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
               color: result.correct ? '#d4af37' : '#ff1744',
               animation: result.correct ? 'cf-glow-green 1.5s ease-in-out infinite' : 'cf-glow-red 1.5s ease-in-out infinite',
             }}>
-              {result.correct ? '·' : '✕'}
+              {result.correct ? '✓' : '✕'}
             </span>
           </div>
         ))}

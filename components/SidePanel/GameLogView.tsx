@@ -13,11 +13,11 @@ function classifyLog(message: string): LogStyle {
   const m = message.toLowerCase();
   
   if (m.includes('rolled') && m.includes('doubles'))
-    return { icon: '⬡', color: '#fbbf24', accent: 'var(--gold-bright)' };
+    return { icon: '✓', color: '#fbbf24', accent: 'var(--gold-bright)' };
   if (m.includes('rolled'))
-    return { icon: '⬡', color: 'var(--ink-secondary)' };
+    return { icon: '✓', color: 'var(--ink-secondary)' };
   if (m.includes('bought'))
-    return { icon: '▪', color: '#4ade80' };
+    return { icon: '✓', color: '#4ade80' };
   if (m.includes('passed go') || m.includes('collected'))
     return { icon: '→', color: '#4ade80', accent: '#4ade80' };
   if (m.includes('paid') && m.includes('rent'))
@@ -25,7 +25,7 @@ function classifyLog(message: string): LogStyle {
   if (m.includes('paid') || m.includes('tax'))
     return { icon: '−', color: '#fb923c' };
   if (m.includes('jail') || m.includes('sent to'))
-    return { icon: '⊘', color: '#f87171', accent: '#ef4444' };
+    return { icon: '✕', color: '#f87171', accent: '#ef4444' };
   if (m.includes('declined'))
     return { icon: '✕', color: 'var(--muted)' };
   if (m.includes('drew'))
@@ -49,7 +49,7 @@ function classifyLog(message: string): LogStyle {
   if (m.includes('owes'))
     return { icon: '!', color: '#f87171' };
     
-  return { icon: '·', color: 'var(--ink-secondary)' };
+  return { icon: '—', color: 'var(--ink-secondary)' };
 }
 
 function highlightMessage(message: string, players: { name: string; color: string }[]): React.ReactElement[] {
