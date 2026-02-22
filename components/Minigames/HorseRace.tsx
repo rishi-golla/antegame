@@ -260,10 +260,14 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
           color: '#e0e0e0',
           letterSpacing: 2,
           display: 'flex', gap: 12, alignItems: 'center',
+          background: 'rgba(0,0,0,0.5)',
+          padding: '6px 18px',
+          borderRadius: 20,
+          backdropFilter: 'blur(4px)',
         }}>
-          <span style={{ color: '#ffd700' }}>YOU {playerWins}</span>
-          <span style={{ color: '#666' }}>—</span>
-          <span style={{ color: '#dc2626' }}>{houseWins} HOUSE</span>
+          <span style={{ color: '#ffd700', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>YOU {playerWins}</span>
+          <span style={{ color: '#888', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>—</span>
+          <span style={{ color: '#ef4444', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{houseWins} HOUSE</span>
         </div>
 
         {/* Round indicator */}
