@@ -773,14 +773,14 @@ input {
 }
 
 .deckStack.deckCommunity {
-  top: 11%;
-  left: 13%;
+  top: 5%;
+  left: 5%;
   transform: rotate(-12deg);
 }
 
 .deckStack.deckChance {
-  right: 11%;
-  bottom: 10%;
+  right: 5%;
+  bottom: 5%;
   transform: rotate(10deg);
 }
 
