@@ -159,6 +159,17 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
   const { stopMusic } = useAudio();
   const [tradeTarget, setTradeTarget] = useState<number | null>(null);
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; senderName: string; senderColor: string; text: string; system: boolean }>>([]);
+
+  const handleSendChat = (text: string) => {
+    setChatMessages(prev => [...prev, {
+      id: `local-${Date.now()}`,
+      senderName: 'You',
+      senderColor: '#d4af37',
+      text,
+      system: false,
+    }]);
+  };
 
   useEffect(() => { stopMusic(); }, [stopMusic]);
   return (
@@ -166,7 +177,7 @@ function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
       <main className="gameScreen">
         <PlayerList onTrade={setTradeTarget} />
         <Board />
-        <SidePanel />
+        <SidePanel chatMessages={chatMessages} onSendChat={handleSendChat} />
       </main>
       {tradeTarget !== null && (
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
