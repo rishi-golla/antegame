@@ -220,7 +220,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
 
         {/* Attempt counter */}
         <div style={{
-          fontFamily: 'monospace',
+          fontFamily: 'Nunito, sans-serif',
           fontSize: 14,
           color: cracked ? '#d4af37' : '#d4af37',
           background: '#1a0f0f',
@@ -462,7 +462,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
               style={{
                 width: 80,
                 padding: '8px 12px',
-                fontFamily: 'monospace',
+                fontFamily: 'Nunito, sans-serif',
                 fontSize: 16,
                 color: '#ffd700',
                 background: '#0a0a0a',
@@ -513,10 +513,10 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
               borderRadius: 4,
               border: '1px solid rgba(212,175,55,0.2)',
             }}>
-              <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#b89a6a' }}>#{index + 1}</span>
-              <span style={{ fontFamily: 'monospace', fontSize: 14, color: '#e0e0e0', letterSpacing: 3 }}>[{attempt.guess.join('')}]</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#d4af37' }}>●×{attempt.correctPosition}</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#b89a6a' }}>◐×{attempt.correctDigit}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, fontWeight: 700, color: '#b89a6a' }}>#{index + 1}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 800, color: '#e0e0e0', letterSpacing: 3 }}>{attempt.guess.join(' ')}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 700, color: '#4ade80' }}>{attempt.correctPosition} exact</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 700, color: '#fbbf24' }}>{attempt.correctDigit} close</span>
             </div>
           ))}
           {attempts.length === 0 && (
@@ -533,7 +533,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           textAlign: 'center',
           maxWidth: 280,
         }}>
-          {cracked ? '✦ SAFE CRACKED ✦' : failed ? `FAILED — CODE: [${combination.join('')}]` : 'DIGITS 1-4. SET COMBO AND TRY. ● = RIGHT PLACE  ◐ = WRONG PLACE'}
+          {cracked ? '✦ SAFE CRACKED ✦' : failed ? `LOCKED OUT — The code was ${combination.join(' ')}` : 'Guess the 3-digit code (1–4). "Exact" = right number, right spot. "Close" = right number, wrong spot.'}
         </div>
       </div>
     </>

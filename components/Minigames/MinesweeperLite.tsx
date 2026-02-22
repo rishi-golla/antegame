@@ -182,7 +182,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
 
         {/* Digital display */}
         <div style={{
-          fontFamily: 'monospace',
+          fontFamily: 'Nunito, sans-serif',
           fontSize: 16,
           color: '#d4af37',
           background: '#1a0f0f',
