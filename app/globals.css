@@ -2609,81 +2609,97 @@ input {
 
 /* ===== MINIGAME STYLES ===== */
 
+/* ── GAMBLE — THE STAR ── */
 .gambleBtn {
-  background: linear-gradient(180deg, #fbbf24 0%, #d97706 50%, #b45309 100%) !important;
-  border-color: #fcd34d !important;
-  color: #1a0a00 !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: gambleGlow 2.5s ease-in-out infinite !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 6px 0 #78350f,
-    0 0 24px rgba(251, 191, 36, 0.35),
-    0 0 60px rgba(251, 191, 36, 0.1) !important;
-  min-width: 140px !important;
-  font-size: 0.95rem !important;
   position: relative;
+  min-width: 160px;
+  padding: 14px 36px;
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff !important;
+  background: linear-gradient(135deg, #6b1a3a 0%, #3d0f22 40%, #d4af37 100%) !important;
+  background-size: 300% 300% !important;
+  animation: gambleGradient 4s ease infinite, gambleBreathe 3s ease-in-out infinite, gamblePulse 2s ease-in-out infinite !important;
+  border: 2px solid #d4af37 !important;
+  border-radius: 12px;
+  cursor: pointer;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3) !important;
+  transition: all 0.2s ease;
+  overflow: visible;
+  letter-spacing: 0.08em;
 }
 
-/* Pulsing glow ring around gamble */
 .gambleBtn::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 14px;
-  border: 2px solid rgba(251, 191, 36, 0.4);
-  animation: gambleRing 2.5s ease-in-out infinite;
+  content: 'RISK IT ALL';
+  display: block;
+  font-family: 'Nunito', sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  color: #d4af37;
+  letter-spacing: 0.15em;
+  margin-top: 2px;
+  animation: gambleFlicker 2s ease-in-out infinite;
   pointer-events: none;
 }
 
-@keyframes gambleRing {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.03); }
+/* Suit symbols at corners */
+.gambleSuit {
+  position: absolute;
+  font-size: 8px;
+  color: #d4af37;
+  opacity: 0.3;
+  pointer-events: none;
+  animation: gambleSuitSpin 20s linear infinite;
+}
+.gambleSuitTL { top: 4px; left: 6px; animation-delay: 0s; }
+.gambleSuitTR { top: 4px; right: 6px; animation-delay: -5s; }
+.gambleSuitBL { bottom: 4px; left: 6px; animation-delay: -10s; }
+.gambleSuitBR { bottom: 4px; right: 6px; animation-delay: -15s; }
+
+@keyframes gambleSuitSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gambleGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes gambleBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes gamblePulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 28px rgba(212, 175, 55, 0.6); }
+}
+
+@keyframes gambleFlicker {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .gambleBtn:hover:not(:disabled) {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 8px 0 #78350f,
-    0 0 40px rgba(251, 191, 36, 0.5),
-    0 0 80px rgba(251, 191, 36, 0.2) !important;
-}
-
-.gambleBtn:hover:not(:disabled)::after {
-  border-color: rgba(251, 191, 36, 0.7);
-  animation: none;
-  opacity: 1;
+  transform: scale(1.06) !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5) !important;
+  animation: gambleGradient 2s ease infinite, gamblePulse 1s ease-in-out infinite !important;
 }
 
 .gambleBtn:active:not(:disabled) {
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 2px 0 #78350f,
-    0 0 12px rgba(251, 191, 36, 0.3) !important;
+  transform: scale(0.97) !important;
+  transition-duration: 0.05s;
 }
 
 .gambleBtn:disabled {
   opacity: 0.5;
   animation: none !important;
-}
-
-@keyframes gambleGlow {
-  0%, 100% { 
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 6px 0 #78350f,
-      0 0 24px rgba(251, 191, 36, 0.3),
-      0 0 60px rgba(251, 191, 36, 0.08);
-    filter: brightness(1);
-  }
-  50% { 
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 6px 0 #78350f,
-      0 0 36px rgba(251, 191, 36, 0.5),
-      0 0 80px rgba(251, 191, 36, 0.15);
-    filter: brightness(1.08);
-  }
+  cursor: not-allowed;
 }
 
 .payRentPhase {
