@@ -111,12 +111,12 @@ body {
 
 body {
   overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  color: var(--ink);
 }
 
 body:has(.landingPage) {
   overflow: auto;
-  font-family: 'Nunito', sans-serif;
-  color: var(--ink);
   background:
     radial-gradient(ellipse at 20% 20%, rgba(107, 26, 58, 0.35), transparent 50%),
     radial-gradient(ellipse at 80% 80%, rgba(107, 26, 58, 0.25), transparent 50%),
@@ -2591,9 +2591,9 @@ input {
   inset: 0;
   z-index: 1000;
   background: linear-gradient(
-    45deg,
-    rgba(11, 61, 11, 0.98),
-    rgba(7, 40, 7, 1)
+    135deg,
+    rgba(20, 10, 15, 0.98),
+    rgba(30, 15, 22, 1)
   );
   display: flex;
   align-items: center;
@@ -2602,6 +2602,88 @@ input {
   box-shadow: 
     inset 0 2px 0 rgba(212, 175, 55, 0.2),
     0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* ===== Per-Minigame Themed Backgrounds ===== */
+
+/* Slots — neon casino floor, purple/magenta ambience */
+.mg-slots {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(180, 50, 180, 0.15), transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(255, 50, 100, 0.1), transparent 50%),
+    linear-gradient(135deg, #1a0a1a 0%, #120818 50%, #0a0510 100%);
+}
+
+/* Higher/Lower — deep green card table */
+.mg-higher-lower {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(20, 100, 40, 0.25), transparent 60%),
+    radial-gradient(ellipse at 50% 90%, rgba(10, 50, 20, 0.3), transparent 50%),
+    linear-gradient(135deg, #0a2a0f 0%, #071a08 50%, #040f05 100%);
+}
+
+/* Craps — warm red/amber dice table */
+.mg-craps {
+  background:
+    radial-gradient(ellipse at 40% 30%, rgba(180, 80, 20, 0.15), transparent 50%),
+    radial-gradient(ellipse at 60% 70%, rgba(200, 50, 30, 0.1), transparent 50%),
+    linear-gradient(135deg, #1a0f08 0%, #12080a 50%, #0a0505 100%);
+}
+
+/* Wheel — royal purple/gold show floor */
+.mg-wheel {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(100, 50, 180, 0.2), transparent 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.08), transparent 40%),
+    linear-gradient(135deg, #12081a 0%, #0a0512 50%, #080410 100%);
+}
+
+/* Minesweeper — dark industrial/vault */
+.mg-minesweeper {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(40, 60, 80, 0.2), transparent 60%),
+    radial-gradient(ellipse at 30% 80%, rgba(20, 40, 60, 0.15), transparent 50%),
+    linear-gradient(135deg, #0a0f14 0%, #08101a 50%, #050a10 100%);
+}
+
+/* Card War — classic green felt */
+.mg-card-war {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(15, 80, 30, 0.25), transparent 60%),
+    radial-gradient(ellipse at 50% 90%, rgba(10, 40, 15, 0.2), transparent 50%),
+    linear-gradient(135deg, #0b2810 0%, #071a08 50%, #040f05 100%);
+}
+
+/* Lucky Number (Darts) — warm pub/bar amber */
+.mg-lucky-number {
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(160, 100, 30, 0.15), transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(80, 40, 10, 0.15), transparent 50%),
+    linear-gradient(135deg, #14100a 0%, #0f0a06 50%, #0a0804 100%);
+}
+
+/* Blackjack — rich green/teal table */
+.mg-blackjack {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(10, 80, 60, 0.25), transparent 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.06), transparent 40%),
+    linear-gradient(135deg, #081a14 0%, #061210 50%, #040a08 100%);
+}
+
+/* Coin Flip — sleek silver/steel */
+.mg-coin-flip {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(120, 130, 150, 0.15), transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(60, 60, 80, 0.15), transparent 50%),
+    linear-gradient(135deg, #10101a 0%, #0a0a14 50%, #08080f 100%);
+}
+
+/* Safe Cracker — dark vault with gold accent */
+.mg-safe-cracker {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(212, 175, 55, 0.08), transparent 50%),
+    radial-gradient(ellipse at 30% 70%, rgba(40, 30, 20, 0.3), transparent 50%),
+    linear-gradient(135deg, #100c08 0%, #0a0806 50%, #080604 100%);
 }
 
 .minigameIntro {
@@ -2822,226 +2904,255 @@ input {
 }
 
 /* === Slot Machine === */
+/* ===== SLOT MACHINE (rebuilt) ===== */
 .slotMachine {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 20px;
+  justify-content: center;
+  gap: 0;
   padding: 24px;
   color: var(--ink);
   height: 100%;
   position: relative;
-  background:
-    radial-gradient(ellipse at 50% 20%, rgba(212, 175, 55, 0.08), transparent 60%),
-    radial-gradient(ellipse at 50% 80%, rgba(107, 26, 58, 0.15), transparent 50%);
 }
 
-.slotFrame {
-  position: relative;
+/* Lever — sits to the right of the machine */
+.slotLeverWrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 28px 32px;
-  background: linear-gradient(180deg, rgba(42, 15, 31, 0.95), rgba(26, 10, 18, 0.98));
+  width: 40px;
+  margin-left: -4px;
+  z-index: 2;
+}
+
+.leverTrack {
+  width: 12px;
+  height: 120px;
+  background: linear-gradient(180deg, #555, #333);
+  border-radius: 6px;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.leverArmNew {
+  width: 8px;
+  height: 60px;
+  background: linear-gradient(180deg, #c0c0c0, #808080);
+  border-radius: 4px;
+  margin-top: 4px;
+  transition: transform 0.15s ease;
+}
+
+.leverBall {
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle at 40% 35%, #ff4466, #cc1133);
+  border-radius: 50%;
+  border: 3px solid #ff6688;
+  box-shadow: 0 4px 12px rgba(255, 23, 68, 0.6), inset 0 -3px 5px rgba(0,0,0,0.3);
+  margin-top: -2px;
+  transition: transform 0.15s ease;
+}
+
+.slotLeverWrap.ready .leverBall {
+  animation: leverBobNew 1.2s ease-in-out infinite;
+  cursor: pointer;
+}
+
+@keyframes leverBobNew {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+.slotLeverWrap.pulled .leverArmNew {
+  animation: leverPullNew 1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.slotLeverWrap.pulled .leverBall {
+  animation: leverBallPull 1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes leverPullNew {
+  0%   { transform: translateY(0); }
+  15%  { transform: translateY(36px); }
+  30%  { transform: translateY(40px); }
+  50%  { transform: translateY(8px); }
+  65%  { transform: translateY(-4px); }
+  80%  { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes leverBallPull {
+  0%   { transform: translateY(0) scale(1); }
+  15%  { transform: translateY(40px) scale(0.95); }
+  30%  { transform: translateY(44px) scale(0.93); }
+  50%  { transform: translateY(8px) scale(1.05); }
+  65%  { transform: translateY(-6px) scale(1.02); }
+  80%  { transform: translateY(2px) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Machine body */
+.slotBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  background: linear-gradient(180deg, rgba(42, 15, 31, 0.97), rgba(22, 8, 16, 0.98));
   border: 3px solid var(--gold);
   border-radius: 20px;
   box-shadow:
     inset 0 2px 0 rgba(212, 175, 55, 0.2),
     0 12px 40px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(212, 175, 55, 0.15);
+    0 0 30px rgba(212, 175, 55, 0.12);
+  overflow: hidden;
+  min-width: 320px;
 }
 
-.slotFrameImg {
-  display: none;
+.slotTopBar {
+  width: 100%;
+  padding: 12px 0;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.15), transparent);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
 }
 
-.slotHeader {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  z-index: 1;
-}
-
-.slotTitle {
+.slotTopText {
   font-family: 'Cinzel', serif;
   font-size: 1.1rem;
+  font-weight: 700;
   color: var(--gold-bright);
-  text-shadow: 0 0 12px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2);
-  margin: 0;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
 }
 
-.slotLever {
-  width: 28px;
-  height: 70px;
-  position: relative;
-  z-index: 1;
-  transform-origin: top center;
-}
-
-.slotLever.ready {
-  cursor: pointer;
-}
-
-.slotLever.ready:hover .leverKnob {
-  filter: brightness(1.3);
-  box-shadow: 0 3px 12px rgba(255, 23, 68, 0.7), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.slotLever.ready .leverKnob {
-  animation: leverBob 1.2s ease-in-out infinite;
-}
-
-@keyframes leverBob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(4px); }
-}
-
-.leverArm {
-  width: 8px;
-  height: 44px;
-  background: linear-gradient(180deg, #c0c0c0, #808080);
-  margin: 0 auto;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  transform-origin: top center;
-}
-
-.leverKnob {
-  width: 22px;
-  height: 22px;
-  background: radial-gradient(circle at 40% 35%, #ff4466, #cc1133);
-  border-radius: 50%;
-  margin: -2px auto 0;
-  border: 2px solid #ff6688;
-  box-shadow: 0 3px 8px rgba(255, 23, 68, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Pull animation: sharp pull down, hold briefly, spring back */
-.slotLever.pulled .leverArm {
-  animation: leverPullArm 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-}
-
-.slotLever.pulled .leverKnob {
-  animation: leverPullKnob 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-}
-
-@keyframes leverPullArm {
-  0%   { transform: translateY(0) scaleY(1); }
-  20%  { transform: translateY(30px) scaleY(0.85); }
-  35%  { transform: translateY(32px) scaleY(0.83); }
-  55%  { transform: translateY(6px) scaleY(1.05); }
-  70%  { transform: translateY(-2px) scaleY(1.02); }
-  85%  { transform: translateY(1px) scaleY(1); }
-  100% { transform: translateY(0) scaleY(1); }
-}
-
-@keyframes leverPullKnob {
-  0%   { transform: translateY(0); }
-  20%  { transform: translateY(34px); }
-  35%  { transform: translateY(36px); }
-  55%  { transform: translateY(6px); }
-  70%  { transform: translateY(-3px); }
-  85%  { transform: translateY(1px); }
-  100% { transform: translateY(0); }
-}
-
-.slotReels {
+/* Reel container */
+.slotReelContainer {
   display: flex;
-  gap: 12px;
-  z-index: 1;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.5);
+  gap: 8px;
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(212, 175, 55, 0.15);
   border-radius: 12px;
-  border: 2px solid rgba(212, 175, 55, 0.3);
-  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.5);
+  margin: 16px;
+  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.6);
 }
 
-.slotReel {
-  width: 100px;
-  height: 190px;
-  border: 3px solid rgba(212, 175, 55, 0.4);
-  background: linear-gradient(180deg, #1a1a2e, #0f0f1f);
+.slotReelNew {
+  width: 90px;
+  height: 80px; /* Show 1 symbol */
+  overflow: hidden;
+  position: relative;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #0a0a18, #12121f);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.slotReelNew.stopped {
+  border-color: #4ade80;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 10px rgba(74, 222, 128, 0.25);
+}
+
+.slotStrip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  will-change: transform, filter;
+}
+
+.slotSymbolCell {
+  width: 100%;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  border-radius: 10px;
-  transition: all 0.2s ease;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-}
-
-.slotReel.active {
-  border-color: var(--neon-red);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 16px rgba(255, 23, 68, 0.4);
-  animation: reelGlow 0.6s ease-in-out infinite;
-}
-
-.slotReel.stopped {
-  border-color: #4ade80;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 12px rgba(74, 222, 128, 0.3);
-}
-
-@keyframes reelGlow {
-  0%, 100% { box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(255,23,68,0.3); }
-  50% { box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 24px rgba(255,23,68,0.6); }
 }
 
 .slotSymbolImg {
-  width: 70px;
-  height: 70px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
 }
 
-.pixelSpin {
-  animation: pixelReelSpin 0.1s linear infinite;
+/* Center line */
+.reelCenterLine {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(212, 175, 55, 0.25);
+  transform: translateY(-1px);
+  pointer-events: none;
+  z-index: 2;
 }
 
-@keyframes pixelReelSpin {
-  0% { transform: translateY(0) scale(1); }
-  25% { transform: translateY(-6px) scale(1.02); }
-  50% { transform: translateY(0) scale(1); }
-  75% { transform: translateY(6px) scale(0.98); }
-  100% { transform: translateY(0) scale(1); }
+/* Top/bottom fade overlays */
+.slotReelNew::before,
+.slotReelNew::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 20px;
+  z-index: 1;
+  pointer-events: none;
+}
+.slotReelNew::before {
+  top: 0;
+  background: linear-gradient(180deg, #0a0a18, transparent);
+}
+.slotReelNew::after {
+  bottom: 0;
+  background: linear-gradient(0deg, #0a0a18, transparent);
 }
 
-.slotInstructions {
-  font-size: 0.55rem;
+.slotBottomBar {
+  width: 100%;
+  padding: 10px 0;
   text-align: center;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--ink-secondary);
   text-transform: uppercase;
-  z-index: 1;
-  letter-spacing: 0.08em;
-  padding: 6px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
+  letter-spacing: 0.1em;
+  border-top: 1px solid rgba(212, 175, 55, 0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
+/* Paytable */
 .slotPaytable {
-  font-size: 0.45rem;
-  text-align: center;
+  font-size: 0.6rem;
   color: var(--muted);
-  line-height: 2;
-  z-index: 1;
   padding: 10px 16px;
   background: rgba(0, 0, 0, 0.25);
   border-radius: 8px;
   border: 1px solid rgba(212, 175, 55, 0.1);
+  margin-top: 16px;
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .paytableRow {
-  margin: 2px 0;
+  margin: 4px 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  font-family: 'Nunito', sans-serif;
 }
 
 .paytableIcon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   vertical-align: middle;
 }
 
@@ -3117,14 +3228,14 @@ input {
 }
 
 .playingCard.hidden {
-  background: var(--burgundy);
+  background: #1a1428;
 }
 
 .cardBackImg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .cardRevealAnim {
@@ -6124,25 +6235,84 @@ input {
 
 /* ===== PHASE 5.7: Responsive and Micro-interactions ===== */
 
-/* Board scales on smaller screens */
+/* ── Tablet: stack layout, allow scroll ── */
 @media (max-width: 900px) {
   .gameScreen {
     flex-direction: column;
-    overflow: auto;
-  }
-  .leftPanel, .rightPanel {
-    width: 100%;
-    flex: none;
+    overflow-y: auto;
+    overflow-x: hidden;
     height: auto;
-    max-height: 30vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 4px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
   }
+
+  .leftPanel,
+  .rightPanel {
+    width: 100% !important;
+    flex: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible;
+    padding: 8px 10px;
+  }
+
+  /* Collapse player list to horizontal scroll strip */
+  .leftPanel ul {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .leftPanel li {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+
   .boardWrap {
     height: auto;
-    min-height: 320px;
+    min-height: 0;
+    flex: none;
+    width: 100%;
+  }
+
+  .boardFrame {
+    width: 100%;
+    /* Let the board fill width, keep square via aspect-ratio on .boardGrid */
+  }
+
+  .boardGrid {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;
+    max-width: 100vw;
+  }
+
+  /* Right panel (action log, property cards) can be taller on tablet */
+  .rightPanel {
+    max-height: none;
+  }
+  .rightPanelBody {
+    overflow: visible;
+    max-height: none;
+  }
+  .sideContent {
+    overflow: visible;
+    max-height: none;
   }
 }
 
+/* ── Phone ── */
 @media (max-width: 480px) {
+  .gameScreen {
+    padding: 2px;
+    gap: 4px;
+  }
+
   .boardGrid {
     border-width: 3px;
     border-radius: 8px;
@@ -6165,16 +6335,57 @@ input {
   }
   .setupCard, .lobbyCard {
     padding: 16px;
+    margin: 8px;
+    max-width: calc(100vw - 16px);
   }
   .setupTitle {
     font-size: 1.8rem;
   }
+
+  /* Panels: tighter on phone */
+  .leftPanel,
+  .rightPanel {
+    padding: 6px 8px;
+  }
+  .leftPanel h2 {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+  }
+  .leftPanel li {
+    min-width: 120px;
+    padding: 6px;
+  }
+
+  /* Popups / modals: keep in viewport */
+  .popupOverlay {
+    padding: 8px;
+  }
+  .popupCard {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+  }
+
+  /* Dice area */
+  .diceContainer {
+    transform: scale(0.85);
+  }
 }
 
+/* ── Tiny phone ── */
 @media (max-width: 320px) {
   .boardGrid {
     border-width: 2px;
     padding: 1px;
+  }
+  .tile span {
+    font-size: 0.38rem !important;
+  }
+  .token {
+    width: 12px;
+    height: 12px;
+    font-size: 0.35rem;
   }
 }
 
@@ -11420,90 +11631,7 @@ img[src*="/assets/"] {
 }
 
 /* Slot Machine Enhancements */
-.reel-window {
-  position: relative;
-  width: 80px;
-  height: 180px; /* Show 3 symbols at 60px each */
-  overflow: hidden;
-  border: 2px solid rgba(212, 175, 55, 0.3);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6));
-}
-
-.reel-strip {
-  position: absolute;
-  width: 100%;
-  transition: filter 0.3s ease-out;
-}
-
-.reel-symbol {
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.reel-window-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.reel-center-highlight {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 60px;
-  transform: translateY(-50%);
-  border: 2px solid var(--gold-bright);
-  border-left: none;
-  border-right: none;
-  box-shadow: inset 0 0 10px rgba(255,215,0,0.3);
-}
-
-.reel-lights {
-  position: absolute;
-  inset: -4px;
-  pointer-events: none;
-}
-
-.light-strip {
-  position: absolute;
-  width: 6px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-}
-
-.light-strip.left {
-  left: -6px;
-}
-
-.light-strip.right {
-  right: -6px;
-}
-
-.light-bulb {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--gold-dim);
-  transition: background-color 0.2s ease;
-}
-
-.reel-lights.chasing .light-bulb {
-  animation: light-chase 1s ease-in-out infinite;
-}
-
-@keyframes light-chase {
-  0%, 70%, 100% {
-    background-color: var(--gold-dim);
-    box-shadow: none;
-  }
-  15%, 55% {
-    background-color: var(--gold-bright);
-    box-shadow: 0 0 8px var(--gold-bright);
-  }
-}
+/* Old reel CSS removed — now using slotReelNew/slotStrip */
 
 /* ===== Sidebar Enhancements (Casino Theme) ===== */
 

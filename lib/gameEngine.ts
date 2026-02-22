@@ -145,9 +145,18 @@ export function createGame(playerNames: string[]): GameState {
   };
 }
 
+function cryptoRoll(): number {
+  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
+    const arr = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(arr);
+    return (arr[0] % 6) + 1;
+  }
+  return Math.ceil(Math.random() * 6);
+}
+
 export function rollDice(state: GameState): GameState {
-  const d1 = Math.ceil(Math.random() * 6);
-  const d2 = Math.ceil(Math.random() * 6);
+  const d1 = cryptoRoll();
+  const d2 = cryptoRoll();
   const isDoubles = d1 === d2;
   const player = currentPlayer(state);
 

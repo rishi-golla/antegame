@@ -5,6 +5,7 @@ import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { COLOR_GROUPS } from '@/lib/gameData';
 import { GROUP_COLORS, hasFullGroup, railroadCount, utilityCount } from './propertyCardUtils';
+import { getTileImage } from '@/lib/assetMap';
 
 interface PropertyCardProps {
   tileIndex: number;
@@ -75,9 +76,14 @@ export default function PropertyCard({ tileIndex, player, readonly, inDebt }: Pr
     isFullSet && !isMortgaged ? 'propCardFullSet' : '',
   ].filter(Boolean).join(' ');
 
+  const tileImage = getTileImage(tile as any);
+
   return (
     <div className={cardClass} title={tile.name}>
       <div className="propCardBar" style={{ background: barColor }} />
+      {tileImage && (
+        <img src={tileImage} alt="" className="propCardImage" draggable={false} />
+      )}
       <div className="propCardBody">
         <div className="propCardName">{tile.name}</div>
         <div className="propCardSub">{subtitle}</div>

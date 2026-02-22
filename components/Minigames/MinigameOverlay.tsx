@@ -119,7 +119,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
 
   if (showIntro) {
     return (
-      <div className="minigameOverlay pixelOverlay">
+      <div className={`minigameOverlay pixelOverlay mg-${minigame.id}`}>
         <div className={`minigameCurtain ${curtainOpen ? 'open' : ''}`}>
           <div className="curtainLeft"></div>
           <div className="curtainRight"></div>
@@ -145,7 +145,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
 
   return (
     <>
-      <div className="minigameOverlay pixelOverlay">
+      <div className={`minigameOverlay pixelOverlay mg-${minigame.id}`}>
         {spectator && (
           <div className="spectatorBanner">
             👁️ Watching {currentPlayerName}

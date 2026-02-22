@@ -201,7 +201,6 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
           className="deckImg"
           draggable={false}
         />
-        <span className="deckLabel deckLabelBlind">BLIND CHEST</span>
       </div>
 
       <div className="deckStack deckChance">
@@ -211,7 +210,6 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
           className="deckImg"
           draggable={false}
         />
-        <span className="deckLabel deckLabelRisk">⚡ RISK</span>
       </div>
 
       {/* Full-screen card overlay (renders via portal-style positioning) */}

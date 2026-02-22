@@ -101,7 +101,7 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
           src={tileImage}
           alt=""
           className="tileBackgroundImg"
-          style={!tile.isCorner && imageRotation !== 0 ? { transform: `rotate(${imageRotation}deg) scale(1.15)` } : undefined}
+          style={undefined}
           draggable={false}
         />
       )}

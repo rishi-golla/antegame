@@ -339,7 +339,9 @@ export default function Board() {
     const updateSize = () => {
       if (!frameRef.current) return;
       const { clientWidth, clientHeight } = frameRef.current;
-      setBoardSize(Math.max(0, Math.floor(Math.min(clientWidth, clientHeight))));
+      // On mobile (column layout), frame may have no fixed height — use width
+      const h = clientHeight > 0 ? clientHeight : clientWidth;
+      setBoardSize(Math.max(0, Math.floor(Math.min(clientWidth, h))));
     };
     updateSize();
     const observer = new ResizeObserver(updateSize);

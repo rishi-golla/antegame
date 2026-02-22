@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Ante Asset Gallery</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#eee;font-family:system-ui;padding:20px}
+h1{text-align:center;margin-bottom:10px;color:#e2b340}
+h2{color:#e2b340;margin:30px 0 15px;border-bottom:1px solid #333;padding-bottom:8px}
+.grid{display:flex;flex-wrap:wrap;gap:16px}
+.card{background:#16213e;border-radius:12px;padding:12px;text-align:center;width:180px}
+.card img{max-width:156px;max-height:156px;border-radius:8px;background:repeating-conic-gradient(#2a2a4a 0% 25%, #1a1a3e 0% 50%) 50%/16px 16px}
+.card p{margin-top:8px;font-size:12px;color:#aaa;word-break:break-all}
+</style></head><body>
+<h1>🎰 Ante — Asset Gallery</h1>
+<script>
+const sections = {
+  "🎲 Board Tiles": "/assets/tiles/",
+  "🃏 Minigame Assets": "/assets/minigames/",
+  "🏠 Landing Page": "/assets/landing/",
+  "🎭 Sprites": "/assets/sprites/",
+  "📋 Menu Icons": "/assets/menu-icons/",
+  "✨ Misc / Branding": "/assets/misc/",
+  "🖼 UI": "/assets/ui/"
+};
+const files = ["/assets/landing/crest-emblem.webp","/assets/landing/feature-board.webp","/assets/landing/feature-minigames.webp","/assets/landing/feature-multiplayer-room.webp","/assets/landing/feature-multiplayer.webp","/assets/landing/feature-onchain-old.webp","/assets/landing/feature-onchain.webp","/assets/landing/header-about.webp","/assets/landing/header-docs.webp","/assets/landing/header-features.webp","/assets/landing/hero-bg.webp","/assets/landing/icons/icon-collect.webp","/assets/landing/icons/icon-connect.webp","/assets/landing/icons/icon-roll.webp","/assets/landing/icons/icon-stake.webp","/assets/landing/menu-bg.webp","/assets/landing/minigames/blackjack.webp","/assets/landing/minigames/coinflip.webp","/assets/landing/minigames/craps.webp","/assets/landing/minigames/darts.webp","/assets/landing/minigames/highlow.webp","/assets/landing/minigames/horse.webp","/assets/landing/minigames/minesweeper.webp","/assets/landing/minigames/safecracker.webp","/assets/landing/minigames/slots.webp","/assets/landing/minigames/wheel.webp","/assets/menu-icons/create-room.webp","/assets/menu-icons/free-play.webp","/assets/menu-icons/join-room.webp","/assets/menu-icons/leaderboard.webp","/assets/menu-icons/profile.webp","/assets/menu-icons/quick-play.webp","/assets/minigames/cards/card-back.png","/assets/minigames/cards/card-table.png","/assets/minigames/cards/deck.png","/assets/minigames/coin/coin-heads.png","/assets/minigames/coin/coin-tails.png","/assets/minigames/darts/dart.png","/assets/minigames/darts/dartboard.png","/assets/minigames/dice/dice-1.png","/assets/minigames/dice/dice-2.png","/assets/minigames/dice/dice-3.png","/assets/minigames/dice/dice-4.png","/assets/minigames/dice/dice-5.png","/assets/minigames/dice/dice-6.png","/assets/minigames/dice/dice-cup.png","/assets/minigames/horses/horse-1.png","/assets/minigames/horses/horse-2.png","/assets/minigames/horses/horse-3.png","/assets/minigames/horses/track.png","/assets/minigames/minesweeper/gem.png","/assets/minigames/minesweeper/mine.png","/assets/minigames/minesweeper/tile-hidden.png","/assets/minigames/minesweeper/tile-revealed.png","/assets/minigames/results/jackpot.png","/assets/minigames/results/lose-banner.png","/assets/minigames/results/win-banner.png","/assets/minigames/safe/dial.png","/assets/minigames/safe/safe-closed.png","/assets/minigames/safe/safe-open.png","/assets/minigames/slots/bar.png","/assets/minigames/slots/cherry.png","/assets/minigames/slots/diamond.png","/assets/minigames/slots/seven.png","/assets/minigames/slots/skull.png","/assets/minigames/slots/slot-machine.png","/assets/minigames/wheel/wheel-pointer.png","/assets/minigames/wheel/wheel-stand.png","/assets/minigames/wheel/wheel.png","/assets/misc/ante-cardshark-clean.webp","/assets/misc/ante-cardshark.webp","/assets/misc/ante-logo.webp","/assets/misc/ante-mascot-transparent.webp","/assets/misc/casino-crest.webp","/assets/misc/chance-deck.webp","/assets/misc/community-chest-deck.webp","/assets/misc/og-image.png","/assets/sprites/bartender.webp","/assets/sprites/card-shark.webp","/assets/sprites/dealer.webp","/assets/sprites/high-roller.webp","/assets/sprites/mobster.webp","/assets/sprites/singer.webp","/assets/sprites/tourist.webp","/assets/sprites/vip.webp","/assets/tiles/chance.webp","/assets/tiles/community-chest.webp","/assets/tiles/corner-free-parking.webp","/assets/tiles/corner-go-to-jail.webp","/assets/tiles/corner-go.webp","/assets/tiles/corner-jail.webp","/assets/tiles/prop-brown.webp","/assets/tiles/prop-dark-blue.webp","/assets/tiles/prop-green.webp","/assets/tiles/prop-light-blue.webp","/assets/tiles/prop-orange.webp","/assets/tiles/prop-pink.webp","/assets/tiles/prop-red.webp","/assets/tiles/prop-yellow.webp","/assets/tiles/railroad.webp","/assets/tiles/tax.webp","/assets/tiles/utility-electric.webp","/assets/tiles/utility-water.webp","/assets/ui/lobby-bg.webp"];
+for (const [title, prefix] of Object.entries(sections)) {
+  const matches = files.filter(f => f.startsWith(prefix));
+  if (!matches.length) continue;
+  document.write(`<h2>${title} (${matches.length})</h2><div class="grid">`);
+  for (const f of matches) {
+    const name = f.split('/').pop();
+    document.write(`<div class="card"><img src="${f}" loading="lazy"><p>${name}</p></div>`);
+  }
+  document.write('</div>');
+}
+</script>
+</body></html>
