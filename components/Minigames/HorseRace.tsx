@@ -360,7 +360,7 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
               fontFamily: 'Nunito, sans-serif',
               fontSize: 16,
               fontWeight: 800,
-              color: '#1a1a2e',
+              color: '#1a0f0f',
               background: 'linear-gradient(180deg, #ffd700, #c9a84c)',
               border: 'none',
               borderRadius: 8,

@@ -345,7 +345,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
               fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
               padding: '14px 36px', borderRadius: '50px',
               background: 'linear-gradient(180deg, #d4af37 0%, #a68628 100%)',
-              color: '#1a1a2e', border: '2px solid #ffd700',
+              color: '#1a0f0f', border: '2px solid #ffd700',
               cursor: spectator ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 16px rgba(212,175,55,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
               letterSpacing: '2px',

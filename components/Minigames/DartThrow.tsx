@@ -137,7 +137,7 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
     if (d === 0) return { color: '#ffd700', animation: 'ln-gold-explode 1s ease-in-out infinite', fontSize: '1.2rem' };
     if (d === 1) return { color: '#f5c542', textShadow: '0 0 15px rgba(245,197,66,0.7)', fontSize: '1rem' };
     if (d === 2) return { color: '#eab308', fontSize: '0.9rem' };
-    return { color: '#f97316', fontSize: '0.85rem' };
+    return { color: '#6b1a3a', fontSize: '0.85rem' };
   };
 
   return (
@@ -317,10 +317,10 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
           display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 20px',
           fontSize: '0.6rem', fontFamily: "'Nunito', sans-serif", color: '#706040',
         }}>
-          <span>EXACT MATCH</span><span style={{ color: '#4ade80', textAlign: 'right' }}>WIN</span>
-          <span>OFF BY 1</span><span style={{ color: '#84cc16', textAlign: 'right' }}>CLOSE WIN</span>
-          <span>OFF BY 2</span><span style={{ color: '#eab308', textAlign: 'right' }}>CLOSE LOSS</span>
-          <span>OFF BY 3-4</span><span style={{ color: '#f97316', textAlign: 'right' }}>LOSS</span>
+          <span>EXACT MATCH</span><span style={{ color: '#d4af37', textAlign: 'right' }}>WIN</span>
+          <span>OFF BY 1</span><span style={{ color: '#b8860b', textAlign: 'right' }}>CLOSE WIN</span>
+          <span>OFF BY 2</span><span style={{ color: '#8b4513', textAlign: 'right' }}>CLOSE LOSS</span>
+          <span>OFF BY 3-4</span><span style={{ color: '#6b1a3a', textAlign: 'right' }}>LOSS</span>
         </div>
       </div>
     </div>

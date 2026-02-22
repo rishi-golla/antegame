@@ -247,7 +247,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
                     <span style={{
                       fontFamily: 'Nunito, sans-serif',
                       fontSize: 11,
-                      color: '#888',
+                      color: '#b89a6a',
                       fontWeight: 700,
                       opacity: 0.6,
                     }}>

@@ -67,12 +67,12 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
         50% { box-shadow: 0 0 25px rgba(212,175,55,0.7); }
       }
       @keyframes cf-glow-green {
-        0%, 100% { text-shadow: 0 0 8px rgba(74,222,128,0.6); }
-        50% { text-shadow: 0 0 20px rgba(74,222,128,1); }
+        0%, 100% { text-shadow: 0 0 8px rgba(212,175,55,0.6); }
+        50% { text-shadow: 0 0 20px rgba(212,175,55,1); }
       }
       @keyframes cf-glow-red {
-        0%, 100% { text-shadow: 0 0 8px rgba(239,68,68,0.6); }
-        50% { text-shadow: 0 0 20px rgba(239,68,68,1); }
+        0%, 100% { text-shadow: 0 0 8px rgba(107,26,58,0.6); }
+        50% { text-shadow: 0 0 20px rgba(255,23,68,1); }
       }
     `;
     document.head.appendChild(style);
@@ -189,7 +189,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
             {[0, 1, 2].map(i => (
               <span key={i} style={{
                 color: i < results.length
-                  ? (results[i].correct ? '#4ade80' : '#ef4444')
+                  ? (results[i].correct ? '#d4af37' : '#6b1a3a')
                   : '#3d2a0a',
                 fontSize: '0.85rem',
               }}>
@@ -307,7 +307,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
             <span>{result.actual.toUpperCase()}</span>
             <span style={{
               fontWeight: 700, fontSize: '0.85rem',
-              color: result.correct ? '#4ade80' : '#ef4444',
+              color: result.correct ? '#d4af37' : '#ff1744',
               animation: result.correct ? 'cf-glow-green 1.5s ease-in-out infinite' : 'cf-glow-red 1.5s ease-in-out infinite',
             }}>
               {result.correct ? '✦' : '✕'}
@@ -331,10 +331,10 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
         background: 'rgba(26,15,15,0.5)', border: '1px solid #2a1a00',
         fontSize: '0.6rem', color: '#706040', fontFamily: "'Nunito', sans-serif",
       }}>
-        <span>3 CORRECT</span><span style={{ color: '#4ade80', textAlign: 'right' }}>WIN</span>
-        <span>2 CORRECT</span><span style={{ color: '#84cc16', textAlign: 'right' }}>CLOSE WIN</span>
-        <span>1 CORRECT</span><span style={{ color: '#eab308', textAlign: 'right' }}>CLOSE LOSS</span>
-        <span>0 CORRECT</span><span style={{ color: '#f97316', textAlign: 'right' }}>LOSS</span>
+        <span>3 CORRECT</span><span style={{ color: '#d4af37', textAlign: 'right' }}>WIN</span>
+        <span>2 CORRECT</span><span style={{ color: '#b8860b', textAlign: 'right' }}>CLOSE WIN</span>
+        <span>1 CORRECT</span><span style={{ color: '#8b4513', textAlign: 'right' }}>CLOSE LOSS</span>
+        <span>0 CORRECT</span><span style={{ color: '#6b1a3a', textAlign: 'right' }}>LOSS</span>
       </div>
     </div>
   );

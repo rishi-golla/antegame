@@ -38,8 +38,8 @@ const STYLES = `
   100% { opacity: 0; transform: scale(2); }
 }
 @keyframes scAlarm {
-  0%, 100% { background: linear-gradient(135deg, #2a1a1a, #1a0a0a); }
-  50% { background: linear-gradient(135deg, #4a1a1a, #3a0a0a); }
+  0%, 100% { background: linear-gradient(135deg, #2a0f1f, #1a0f0f); }
+  50% { background: linear-gradient(135deg, #3d0f22, #2a0f1f); }
 }
 @keyframes scLockStamp {
   0% { transform: scale(3) rotate(-15deg); opacity: 0; }
@@ -263,7 +263,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                 position: 'absolute',
                 width: i % 10 === 0 ? 3 : 1,
                 height: i % 10 === 0 ? 14 : 8,
-                background: i % 10 === 0 ? '#ffd700' : '#888',
+                background: i % 10 === 0 ? '#ffd700' : '#b89a6a',
                 top: 6,
                 left: '50%',
                 transformOrigin: '50% 94px',
@@ -480,8 +480,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                 fontFamily: 'Nunito, sans-serif',
                 fontSize: 14,
                 fontWeight: 800,
-                color: '#1a1a2e',
-                background: 'linear-gradient(180deg, #ffd700, #c9a84c)',
+                color: '#1a0f0f',
+                background: 'linear-gradient(180deg, #ffd700, #d4af37)',
                 border: 'none',
                 borderRadius: 6,
                 padding: '8px 20px',
@@ -515,8 +515,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
             }}>
               <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#666' }}>#{index + 1}</span>
               <span style={{ fontFamily: 'monospace', fontSize: 14, color: '#e0e0e0', letterSpacing: 3 }}>[{attempt.guess.join('')}]</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#00cc66' }}>●×{attempt.correctPosition}</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#ccaa00' }}>◐×{attempt.correctDigit}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#d4af37' }}>●×{attempt.correctPosition}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#b89a6a' }}>◐×{attempt.correctDigit}</span>
             </div>
           ))}
           {attempts.length === 0 && (
