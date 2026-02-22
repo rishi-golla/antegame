@@ -162,16 +162,17 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
       background: 'linear-gradient(180deg, #1a0a0a 0%, #0d0505 100%)',
-      borderRadius: '16px', padding: '20px 16px', border: '1px solid #3d2a0a',
+      borderRadius: '16px', padding: '28px 24px', border: '1px solid #3d2a0a',
+      maxWidth: '600px', margin: '0 auto',
       boxShadow: '0 0 40px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
       fontFamily: "'Nunito', sans-serif",
     }}>
       {/* Header */}
       <div style={{ textAlign: 'center' }}>
         <h2 style={{
-          fontFamily: "'Cinzel', serif", fontSize: '1.3rem', fontWeight: 700,
+          fontFamily: "'Cinzel', serif", fontSize: '36px', fontWeight: 700,
           color: '#d4af37', letterSpacing: '3px', margin: 0,
           textShadow: '0 0 20px rgba(212,175,55,0.6), 0 2px 4px rgba(0,0,0,0.8)',
         }}>
@@ -204,11 +205,11 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
 
       {/* Coin */}
       <div style={{
-        width: 140, height: 140, perspective: '600px',
+        width: 180, height: 180, perspective: '600px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{
-          width: 120, height: 120, position: 'relative',
+          width: 160, height: 160, position: 'relative',
           transformStyle: 'preserve-3d',
           animation: phase === 'flipping'
             ? 'cf-toss 1.5s ease-in-out'
@@ -216,7 +217,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
         }}>
           {/* Coin face — using original coin images */}
           <div style={{
-            width: 120, height: 120, borderRadius: '50%',
+            width: 160, height: 160, borderRadius: '50%',
             border: '3px solid #d4af37',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 20px rgba(212,175,55,0.5), inset 0 -2px 6px rgba(0,0,0,0.3)',
@@ -251,7 +252,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
           {(['heads', 'tails'] as CoinSide[]).map(side => (
             <button key={side} onClick={() => makeGuess(side)} disabled={spectator}
               style={{
-                width: 80, height: 80, borderRadius: '50%',
+                width: 100, height: 100, borderRadius: '50%',
                 background: side === 'heads'
                   ? 'radial-gradient(circle at 40% 40%, #f5e6a3, #d4af37 60%, #8b6914)'
                   : 'radial-gradient(circle at 40% 40%, #8b6914, #d4af37 60%, #f5e6a3)',
@@ -270,7 +271,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
                 pointerEvents: 'none',
               }} />
               <span style={{
-                fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '0.65rem',
+                fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '16px',
                 color: '#1a0a0a',
                 letterSpacing: '1px', zIndex: 1,
                 textShadow: '0 1px 0 rgba(255,255,255,0.3)',
@@ -292,13 +293,13 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
       )}
 
       {/* Results */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', maxWidth: 280 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: 360 }}>
         {results.map((result, index) => (
           <div key={index} style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '6px 12px', borderRadius: '8px',
+            padding: '10px 16px', borderRadius: '10px',
             background: 'rgba(26,15,15,0.6)', border: '1px solid #3d2a0a',
-            fontSize: '0.7rem', fontFamily: "'Nunito', sans-serif",
+            fontSize: '16px', fontFamily: "'Nunito', sans-serif",
             color: '#a0906a',
           }}>
             <span style={{ fontFamily: "'Cinzel', serif", letterSpacing: '1px' }}>FLIP {index + 1}</span>
@@ -326,10 +327,10 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
 
       {/* Paytable */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 16px',
-        padding: '8px 14px', borderRadius: '8px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px',
+        padding: '12px 20px', borderRadius: '10px',
         background: 'rgba(26,15,15,0.5)', border: '1px solid #2a1a00',
-        fontSize: '0.6rem', color: '#706040', fontFamily: "'Nunito', sans-serif",
+        fontSize: '14px', color: '#706040', fontFamily: "'Nunito', sans-serif",
       }}>
         <span>3 CORRECT</span><span style={{ color: '#d4af37', textAlign: 'right' }}>WIN</span>
         <span>2 CORRECT</span><span style={{ color: '#b8860b', textAlign: 'right' }}>CLOSE WIN</span>

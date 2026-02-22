@@ -165,7 +165,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
       fontFamily: "'Nunito', sans-serif",
     }}>
       <h2 style={{
-        fontFamily: "'Cinzel', serif", fontSize: '1.3rem', fontWeight: 700,
+        fontFamily: "'Cinzel', serif", fontSize: '36px', fontWeight: 700,
         color: '#d4af37', letterSpacing: '3px', margin: 0,
         textShadow: '0 0 20px rgba(212,175,55,0.6), 0 2px 4px rgba(0,0,0,0.8)',
       }}>
@@ -285,7 +285,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
                 <text
                   x={tx} y={ty}
                   textAnchor="middle" dominantBaseline="middle"
-                  fill="#fff" fontSize="10" fontWeight="bold"
+                  fill="#fff" fontSize="12" fontWeight="bold"
                   fontFamily="'Cinzel', serif"
                   transform={`rotate(${textRotation}, ${tx}, ${ty})`}
                   style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)', pointerEvents: 'none' } as any}
@@ -315,7 +315,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
               transform: 'translateX(-50%)',
               background: 'linear-gradient(180deg, #f5e6a3 0%, #d4af37 40%, #8b6914 100%)',
               color: '#1a0a0a', border: '2px solid #d4af37',
-              borderRadius: '30px', padding: '10px 36px',
+              borderRadius: '30px', padding: '14px 40px',
               fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1rem',
               letterSpacing: '4px', cursor: spectator ? 'default' : 'pointer',
               animation: 'wof-pulse-spin-btn 1.8s ease-in-out infinite',
@@ -369,7 +369,7 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
         ].map(item => (
           <div key={item.label} style={{
             display: 'flex', alignItems: 'center', gap: '5px',
-            fontSize: '0.65rem', color: '#a0906a', fontFamily: "'Nunito', sans-serif",
+            fontSize: '14px', color: '#a0906a', fontFamily: "'Nunito', sans-serif",
           }}>
             <span style={{
               width: 10, height: 10, borderRadius: '50%',

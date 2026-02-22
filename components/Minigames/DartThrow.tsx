@@ -142,14 +142,15 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '22px',
       background: 'linear-gradient(180deg, #1a0a0a 0%, #0d0505 100%)',
-      borderRadius: '16px', padding: '20px 16px', border: '1px solid #3d2a0a',
+      borderRadius: '16px', padding: '28px 24px', border: '1px solid #3d2a0a',
+      maxWidth: '600px', margin: '0 auto',
       boxShadow: '0 0 40px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
       fontFamily: "'Nunito', sans-serif",
     }}>
       <h2 style={{
-        fontFamily: "'Cinzel', serif", fontSize: '1.3rem', fontWeight: 700,
+        fontFamily: "'Cinzel', serif", fontSize: '36px', fontWeight: 700,
         color: '#d4af37', letterSpacing: '3px', margin: 0,
         textShadow: '0 0 20px rgba(212,175,55,0.6), 0 2px 4px rgba(0,0,0,0.8)',
       }}>
@@ -160,21 +161,21 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
       {!locked && (
         <>
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px',
-            padding: '8px',
+            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px',
+            padding: '12px',
           }}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
               const isSelected = selected === n;
               return (
                 <button key={n} onClick={() => selectNumber(n)} disabled={spectator}
                   style={{
-                    width: 52, height: 52, borderRadius: '50%',
+                    width: 64, height: 64, borderRadius: '50%',
                     background: isSelected
                       ? 'radial-gradient(circle at 35% 35%, #ffe082, #d4af37 50%, #8b6914)'
                       : 'radial-gradient(circle at 35% 35%, #3d2a0a, #1a0f0f 70%)',
                     border: isSelected ? '3px solid #ffd700' : '2px solid #5a4a20',
                     color: isSelected ? '#1a0a0a' : '#d4af37',
-                    fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1.1rem',
+                    fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1.3rem',
                     cursor: spectator ? 'default' : 'pointer',
                     position: 'relative',
                     animation: isSelected ? 'ln-chip-select 0.3s ease-out forwards' : 'none',
@@ -201,7 +202,7 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
               style={{
                 background: 'linear-gradient(180deg, #f5e6a3 0%, #d4af37 40%, #8b6914 100%)',
                 color: '#1a0a0a', border: '2px solid #d4af37',
-                borderRadius: '30px', padding: '12px 40px',
+                borderRadius: '30px', padding: '14px 44px',
                 fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1rem',
                 letterSpacing: '4px', cursor: spectator ? 'default' : 'pointer',
                 animation: 'ln-lock-pulse 1.8s ease-in-out infinite',
@@ -234,7 +235,7 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
       {revealed && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '16px', padding: '16px 0',
+          gap: '24px', padding: '24px 0',
         }}>
           <div style={{
             textAlign: 'center',
@@ -245,11 +246,11 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
               letterSpacing: '2px', marginBottom: '4px',
             }}>YOU</div>
             <div style={{
-              width: 64, height: 64, borderRadius: '50%',
+              width: 80, height: 80, borderRadius: '50%',
               background: 'radial-gradient(circle at 35% 35%, #f5e6a3, #d4af37 50%, #8b6914)',
               border: '3px solid #d4af37',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1.8rem',
+              fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '2.2rem',
               color: '#1a0a0a',
               boxShadow: '0 0 20px rgba(212,175,55,0.5)',
             }}>
@@ -275,11 +276,11 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
               letterSpacing: '2px', marginBottom: '4px',
             }}>HOUSE</div>
             <div style={{
-              width: 64, height: 64, borderRadius: '50%',
+              width: 80, height: 80, borderRadius: '50%',
               background: 'radial-gradient(circle at 35% 35%, #6b1a3a, #3d0f22 50%, #2a0f1f)',
               border: '3px solid #d4af37',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '1.8rem',
+              fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '2.2rem',
               color: '#fff8e7',
               boxShadow: '0 0 20px rgba(212,175,55,0.4)',
             }}>
@@ -314,8 +315,8 @@ export default function LuckyNumber({ onResult, spectator = false }: LuckyNumber
           ★ PAYTABLE ★
         </div>
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 20px',
-          fontSize: '0.6rem', fontFamily: "'Nunito', sans-serif", color: '#706040',
+          display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 24px',
+          fontSize: '14px', fontFamily: "'Nunito', sans-serif", color: '#706040',
         }}>
           <span>EXACT MATCH</span><span style={{ color: '#d4af37', textAlign: 'right' }}>WIN</span>
           <span>OFF BY 1</span><span style={{ color: '#b8860b', textAlign: 'right' }}>CLOSE WIN</span>

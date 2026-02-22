@@ -238,7 +238,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
 
   return (
     <div style={{
-      position: 'relative', width: '100%', minHeight: '440px',
+      position: 'relative', width: '100%', maxWidth: '600px', margin: '0 auto', minHeight: '440px',
       background: 'linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 50%, #1a0f0f 100%)',
       borderRadius: '16px', overflow: 'hidden', fontFamily: 'Nunito, sans-serif',
     }}>
