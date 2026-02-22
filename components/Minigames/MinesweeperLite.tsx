@@ -24,6 +24,41 @@ interface Cell {
 const GRID_SIZE = 9;
 const MINE_COUNT = 3;
 
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@600;700;800&display=swap');
+
+@keyframes msRevealPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes msExplode {
+  0% { transform: scale(1); background: #ff2222; }
+  30% { transform: scale(1.3); background: #ff4400; box-shadow: 0 0 30px #ff4400, 0 0 60px rgba(255,68,0,0.5); }
+  100% { transform: scale(1); background: #441111; }
+}
+@keyframes msShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-4px) translateY(2px); }
+  30% { transform: translateX(4px) translateY(-2px); }
+  50% { transform: translateX(-3px) translateY(1px); }
+  70% { transform: translateX(3px); }
+  90% { transform: translateX(-2px); }
+}
+@keyframes msPulse {
+  0%, 100% { box-shadow: inset 0 0 20px rgba(255,215,0,0.05); }
+  50% { box-shadow: inset 0 0 30px rgba(255,215,0,0.12); }
+}
+@keyframes msCellHover {
+  0% { transform: scale(1); }
+  100% { transform: scale(0.96) translateY(2px); }
+}
+@keyframes msParticleBurst {
+  0% { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0); }
+}
+`;
+
 export default function MinesweeperLite({ onResult, baseAmount, context, spectator = false }: MinesweeperLiteProps) {
   const { play } = useAudio();
   const [grid, setGrid] = useState<Cell[]>([]);
@@ -31,27 +66,24 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
   const [gameEnded, setGameEnded] = useState(false);
   const [safeCount, setSafeCount] = useState(0);
   const [firstClick, setFirstClick] = useState(true);
+  const [shaking, setShaking] = useState(false);
 
-  // Sync: active player emits actions, spectator receives them
   const handleRemoteAction = useCallback((data: any) => {
     if (data.type === 'init') {
-      // Spectator receives the mine layout from the active player
       const newGrid: Cell[] = [];
       for (let i = 0; i < GRID_SIZE; i++) {
         newGrid.push({ id: i, hasMine: data.mines.includes(i), state: 'hidden', safeRevealed: false });
       }
       setGrid(newGrid);
     } else if (data.type === 'click') {
-      // Replay the click
       doClick(data.cellId);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { emitAction } = useMinigameSync(spectator, handleRemoteAction);
 
   useEffect(() => {
     if (!spectator) {
-      // Active player: generate grid and broadcast mine positions
       const newGrid: Cell[] = [];
       for (let i = 0; i < GRID_SIZE; i++) {
         newGrid.push({ id: i, hasMine: false, state: 'hidden', safeRevealed: false });
@@ -69,7 +101,6 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Shared click logic used by both active player and spectator replay
   const doClick = useCallback((cellId: number) => {
     setGrid(prev => {
       if (!prev.length || prev[cellId]?.state !== 'hidden') return prev;
@@ -81,6 +112,8 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
         clickedCell.state = 'mine';
         newGrid[cellId] = clickedCell;
         setGameEnded(true);
+        setShaking(true);
+        setTimeout(() => setShaking(false), 600);
         setFirstClick(fc => {
           if (fc) {
             setTimeout(() => onResult('catastrophic'), 1000);
@@ -125,56 +158,167 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
     else onResult('catastrophic');
   };
 
-  const renderCell = (cell: Cell) => {
-    if (cell.state === 'hidden') {
-      return (
-        <div className="msTileHidden">
-          <span className="msTileQuestion">?</span>
-        </div>
-      );
-    }
-    if (cell.state === 'revealed') {
-      return (
-        <div className="msTileRevealed">
-          <span className="msTileGem">💎</span>
-        </div>
-      );
-    }
-    return (
-      <div className="msTileMine">
-        <span className="msTileBomb">💣</span>
-      </div>
-    );
-  };
+  const tensionLevel = safeCount / (GRID_SIZE - MINE_COUNT);
 
   return (
-    <div className="minesweeperLite pixelMinigame">
-      <h2 className="minesweeperTitle">MINESWEEPER LITE</h2>
-      <div className="minesweeperStats">SAFE: {safeCount}/{GRID_SIZE - MINE_COUNT}</div>
+    <>
+      <style>{STYLES}</style>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        animation: shaking ? 'msShake 0.5s ease-out' : 'none',
+      }}>
+        {/* Title */}
+        <h2 style={{
+          fontFamily: 'Cinzel, serif',
+          fontSize: 22,
+          fontWeight: 900,
+          color: '#ffd700',
+          letterSpacing: 3,
+          margin: 0,
+          textShadow: '0 0 10px rgba(255,215,0,0.4)',
+        }}>
+          VAULT SWEEP
+        </h2>
 
-      <div className="msGrid">
-        {grid.map((cell) => (
-          <button
-            key={cell.id}
-            className={`msCell ${cell.state} ${cell.state === 'mine' ? 'msCellExplode' : ''}`}
-            onClick={() => clickCell(cell.id)}
-            disabled={gameEnded || cell.state !== 'hidden' || spectator}
-          >
-            {renderCell(cell)}
-          </button>
-        ))}
-      </div>
+        {/* Digital display */}
+        <div style={{
+          fontFamily: 'monospace',
+          fontSize: 16,
+          color: '#00ff88',
+          background: '#0a0a0a',
+          border: '2px solid #333',
+          borderRadius: 6,
+          padding: '6px 16px',
+          letterSpacing: 3,
+          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8), 0 0 8px rgba(0,255,136,0.15)',
+          textShadow: '0 0 6px rgba(0,255,136,0.5)',
+        }}>
+          SAFE: {safeCount}/{GRID_SIZE - MINE_COUNT}
+        </div>
 
-      <div className="minesweeperInstructions">
-        {!gameStarted ? 'TAP TILES! AVOID 3 MINES!' : gameEnded ? (safeCount === GRID_SIZE - MINE_COUNT ? 'ALL SAFE!' : 'BOOM!') : `${GRID_SIZE - MINE_COUNT - safeCount} SAFE REMAINING`}
-      </div>
+        {/* Vault frame + grid */}
+        <div style={{
+          background: 'linear-gradient(135deg, #2a2a3e, #1a1a2e)',
+          border: '4px solid #555',
+          borderImage: 'linear-gradient(180deg, #c9a84c, #7a5a1e, #c9a84c) 1',
+          borderRadius: 12,
+          padding: 16,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.4)',
+          animation: tensionLevel > 0.5 ? `msPulse ${2 - tensionLevel}s infinite` : 'none',
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 6,
+          }}>
+            {grid.map((cell) => (
+              <button
+                key={cell.id}
+                onClick={() => clickCell(cell.id)}
+                disabled={gameEnded || cell.state !== 'hidden' || spectator}
+                style={{
+                  width: 72, height: 72,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: cell.state === 'hidden' && !gameEnded && !spectator ? 'pointer' : 'default',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                  ...(cell.state === 'hidden' ? {
+                    background: 'linear-gradient(145deg, #555 0%, #3a3a3a 50%, #444 100%)',
+                    boxShadow: '2px 2px 6px rgba(0,0,0,0.5), -1px -1px 3px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.1)',
+                  } : cell.state === 'revealed' ? {
+                    background: 'radial-gradient(circle, #1a3a1a, #0a1f0a)',
+                    boxShadow: '0 0 12px rgba(0,255,100,0.3), inset 0 0 8px rgba(0,255,100,0.1)',
+                    animation: 'msRevealPop 0.4s ease-out',
+                  } : {
+                    background: '#2a0a0a',
+                    boxShadow: '0 0 20px rgba(255,0,0,0.5), inset 0 0 12px rgba(255,0,0,0.3)',
+                    animation: 'msExplode 0.6s ease-out',
+                  }),
+                }}
+              >
+                {cell.state === 'hidden' && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '100%', height: '100%',
+                  }}>
+                    <span style={{
+                      fontFamily: 'Nunito, sans-serif',
+                      fontSize: 11,
+                      color: '#888',
+                      fontWeight: 700,
+                      opacity: 0.6,
+                    }}>
+                      {String(cell.id + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                )}
+                {cell.state === 'revealed' && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '100%', height: '100%',
+                  }}>
+                    <span style={{
+                      fontSize: 28,
+                      color: '#ffd700',
+                      textShadow: '0 0 8px rgba(255,215,0,0.6)',
+                      fontWeight: 900,
+                    }}>
+                      ◆
+                    </span>
+                  </div>
+                )}
+                {cell.state === 'mine' && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '100%', height: '100%',
+                  }}>
+                    <span style={{
+                      fontSize: 28,
+                      color: '#ff3333',
+                      textShadow: '0 0 12px rgba(255,0,0,0.8)',
+                      fontWeight: 900,
+                    }}>
+                      ✕
+                    </span>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="minesweeperPaytable">
-        <div className="paytableRow">6 SAFE = WIN</div>
-        <div className="paytableRow">4-5 SAFE = CLOSE WIN</div>
-        <div className="paytableRow">2-3 SAFE = CLOSE LOSS</div>
-        <div className="paytableRow">1 SAFE = LOSS</div>
+        {/* Instructions */}
+        <div style={{
+          fontFamily: 'Nunito, sans-serif',
+          fontSize: 13,
+          fontWeight: 700,
+          color: '#c9a84c',
+          letterSpacing: 1,
+          textAlign: 'center',
+        }}>
+          {!gameStarted ? 'TAP DEPOSIT BOXES — AVOID 3 MINES' : gameEnded ? (safeCount === GRID_SIZE - MINE_COUNT ? '✦ VAULT CLEARED ✦' : '✕ DETONATION ✕') : `${GRID_SIZE - MINE_COUNT - safeCount} SAFE REMAINING`}
+        </div>
+
+        {/* Paytable */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 1,
+          fontFamily: 'Nunito, sans-serif',
+          fontSize: 10,
+          color: '#777',
+          textAlign: 'center',
+          padding: '6px 12px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: 6,
+          border: '1px solid #c9a84c22',
+        }}>
+          <div>6 SAFE = WIN</div>
+          <div>4-5 SAFE = CLOSE WIN</div>
+          <div>2-3 SAFE = CLOSE LOSS</div>
+          <div>1 SAFE = LOSS</div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

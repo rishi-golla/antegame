@@ -31,24 +31,125 @@ function randomCard(): CardData {
 }
 
 function suitColor(suit: string): string {
-  return suit === '♥' || suit === '♦' ? '#dc2626' : '#1a1a1a';
+  return suit === '♥' || suit === '♦' ? '#dc2626' : '#e8e8e8';
 }
 
-function CardFace({ card }: { card: CardData }) {
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@600;700;800&display=swap');
+
+@keyframes hrCardSlideLeft {
+  0% { transform: translateX(-120px) rotateY(180deg); opacity: 0; }
+  50% { transform: translateX(0) rotateY(180deg); opacity: 1; }
+  70% { transform: translateX(0) rotateY(90deg); }
+  100% { transform: translateX(0) rotateY(0deg); }
+}
+@keyframes hrCardSlideRight {
+  0% { transform: translateX(120px) rotateY(180deg); opacity: 0; }
+  50% { transform: translateX(0) rotateY(180deg); opacity: 1; }
+  70% { transform: translateX(0) rotateY(90deg); }
+  100% { transform: translateX(0) rotateY(0deg); }
+}
+@keyframes hrCardBack {
+  0%, 100% { transform: rotateY(0deg); }
+}
+@keyframes hrGlowGold {
+  0%, 100% { box-shadow: 0 0 15px rgba(255,215,0,0.5), 0 0 30px rgba(255,215,0,0.3); }
+  50% { box-shadow: 0 0 25px rgba(255,215,0,0.8), 0 0 50px rgba(255,215,0,0.5); }
+}
+@keyframes hrGlowRed {
+  0%, 100% { box-shadow: 0 0 15px rgba(220,38,38,0.5), 0 0 30px rgba(220,38,38,0.3); }
+  50% { box-shadow: 0 0 25px rgba(220,38,38,0.8), 0 0 50px rgba(220,38,38,0.5); }
+}
+@keyframes hrDim {
+  0% { opacity: 1; filter: brightness(1); }
+  100% { opacity: 0.5; filter: brightness(0.5) saturate(0.3); }
+}
+@keyframes hrWarSlam {
+  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes hrPulseAmber {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,180,0,0.4); }
+  50% { box-shadow: 0 0 20px rgba(255,180,0,0.7), 0 0 40px rgba(255,180,0,0.3); }
+}
+@keyframes hrVsSpark {
+  0%, 100% { text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+  50% { text-shadow: 0 0 20px rgba(255,215,0,1), 0 0 40px rgba(255,215,0,0.5); }
+}
+@keyframes hrSpotlight {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.12; }
+}
+`;
+
+function CardFace({ card, side, result }: { card: CardData; side: 'left' | 'right'; result?: 'win' | 'lose' | 'tie' }) {
   const color = suitColor(card.suit);
   return (
-    <div className="playingCard cardRevealAnim" style={{ color }}>
-      <span className="cardRank">{RANK_NAMES[card.rank]}</span>
-      <span className="cardSuit">{card.suit}</span>
-      <span className="cardCenter">{card.suit}</span>
+    <div style={{
+      width: 100, height: 140,
+      background: 'linear-gradient(135deg, #ffffff, #f5f5f0)',
+      borderRadius: 10,
+      border: '2px solid #ddd',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative',
+      animation: `${side === 'left' ? 'hrCardSlideLeft' : 'hrCardSlideRight'} 0.8s ease-out forwards${result === 'win' ? ', hrGlowGold 1s infinite 0.8s' : result === 'lose' ? ', hrDim 0.5s ease-out 0.8s forwards' : result === 'tie' ? ', hrPulseAmber 0.6s infinite 0.8s' : ''}`,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+      perspective: 800,
+    }}>
+      <span style={{
+        position: 'absolute', top: 6, left: 8,
+        fontFamily: 'Cinzel, serif', fontSize: 16, fontWeight: 900, color,
+      }}>
+        {RANK_NAMES[card.rank]}
+      </span>
+      <span style={{
+        position: 'absolute', top: 22, left: 8,
+        fontSize: 12, color,
+      }}>
+        {card.suit}
+      </span>
+      <span style={{
+        fontSize: 42, color,
+        textShadow: `0 2px 4px rgba(0,0,0,0.1)`,
+      }}>
+        {card.suit}
+      </span>
+      <span style={{
+        position: 'absolute', bottom: 6, right: 8,
+        fontFamily: 'Cinzel, serif', fontSize: 16, fontWeight: 900, color,
+        transform: 'rotate(180deg)',
+      }}>
+        {RANK_NAMES[card.rank]}
+      </span>
     </div>
   );
 }
 
 function CardBack() {
   return (
-    <div className="playingCard hidden">
-      <img src="/assets/minigames/cards/card-back.png" alt="card back" className="cardBackImg" />
+    <div style={{
+      width: 100, height: 140,
+      borderRadius: 10,
+      border: '2px solid #c9a84c',
+      background: `
+        repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(201,168,76,0.15) 8px, rgba(201,168,76,0.15) 9px),
+        repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(201,168,76,0.15) 8px, rgba(201,168,76,0.15) 9px),
+        linear-gradient(135deg, #1a1a2e, #12121e)
+      `,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.4), inset 0 0 20px rgba(201,168,76,0.1)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <span style={{
+        fontFamily: 'Cinzel, serif',
+        fontSize: 24,
+        fontWeight: 900,
+        color: '#c9a84c',
+        opacity: 0.6,
+      }}>
+        ◆
+      </span>
     </div>
   );
 }
@@ -62,6 +163,7 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
   const [houseCard, setHouseCard] = useState<CardData | null>(null);
   const [roundRevealed, setRoundRevealed] = useState(false);
   const [done, setDone] = useState(false);
+  const [roundResult, setRoundResult] = useState<'player' | 'house' | 'tie' | null>(null);
   const [pendingDraw, setPendingDraw] = useState<{ pc: CardData; hc: CardData } | null>(null);
 
   const handleRemoteAction = useCallback((data: any) => {
@@ -88,9 +190,9 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
     const newRound = round + 1;
     let pw = playerWins;
     let hw = houseWins;
-    if (pc.rank > hc.rank) pw += 1;
-    else if (hc.rank > pc.rank) hw += 1;
-    else { pw += 0.5; hw += 0.5; }
+    if (pc.rank > hc.rank) { pw += 1; setRoundResult('player'); }
+    else if (hc.rank > pc.rank) { hw += 1; setRoundResult('house'); }
+    else { pw += 0.5; hw += 0.5; setRoundResult('tie'); }
 
     setPlayerWins(pw);
     setHouseWins(hw);
@@ -109,12 +211,12 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
     setTimeout(() => {
       setRound(newRound);
       setRoundRevealed(false);
+      setRoundResult(null);
       setPlayerCard(null);
       setHouseCard(null);
     }, 1500);
   }, [round, playerWins, houseWins, onResult, play]);
 
-  // Spectator: react when pending draw arrives
   useEffect(() => {
     if (spectator && pendingDraw && !roundRevealed) {
       const { pc, hc } = pendingDraw;
@@ -132,39 +234,168 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
   }, [round, roundRevealed, spectator, emitAction, executeRound]);
 
   return (
-    <div className="cardWar pixelMinigame">
-      <h2 className="cardWarTitle">CARD WAR</h2>
+    <>
+      <style>{STYLES}</style>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+      }}>
+        {/* Title */}
+        <h2 style={{
+          fontFamily: 'Cinzel, serif',
+          fontSize: 24,
+          fontWeight: 900,
+          color: '#ffd700',
+          letterSpacing: 4,
+          margin: 0,
+          textShadow: '0 0 12px rgba(255,215,0,0.4)',
+        }}>
+          CARD WAR
+        </h2>
 
-      <div className="cardWarScore">
-        YOU {playerWins} - {houseWins} HOUSE
-      </div>
-
-      <div className="cardWarRound">ROUND {Math.min(round + 1, 3)} / 3</div>
-
-      <div className="cardWarTable">
-        <div className="cardWarSlot">
-          <div className="cardWarSlotLabel">YOU</div>
-          {playerCard ? <CardFace card={playerCard} /> : <CardBack />}
+        {/* Score */}
+        <div style={{
+          fontFamily: 'Nunito, sans-serif',
+          fontSize: 16,
+          fontWeight: 800,
+          color: '#e0e0e0',
+          letterSpacing: 2,
+          display: 'flex', gap: 12, alignItems: 'center',
+        }}>
+          <span style={{ color: '#ffd700' }}>YOU {playerWins}</span>
+          <span style={{ color: '#666' }}>—</span>
+          <span style={{ color: '#dc2626' }}>{houseWins} HOUSE</span>
         </div>
-        <div className="cardWarVs">VS</div>
-        <div className="cardWarSlot">
-          <div className="cardWarSlotLabel">HOUSE</div>
-          {houseCard ? <CardFace card={houseCard} /> : <CardBack />}
+
+        {/* Round indicator */}
+        <div style={{
+          fontFamily: 'Nunito, sans-serif',
+          fontSize: 12,
+          fontWeight: 700,
+          color: '#888',
+          letterSpacing: 2,
+        }}>
+          ROUND {Math.min(round + 1, 3)} / 3
+        </div>
+
+        {/* Card arena */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '24px 20px',
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1), rgba(0,0,0,0.3))',
+          borderRadius: 16,
+          position: 'relative',
+        }}>
+          {/* Spotlight left */}
+          <div style={{
+            position: 'absolute', left: 30, top: -20, width: 100, height: 60,
+            background: 'radial-gradient(ellipse, rgba(255,255,255,0.08), transparent)',
+            animation: 'hrSpotlight 3s infinite',
+            pointerEvents: 'none',
+          }} />
+          {/* Spotlight right */}
+          <div style={{
+            position: 'absolute', right: 30, top: -20, width: 100, height: 60,
+            background: 'radial-gradient(ellipse, rgba(255,255,255,0.08), transparent)',
+            animation: 'hrSpotlight 3s infinite 1.5s',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Player card slot */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 800,
+              color: '#ffd700', letterSpacing: 2, textTransform: 'uppercase',
+            }}>YOU</span>
+            {playerCard ? (
+              <CardFace card={playerCard} side="left"
+                result={roundResult === 'player' ? 'win' : roundResult === 'house' ? 'lose' : roundResult === 'tie' ? 'tie' : undefined}
+              />
+            ) : <CardBack />}
+          </div>
+
+          {/* VS */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{
+              fontFamily: 'Cinzel, serif',
+              fontSize: 28,
+              fontWeight: 900,
+              color: '#ffd700',
+              animation: roundRevealed ? 'hrVsSpark 0.5s infinite' : 'none',
+              textShadow: '0 0 10px rgba(255,215,0,0.4)',
+            }}>
+              VS
+            </span>
+            {roundResult === 'tie' && (
+              <div style={{
+                position: 'absolute', top: -30,
+                fontFamily: 'Cinzel, serif',
+                fontSize: 20,
+                fontWeight: 900,
+                color: '#ffaa00',
+                animation: 'hrWarSlam 0.4s ease-out',
+                textShadow: '0 0 15px rgba(255,170,0,0.8)',
+              }}>
+                WAR!
+              </div>
+            )}
+          </div>
+
+          {/* House card slot */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 800,
+              color: '#dc2626', letterSpacing: 2, textTransform: 'uppercase',
+            }}>HOUSE</span>
+            {houseCard ? (
+              <CardFace card={houseCard} side="right"
+                result={roundResult === 'house' ? 'win' : roundResult === 'player' ? 'lose' : roundResult === 'tie' ? 'tie' : undefined}
+              />
+            ) : <CardBack />}
+          </div>
+        </div>
+
+        {/* Draw button */}
+        {round < 3 && !roundRevealed && (
+          <button
+            onClick={drawRound}
+            disabled={spectator}
+            style={{
+              fontFamily: 'Nunito, sans-serif',
+              fontSize: 16,
+              fontWeight: 800,
+              color: '#1a1a2e',
+              background: 'linear-gradient(180deg, #ffd700, #c9a84c)',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 40px',
+              cursor: spectator ? 'default' : 'pointer',
+              letterSpacing: 2,
+              boxShadow: '0 4px 12px rgba(255,215,0,0.3)',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+            }}
+          >
+            DRAW
+          </button>
+        )}
+
+        {/* Paytable */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 1,
+          fontFamily: 'Nunito, sans-serif',
+          fontSize: 10,
+          color: '#777',
+          textAlign: 'center',
+          padding: '6px 12px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: 6,
+          border: '1px solid #c9a84c22',
+        }}>
+          <div>3-0 = WIN</div>
+          <div>2-1 = CLOSE WIN</div>
+          <div>TIE = CLOSE LOSS</div>
+          <div>1-2 = LOSS</div>
         </div>
       </div>
-
-      {round < 3 && !roundRevealed && (
-        <button className="cardWarDrawBtn pixelBtn" onClick={drawRound} disabled={spectator}>
-          DRAW
-        </button>
-      )}
-
-      <div className="cardWarPaytable">
-        <div className="paytableRow">3-0 = WIN</div>
-        <div className="paytableRow">2-1 = CLOSE WIN</div>
-        <div className="paytableRow">TIE = CLOSE LOSS</div>
-        <div className="paytableRow">1-2 = LOSS</div>
-      </div>
-    </div>
+    </>
   );
 }
