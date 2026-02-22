@@ -302,7 +302,7 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
                   transform: 'translate(-50%,-50%)',
                   fontSize: 28, color: '#d4af37', opacity: 0.3,
                   fontFamily: 'Cinzel, serif',
-                }}>◆</div>
+                }}>♠</div>
               </div>
             ))}
 
@@ -330,7 +330,7 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
                 transform: 'translate(-50%,-50%)',
                 fontSize: 28, color: '#d4af37', opacity: 0.4,
                 fontFamily: 'Cinzel, serif',
-              }}>◆</div>
+              }}>♠</div>
             </div>
           </div>
         )}
@@ -389,7 +389,7 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
                   color: isRisk ? '#fecaca' : '#e8d5f5',
                   letterSpacing: 3,
                 }}>
-                  {isRisk ? '⚡ RISK' : '✦ BLIND CHEST'}
+                  {isRisk ? '⚡ RISK' : 'BLIND CHEST'}
                 </div>
               </div>
 

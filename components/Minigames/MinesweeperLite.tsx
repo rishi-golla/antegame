@@ -164,13 +164,14 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
     <>
       <style>{STYLES}</style>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+        maxWidth: '600px', margin: '0 auto',
         animation: shaking ? 'msShake 0.5s ease-out' : 'none',
       }}>
         {/* Title */}
         <h2 style={{
           fontFamily: 'Cinzel, serif',
-          fontSize: 22,
+          fontSize: 36,
           fontWeight: 900,
           color: '#ffd700',
           letterSpacing: 3,
@@ -183,12 +184,12 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
         {/* Digital display */}
         <div style={{
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 16,
+          fontSize: 18,
           color: '#d4af37',
           background: '#1a0f0f',
           border: '2px solid #4a2828',
-          borderRadius: 6,
-          padding: '6px 16px',
+          borderRadius: 8,
+          padding: '8px 20px',
           letterSpacing: 3,
           boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8), 0 0 8px rgba(212,175,55,0.15)',
           textShadow: '0 0 6px rgba(212,175,55,0.5)',
@@ -202,14 +203,14 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
           border: '4px solid #4a2828',
           borderImage: 'linear-gradient(180deg, #d4af37, #8b6914, #d4af37) 1',
           borderRadius: 12,
-          padding: 16,
+          padding: 20,
           boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.4)',
           animation: tensionLevel > 0.5 ? `msPulse ${2 - tensionLevel}s infinite` : 'none',
         }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 6,
+            gap: 10,
           }}>
             {grid.map((cell) => (
               <button
@@ -217,7 +218,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
                 onClick={() => clickCell(cell.id)}
                 disabled={gameEnded || cell.state !== 'hidden' || spectator}
                 style={{
-                  width: 72, height: 72,
+                  width: 90, height: 90,
                   border: 'none',
                   borderRadius: 6,
                   cursor: cell.state === 'hidden' && !gameEnded && !spectator ? 'pointer' : 'default',
@@ -261,12 +262,12 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
                     width: '100%', height: '100%',
                   }}>
                     <span style={{
-                      fontSize: 28,
+                      fontSize: 32,
                       color: '#ffd700',
                       textShadow: '0 0 8px rgba(255,215,0,0.6)',
                       fontWeight: 900,
                     }}>
-                      ◆
+                      ✓
                     </span>
                   </div>
                 )}
@@ -276,7 +277,7 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
                     width: '100%', height: '100%',
                   }}>
                     <span style={{
-                      fontSize: 28,
+                      fontSize: 32,
                       color: '#ff3333',
                       textShadow: '0 0 12px rgba(255,0,0,0.8)',
                       fontWeight: 900,
@@ -293,20 +294,20 @@ export default function MinesweeperLite({ onResult, baseAmount, context, spectat
         {/* Instructions */}
         <div style={{
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 13,
+          fontSize: 16,
           fontWeight: 700,
           color: '#c9a84c',
           letterSpacing: 1,
           textAlign: 'center',
         }}>
-          {!gameStarted ? 'TAP DEPOSIT BOXES — AVOID 3 MINES' : gameEnded ? (safeCount === GRID_SIZE - MINE_COUNT ? '✦ VAULT CLEARED ✦' : '✕ DETONATION ✕') : `${GRID_SIZE - MINE_COUNT - safeCount} SAFE REMAINING`}
+          {!gameStarted ? 'TAP DEPOSIT BOXES — AVOID 3 MINES' : gameEnded ? (safeCount === GRID_SIZE - MINE_COUNT ? 'VAULT CLEARED' : '✕ DETONATION ✕') : `${GRID_SIZE - MINE_COUNT - safeCount} SAFE REMAINING`}
         </div>
 
         {/* Paytable */}
         <div style={{
           display: 'flex', flexDirection: 'column', gap: 1,
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 10,
+          fontSize: 13,
           color: '#777',
           textAlign: 'center',
           padding: '6px 12px',

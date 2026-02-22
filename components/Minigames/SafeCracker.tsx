@@ -231,7 +231,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.8)',
         }}>
           ATTEMPT {Math.min(currentAttempt, 4)}/4
-          {cracked && <span style={{ color: '#ffd700', marginLeft: 8 }}>✦ CRACKED</span>}
+          {cracked && <span style={{ color: '#ffd700', marginLeft: 8 }}>CRACKED</span>}
         </div>
 
         {/* Tumblers */}
@@ -327,7 +327,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
               color: '#ffd700',
               textShadow: '0 0 20px rgba(255,215,0,0.8)',
             }}>
-              ✦
+              ·
             </span>
           </div>
         )}
@@ -533,7 +533,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           textAlign: 'center',
           maxWidth: 280,
         }}>
-          {cracked ? '✦ SAFE CRACKED ✦' : failed ? `LOCKED OUT — The code was ${combination.join(' ')}` : 'Guess the 3-digit code (1–4). "Exact" = right number, right spot. "Close" = right number, wrong spot.'}
+          {cracked ? 'SAFE CRACKED' : failed ? `LOCKED OUT — The code was ${combination.join(' ')}` : 'Guess the 3-digit code (1–4). "Exact" = right number, right spot. "Close" = right number, wrong spot.'}
         </div>
       </div>
     </>

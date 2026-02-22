@@ -145,7 +145,7 @@ function CardBack() {
         color: '#d4af37',
         opacity: 0.6,
       }}>
-        ◆
+        ♠
       </span>
     </div>
   );

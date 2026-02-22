@@ -275,7 +275,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
       return (
         <div key={`hidden-${index}`} style={cardBackStyle(true)}>
           <div style={cardBackOverlay} />
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: '#d4af37', fontSize: '28px', opacity: 0.4 }}>✦</div>
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: '#d4af37', fontSize: '28px', opacity: 0.4 }}>♠</div>
         </div>
       );
     }
@@ -405,7 +405,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
               animation: 'bj-blackjackFlash 0.8s ease-out both',
               pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
             }}>
-              ✦ BLACKJACK! ✦
+              BLACKJACK!
             </div>
           )}
         </div>

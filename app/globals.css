@@ -2717,7 +2717,7 @@ input {
 
 /* Subtitle */
 .gambleBtn::after {
-  content: '✦ RISK IT ALL ✦';
+  content: 'RISK IT ALL';
   display: block;
   font-family: 'Nunito', sans-serif;
   font-size: 9px;
@@ -7558,7 +7558,7 @@ button:active:not(:disabled) {
 }
 
 .characterCard.characterCardSelected::after {
-  content: '✦';
+  content: '♠';
   position: absolute;
   top: 4px;
   right: 6px;

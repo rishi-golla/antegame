@@ -16,13 +16,13 @@ type SlotSymbol = 'cherry' | 'seven' | 'diamond' | 'bar' | 'skull';
 
 const SYMBOLS: SlotSymbol[] = ['cherry', 'seven', 'diamond', 'bar', 'skull'];
 const SYMBOL_COUNT = SYMBOLS.length;
-const SYMBOL_HEIGHT = 80;
+const SYMBOL_HEIGHT = 100;
 const TOTAL_HEIGHT = SYMBOL_COUNT * SYMBOL_HEIGHT;
 
 const SYMBOL_DISPLAY: Record<SlotSymbol, { char: string; color: string }> = {
   cherry: { char: '★', color: '#d4af37' },
   seven: { char: '7', color: '#ffd700' },
-  diamond: { char: '◆', color: '#f5e6a3' },
+  diamond: { char: '★', color: '#f5e6a3' },
   bar: { char: '▪', color: '#e8d5b5' },
   skull: { char: '✕', color: '#ff1744' },
 };
@@ -242,7 +242,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: sym === 'seven' ? 'Cinzel, serif' : 'Nunito, sans-serif',
-            fontSize: sym === 'seven' ? 48 : 40,
+            fontSize: sym === 'seven' ? 56 : 48,
             fontWeight: 900,
             color: display.color,
             textShadow: `0 0 8px ${display.color}44, 0 2px 4px rgba(0,0,0,0.5)`,
@@ -279,7 +279,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
           borderImage: 'linear-gradient(180deg, #c9a84c, #8b6914, #c9a84c) 1',
           borderRadius: 12,
           padding: 0,
-          width: 320,
+          width: 420,
           boxShadow: jackpot
             ? '0 0 40px rgba(255,215,0,0.6), inset 0 0 30px rgba(255,215,0,0.2)'
             : '0 4px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
@@ -301,14 +301,14 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
           }}>
             <span style={{
               fontFamily: 'Cinzel, serif',
-              fontSize: 22,
+              fontSize: 28,
               fontWeight: 900,
               color: '#ffd700',
               letterSpacing: 4,
               animation: phase === 'done' && jackpot ? 'slotMarqueeFlash 0.3s infinite' : 'none',
               textShadow: '0 0 10px rgba(255,215,0,0.5)',
             }}>
-              ✦ ANTE SLOTS ✦
+              ANTE SLOTS
             </span>
           </div>
 
@@ -317,7 +317,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
             display: 'flex',
             justifyContent: 'center',
             gap: 0,
-            padding: '16px 20px',
+            padding: '20px 28px',
             position: 'relative',
             background: 'linear-gradient(180deg, #1a0f0f, #0d0505, #1a0f0f)',
           }}>
@@ -332,7 +332,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
                   }} />
                 )}
                 <div style={{
-                  width: 80, height: SYMBOL_HEIGHT, overflow: 'hidden',
+                  width: 100, height: SYMBOL_HEIGHT, overflow: 'hidden',
                   position: 'relative',
                   background: '#1a0f0f',
                   boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.8), inset 0 0 6px rgba(0,0,0,0.5)',
@@ -369,7 +369,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
             textAlign: 'center',
             borderTop: '2px solid #c9a84c',
             fontFamily: 'Nunito, sans-serif',
-            fontSize: 13,
+            fontSize: 16,
             fontWeight: 700,
             color: '#c9a84c',
             letterSpacing: 2,
@@ -377,7 +377,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
             {phase === 'idle' && 'GET READY...'}
             {phase === 'spinning' && 'SPINNING...'}
             {phase === 'stopping' && 'STOPPING...'}
-            {phase === 'done' && (jackpot ? '✦ JACKPOT ✦' : 'RESULT!')}
+            {phase === 'done' && (jackpot ? 'JACKPOT!' : 'RESULT!')}
           </div>
 
           {/* Coin tray */}
@@ -391,14 +391,14 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
         {/* Lever */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          marginLeft: -4, width: 36,
+          marginLeft: -4, width: 44,
           cursor: leverPulled ? 'default' : 'pointer',
         }}
           onClick={handlePullLever}
         >
           {/* Glowing bulb on top */}
           <div style={{
-            width: 26, height: 26, borderRadius: '50%',
+            width: 32, height: 32, borderRadius: '50%',
             background: leverPulled
               ? 'radial-gradient(circle at 35% 35%, #8b6914, #5a4a20)'
               : 'radial-gradient(circle at 35% 35%, #fff8a0, #ffd700, #ff8c00)',
@@ -411,7 +411,7 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
           }} />
           {/* Lever shaft */}
           <div style={{
-            width: 6, height: 80,
+            width: 8, height: 100,
             background: 'linear-gradient(90deg, #8b6914, #d4af37, #8b6914)',
             borderRadius: 3,
             boxShadow: '1px 0 3px rgba(0,0,0,0.3)',

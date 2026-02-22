@@ -230,7 +230,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
       position: 'relative' as const, overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: '6px', borderRadius: '6px', border: '1px solid #d4af37', background: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(212,175,55,0.08) 8px, rgba(212,175,55,0.08) 16px)' }} />
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: '#d4af37', fontSize: '28px', opacity: 0.4 }}>✦</div>
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: '#d4af37', fontSize: '28px', opacity: 0.4 }}>♠</div>
     </div>
   );
 

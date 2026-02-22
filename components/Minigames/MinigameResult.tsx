@@ -348,7 +348,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
                 fontSize: '120px', color: '#d4af37', opacity: 0.06,
                 fontFamily: 'Cinzel, serif', pointerEvents: 'none', zIndex: 0,
                 lineHeight: 1,
-              }}>✦</div>
+              }}>·</div>
 
               {/* === TOP BANNER === */}
               <div style={{

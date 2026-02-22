@@ -67,7 +67,7 @@ function CasinoDie({ value, rolling, result, won }: { value: number; rolling: bo
   const pips = PIP_POSITIONS[value] || [];
 
   const dieStyle: React.CSSProperties = {
-    width: '72px', height: '72px',
+    width: '100px', height: '100px',
     borderRadius: '12px',
     background: 'linear-gradient(145deg, #f5f0e0, #ddd5c0)',
     border: '2px solid #d4af37',
@@ -77,7 +77,7 @@ function CasinoDie({ value, rolling, result, won }: { value: number; rolling: bo
     display: 'grid',
     gridTemplateRows: '1fr 1fr 1fr',
     gridTemplateColumns: '1fr 1fr 1fr',
-    padding: '10px',
+    padding: '14px',
     position: 'relative' as const,
     animation: rolling ? 'craps-tumble 0.8s ease-out' : result ? (won ? 'craps-winGlow 1.5s ease-in-out infinite' : 'craps-lossShake 0.4s ease-out') : undefined,
     transition: 'box-shadow 0.3s',
@@ -92,7 +92,7 @@ function CasinoDie({ value, rolling, result, won }: { value: number; rolling: bo
       <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {hasPip && (
           <div style={{
-            width: '12px', height: '12px', borderRadius: '50%',
+            width: '16px', height: '16px', borderRadius: '50%',
             background: 'linear-gradient(145deg, #1a0f0f, #2e1a1a)',
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5), 0 1px 1px rgba(255,255,255,0.2)',
           }} />
@@ -208,7 +208,7 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
 
   return (
     <div style={{
-      position: 'relative', width: '100%', minHeight: '440px',
+      position: 'relative', width: '100%', maxWidth: '600px', margin: '0 auto', minHeight: '440px',
       background: isPointPhase
         ? 'linear-gradient(180deg, #2a0f1f 0%, #3d0f22 50%, #1a0f0f 100%)'
         : 'linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 50%, #1a0f0f 100%)',
@@ -223,9 +223,9 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       )}
 
       {/* Title */}
-      <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+      <div style={{ textAlign: 'center', padding: '24px 0 12px' }}>
         <h2 style={{
-          fontFamily: 'Cinzel, serif', fontSize: '28px', fontWeight: 900,
+          fontFamily: 'Cinzel, serif', fontSize: '38px', fontWeight: 900,
           color: '#d4af37', textShadow: '0 0 12px rgba(212,175,55,0.5)',
           margin: 0, letterSpacing: '3px',
         }}>CRAPS</h2>
@@ -234,15 +234,15 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       {/* Target display / Point plaque */}
       {targetNumber && (
         <div style={{
-          textAlign: 'center', margin: '4px auto 12px', maxWidth: '200px',
-          padding: '8px 24px', borderRadius: '8px',
+          textAlign: 'center', margin: '8px auto 20px', maxWidth: '240px',
+          padding: '12px 32px', borderRadius: '10px',
           background: 'linear-gradient(180deg, #2a1a00 0%, #1a1000 100%)',
           border: '2px solid #d4af37',
           boxShadow: '0 0 16px rgba(212,175,55,0.3), inset 0 0 12px rgba(212,175,55,0.1)',
         }}>
-          <div style={{ fontSize: '11px', color: 'rgba(212,175,55,0.6)', letterSpacing: '2px', marginBottom: '2px' }}>TARGET</div>
+          <div style={{ fontSize: '14px', color: 'rgba(212,175,55,0.6)', letterSpacing: '2px', marginBottom: '4px' }}>TARGET</div>
           <div style={{
-            fontFamily: 'Cinzel, serif', fontSize: '32px', fontWeight: 900, color: '#ffd700',
+            fontFamily: 'Cinzel, serif', fontSize: '38px', fontWeight: 900, color: '#ffd700',
             animation: isPointPhase ? 'craps-pointPulse 2s ease-in-out infinite' : undefined,
           }}>{targetNumber}</div>
         </div>
@@ -251,14 +251,14 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       {/* Target selection */}
       {!gameStarted && (
         <div style={{ textAlign: 'center', padding: '0 20px 16px' }}>
-          <div style={{ fontSize: '13px', color: 'rgba(212,175,55,0.7)', letterSpacing: '2px', marginBottom: '12px' }}>
+          <div style={{ fontSize: '16px', color: 'rgba(212,175,55,0.7)', letterSpacing: '2px', marginBottom: '16px' }}>
             CHOOSE YOUR TARGET
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
             {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
               <button key={num} onClick={() => selectTarget(num)} disabled={spectator} style={{
-                width: '42px', height: '42px', borderRadius: '50%',
-                fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '15px',
+                width: '48px', height: '48px', borderRadius: '50%',
+                fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '17px',
                 background: targetNumber === num
                   ? 'linear-gradient(180deg, #d4af37 0%, #a68628 100%)'
                   : 'linear-gradient(180deg, #2a0f1f 0%, #1a0f0f 100%)',
@@ -274,15 +274,15 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       )}
 
       {/* Dice area */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', padding: '16px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '24px 0' }}>
         <CasinoDie value={dice1} rolling={rolling} result={rollPhase === 'result'} won={won === true} />
         <CasinoDie value={dice2} rolling={rolling} result={rollPhase === 'result'} won={won === true} />
       </div>
 
       {/* Status */}
       <div style={{
-        textAlign: 'center', padding: '8px 0',
-        fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: '14px',
+        textAlign: 'center', padding: '12px 0',
+        fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: '18px',
         color: 'rgba(212,175,55,0.8)', letterSpacing: '1px',
       }}>
         {!targetNumber ? 'SELECT A TARGET (2–12)' : !gameStarted ? 'CLICK ROLL DICE!' : rolling ? 'ROLLING...' : `YOU ROLLED ${dice1 + dice2}!`}
@@ -290,10 +290,10 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
 
       {/* Roll button */}
       {targetNumber && !rolling && !result && (
-        <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+        <div style={{ textAlign: 'center', padding: '12px 0 24px' }}>
           <button onClick={rollDice} disabled={spectator} style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '18px',
-            padding: '16px 48px', borderRadius: '50px',
+            padding: '14px 48px', borderRadius: '50px',
             background: 'linear-gradient(180deg, #d4af37 0%, #8b6914 100%)',
             color: '#ffd700', border: '3px solid #d4af37',
             cursor: spectator ? 'not-allowed' : 'pointer',
@@ -310,18 +310,18 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       {/* Result */}
       {result && targetNumber && (
         <div style={{
-          textAlign: 'center', padding: '8px 0',
+          textAlign: 'center', padding: '12px 0',
           animation: 'craps-celebration 0.4s ease-out both',
         }}>
           <div style={{
-            fontFamily: 'Cinzel, serif', fontSize: '18px', fontWeight: 700,
+            fontFamily: 'Cinzel, serif', fontSize: '22px', fontWeight: 700,
             color: won ? '#22c55e' : '#dc2626',
             textShadow: won ? '0 0 12px rgba(34,197,94,0.5)' : '0 0 12px rgba(220,38,38,0.5)',
           }}>
             TARGET: {targetNumber} ▪ ROLLED: {result}
           </div>
           <div style={{
-            fontSize: '14px', color: 'rgba(212,175,55,0.6)', marginTop: '4px',
+            fontSize: '16px', color: 'rgba(212,175,55,0.6)', marginTop: '6px',
           }}>
             DIFFERENCE: {Math.abs(result - targetNumber)}
           </div>
@@ -329,14 +329,14 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       )}
 
       {/* Paytable */}
-      <div style={{ textAlign: 'center', padding: '12px 0 16px' }}>
+      <div style={{ textAlign: 'center', padding: '20px 0 24px' }}>
         {[
           ['EXACT', 'WIN'],
           ['OFF BY 1', 'CLOSE WIN'],
           ['OFF BY 2', 'CLOSE LOSS'],
           ['OFF BY 3+', 'LOSS'],
         ].map(([label, val], i) => (
-          <div key={i} style={{ fontSize: '11px', color: 'rgba(212,175,55,0.4)', letterSpacing: '1px', lineHeight: 1.8 }}>
+          <div key={i} style={{ fontSize: '14px', color: 'rgba(212,175,55,0.4)', letterSpacing: '1px', lineHeight: 2 }}>
             {label} = {val}
           </div>
         ))}

@@ -137,7 +137,7 @@ export default function AssetsModal({ playerIndex, onClose }: AssetsModalProps) 
               Special Cards
             </div>
             <div className="assetsJailCardItem">
-              <span className="assetsJailCardIcon">✦</span>
+              <span className="assetsJailCardIcon">♠</span>
               <span className="assetsJailCardText">
                 Get Out of Jail Free × {player.getOutOfJailCards}
               </span>
