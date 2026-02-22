@@ -798,14 +798,21 @@ input {
   left: 50%;
   bottom: 14%;
   transform: translateX(-50%);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 800;
   font-family: 'Cinzel', serif;
-  color: var(--gold);
+  color: #fff8e7;
   white-space: nowrap;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.4), 0 0 20px rgba(212, 175, 55, 0.2);
+  /* Animated gold shimmer text */
+  background: linear-gradient(90deg, #d4af37 0%, #ffd700 25%, #fff8e7 50%, #ffd700 75%, #d4af37 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hintShimmer 2.5s linear infinite, hintFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.5));
 }
 
 .waitingLabel {
@@ -6178,10 +6185,21 @@ input {
 
 /* Phase hint styling */
 .rollHint {
-  background: rgba(10, 5, 5, 0.7);
-  padding: 4px 14px;
-  border-radius: 10px;
-  backdrop-filter: blur(4px);
+  padding: 6px 20px;
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  background: none;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.1), inset 0 0 20px rgba(10, 5, 5, 0.6);
+}
+
+@keyframes hintShimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes hintFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
 }
 
 /* ===== PHASE 5.4: Side Panels ===== */
