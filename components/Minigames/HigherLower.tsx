@@ -311,7 +311,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
               border: `1px solid ${correct ? '#22c55e' : '#dc2626'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '14px', color: correct ? '#22c55e' : '#dc2626', fontWeight: 700,
-            }}>{correct ? '★' : '✕'}</div>
+            }}>{correct ? '✓' : '✕'}</div>
           ))}
           {Array.from({ length: 3 - history.length }).map((_, i) => (
             <div key={`e-${i}`} style={{
@@ -330,7 +330,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
           color: lastGuessCorrect ? '#22c55e' : '#dc2626',
           textShadow: lastGuessCorrect ? '0 0 12px rgba(34,197,94,0.5)' : '0 0 12px rgba(220,38,38,0.5)',
         }}>
-          {lastGuessCorrect ? '★ CORRECT ★' : '✕ WRONG ✕'}
+          {lastGuessCorrect ? '✓ CORRECT' : '✕ WRONG'}
         </div>
       )}
 
