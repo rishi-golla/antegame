@@ -208,7 +208,7 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
 
   return (
     <div style={{
-      position: 'relative', width: '100%', maxWidth: '600px', margin: '0 auto', minHeight: '520px',
+      position: 'relative', width: '100%', maxWidth: '650px', margin: '0 auto', minHeight: '620px', padding: '12px 0',
       background: isPointPhase
         ? 'linear-gradient(180deg, #2a0f1f 0%, #3d0f22 50%, #1a0f0f 100%)'
         : 'linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 50%, #1a0f0f 100%)',
@@ -274,7 +274,7 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
       )}
 
       {/* Dice area */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '40px', padding: '24px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', padding: '32px 0' }}>
         <CasinoDie value={dice1} rolling={rolling} result={rollPhase === 'result'} won={won === true} />
         <CasinoDie value={dice2} rolling={rolling} result={rollPhase === 'result'} won={won === true} />
       </div>
