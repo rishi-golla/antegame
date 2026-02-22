@@ -452,15 +452,17 @@ export default function Board() {
     }, 980);
   }, [play]);
 
+  const isFirstRender = useRef(true);
   useEffect(() => {
-    if (prevDiceRef.current === null) {
-      // First render -- store initial values, don't animate
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
       prevDiceRef.current = state.dice;
       prevPhaseRef.current = state.phase;
       return;
     }
-    const diceChanged = prevDiceRef.current[0] !== state.dice[0] || prevDiceRef.current[1] !== state.dice[1];
-    if (diceChanged) {
+    const prev = prevDiceRef.current || [0, 0];
+    const diceChanged = prev[0] !== state.dice[0] || prev[1] !== state.dice[1];
+    if (diceChanged && state.dice[0] > 0 && state.dice[1] > 0) {
       animateRoll(state.dice);
     }
     prevPhaseRef.current = state.phase;

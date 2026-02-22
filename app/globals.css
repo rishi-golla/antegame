@@ -1898,7 +1898,7 @@ input {
 
 .turnIndicator {
   position: absolute;
-  top: 8%;
+  top: 12%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -12137,13 +12137,16 @@ img[src*="/assets/"] {
 
 /* ── Countdown Timer ── */
 .countdownTimer {
-  position: relative;
+  position: absolute;
+  top: 1%;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin: 6px auto 0;
+  width: 40px;
+  height: 40px;
+  z-index: 4;
 }
 
 .countdownRing {
