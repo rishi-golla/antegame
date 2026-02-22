@@ -38,16 +38,14 @@ const STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@600;700;800&display=swap');
 
 @keyframes hrCardSlideLeft {
-  0% { transform: translateX(-120px) rotateY(180deg); opacity: 0; }
-  50% { transform: translateX(0) rotateY(180deg); opacity: 1; }
-  70% { transform: translateX(0) rotateY(90deg); }
-  100% { transform: translateX(0) rotateY(0deg); }
+  0% { transform: translateX(-120px) scale(0.8); opacity: 0; }
+  60% { transform: translateX(0) scale(1.05); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
 }
 @keyframes hrCardSlideRight {
-  0% { transform: translateX(120px) rotateY(180deg); opacity: 0; }
-  50% { transform: translateX(0) rotateY(180deg); opacity: 1; }
-  70% { transform: translateX(0) rotateY(90deg); }
-  100% { transform: translateX(0) rotateY(0deg); }
+  0% { transform: translateX(120px) scale(0.8); opacity: 0; }
+  60% { transform: translateX(0) scale(1.05); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
 }
 @keyframes hrCardBack {
   0%, 100% { transform: rotateY(0deg); }
@@ -94,9 +92,8 @@ function CardFace({ card, side, result }: { card: CardData; side: 'left' | 'righ
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative',
-      animation: `${side === 'left' ? 'hrCardSlideLeft' : 'hrCardSlideRight'} 0.8s ease-out forwards${result === 'win' ? ', hrGlowGold 1s infinite 0.8s' : result === 'lose' ? ', hrDim 0.5s ease-out 0.8s forwards' : result === 'tie' ? ', hrPulseAmber 0.6s infinite 0.8s' : ''}`,
+      animation: `${side === 'left' ? 'hrCardSlideLeft' : 'hrCardSlideRight'} 0.6s ease-out forwards${result === 'win' ? ', hrGlowGold 1s infinite 0.6s' : result === 'lose' ? ', hrDim 0.5s ease-out 0.6s forwards' : result === 'tie' ? ', hrPulseAmber 0.6s infinite 0.6s' : ''}`,
       boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-      perspective: 800,
     }}>
       <span style={{
         position: 'absolute', top: 6, left: 8,

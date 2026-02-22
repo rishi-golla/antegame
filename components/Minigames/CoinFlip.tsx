@@ -214,37 +214,24 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
             ? 'cf-toss 1.5s ease-in-out'
             : (phase === 'choosing' ? 'cf-wobble 3s ease-in-out infinite' : 'none'),
         }}>
-          {/* Coin face */}
+          {/* Coin face — using original coin images */}
           <div style={{
             width: 120, height: 120, borderRadius: '50%',
-            background: displaySide === 'heads'
-              ? 'radial-gradient(circle at 35% 35%, #f5e6a3, #d4af37 40%, #8b6914 90%)'
-              : 'radial-gradient(circle at 35% 35%, #e0e0e0, #a0a0a0 40%, #606060 90%)',
-            border: `3px solid ${displaySide === 'heads' ? '#d4af37' : '#888'}`,
+            border: '3px solid #d4af37',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column',
-            boxShadow: displaySide === 'heads'
-              ? '0 4px 20px rgba(212,175,55,0.5), inset 0 -2px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3)'
-              : '0 4px 20px rgba(150,150,150,0.4), inset 0 -2px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.4)',
+            boxShadow: '0 4px 20px rgba(212,175,55,0.5), inset 0 -2px 6px rgba(0,0,0,0.3)',
             overflow: 'hidden',
             position: 'relative',
+            background: '#1a0f0f',
           }}>
-            <div style={{
-              fontFamily: "'Cinzel', serif", fontWeight: 700,
-              fontSize: '1.6rem',
-              color: displaySide === 'heads' ? '#1a0a0a' : '#1a1a1a',
-              textShadow: '0 1px 0 rgba(255,255,255,0.3)',
-              zIndex: 1,
-            }}>
-              {displaySide === 'heads' ? '★' : '✦'}
-            </div>
-            <div style={{
-              fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '0.6rem',
-              color: displaySide === 'heads' ? '#4a3000' : '#333',
-              letterSpacing: '2px', marginTop: '2px', zIndex: 1,
-            }}>
-              {displaySide === 'heads' ? 'HEADS' : 'TAILS'}
-            </div>
+            <img
+              src={displaySide === 'heads' ? '/assets/minigames/coin/coin-heads.png' : '/assets/minigames/coin/coin-tails.png'}
+              alt={displaySide}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%',
+                zIndex: 1,
+              }}
+            />
             {/* Shine sweep */}
             {phase !== 'flipping' && (
               <div style={{
@@ -254,13 +241,6 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
                 pointerEvents: 'none', zIndex: 2,
               }} />
             )}
-            {/* Inner ring */}
-            <div style={{
-              position: 'absolute', top: 8, left: 8, right: 8, bottom: 8,
-              borderRadius: '50%',
-              border: `1px solid ${displaySide === 'heads' ? 'rgba(139,105,20,0.4)' : 'rgba(100,100,100,0.4)'}`,
-              pointerEvents: 'none', zIndex: 1,
-            }} />
           </div>
         </div>
       </div>
@@ -274,7 +254,7 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
                 width: 80, height: 80, borderRadius: '50%',
                 background: side === 'heads'
                   ? 'radial-gradient(circle at 40% 40%, #f5e6a3, #d4af37 60%, #8b6914)'
-                  : 'radial-gradient(circle at 40% 40%, #ddd, #999 60%, #555)',
+                  : 'radial-gradient(circle at 40% 40%, #8b6914, #d4af37 60%, #f5e6a3)',
                 border: 'none', cursor: spectator ? 'default' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexDirection: 'column',
@@ -286,12 +266,12 @@ export default function CoinFlip({ onResult, baseAmount, context, spectator = fa
               <div style={{
                 position: 'absolute', top: 6, left: 6, right: 6, bottom: 6,
                 borderRadius: '50%',
-                border: `2px dashed ${side === 'heads' ? 'rgba(139,105,20,0.5)' : 'rgba(80,80,80,0.5)'}`,
+                border: `2px dashed ${side === 'heads' ? 'rgba(139,105,20,0.5)' : 'rgba(139,105,20,0.5)'}`,
                 pointerEvents: 'none',
               }} />
               <span style={{
                 fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '0.65rem',
-                color: side === 'heads' ? '#1a0a0a' : '#1a1a1a',
+                color: '#1a0a0a',
                 letterSpacing: '1px', zIndex: 1,
                 textShadow: '0 1px 0 rgba(255,255,255,0.3)',
               }}>

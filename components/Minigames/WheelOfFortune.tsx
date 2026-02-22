@@ -20,18 +20,18 @@ type WheelSegment = {
 };
 
 const WHEEL_SEGMENTS: WheelSegment[] = [
-  { id: 1, tier: 'win', label: 'WIN', color: '#4ade80' },
-  { id: 2, tier: 'close-win', label: 'CLOSE', color: '#84cc16' },
-  { id: 3, tier: 'close-loss', label: 'ALMOST', color: '#eab308' },
-  { id: 4, tier: 'loss', label: 'LOSS', color: '#f97316' },
-  { id: 5, tier: 'win', label: 'WIN', color: '#4ade80' },
-  { id: 6, tier: 'close-win', label: 'CLOSE', color: '#84cc16' },
-  { id: 7, tier: 'close-loss', label: 'ALMOST', color: '#eab308' },
-  { id: 8, tier: 'loss', label: 'LOSS', color: '#f97316' },
-  { id: 9, tier: 'close-win', label: 'CLOSE', color: '#84cc16' },
-  { id: 10, tier: 'close-loss', label: 'ALMOST', color: '#eab308' },
-  { id: 11, tier: 'loss', label: 'LOSS', color: '#f97316' },
-  { id: 12, tier: 'catastrophic', label: '✕✕', color: '#ef4444' }
+  { id: 1, tier: 'win', label: 'WIN', color: '#d4af37' },
+  { id: 2, tier: 'close-win', label: 'CLOSE', color: '#b8860b' },
+  { id: 3, tier: 'close-loss', label: 'ALMOST', color: '#8b4513' },
+  { id: 4, tier: 'loss', label: 'LOSS', color: '#6b1a3a' },
+  { id: 5, tier: 'win', label: 'WIN', color: '#d4af37' },
+  { id: 6, tier: 'close-win', label: 'CLOSE', color: '#b8860b' },
+  { id: 7, tier: 'close-loss', label: 'ALMOST', color: '#8b4513' },
+  { id: 8, tier: 'loss', label: 'LOSS', color: '#6b1a3a' },
+  { id: 9, tier: 'close-win', label: 'CLOSE', color: '#b8860b' },
+  { id: 10, tier: 'close-loss', label: 'ALMOST', color: '#8b4513' },
+  { id: 11, tier: 'loss', label: 'LOSS', color: '#6b1a3a' },
+  { id: 12, tier: 'catastrophic', label: '✕✕', color: '#3d0f22' }
 ];
 
 function darkenColor(hex: string, amount: number): string {
@@ -361,11 +361,11 @@ export default function WheelOfFortune({ onResult, baseAmount, context, spectato
         marginTop: '4px',
       }}>
         {[
-          { color: '#4ade80', label: 'WIN' },
-          { color: '#84cc16', label: 'CLOSE WIN' },
-          { color: '#eab308', label: 'CLOSE LOSS' },
-          { color: '#f97316', label: 'LOSS' },
-          { color: '#ef4444', label: 'DISASTER' },
+          { color: '#d4af37', label: 'WIN' },
+          { color: '#b8860b', label: 'CLOSE WIN' },
+          { color: '#8b4513', label: 'CLOSE LOSS' },
+          { color: '#6b1a3a', label: 'LOSS' },
+          { color: '#3d0f22', label: 'DISASTER' },
         ].map(item => (
           <div key={item.label} style={{
             display: 'flex', alignItems: 'center', gap: '5px',

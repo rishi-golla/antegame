@@ -249,7 +249,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
     width: '80px',
     height: '112px',
     borderRadius: '10px',
-    background: 'repeating-conic-gradient(#1a1a2e 0% 25%, #16213e 0% 50%) 50% / 16px 16px',
+    background: 'repeating-conic-gradient(#3d0f22 0% 25%, #2a0f1f 0% 50%) 50% / 16px 16px',
     border: '2px solid #d4af37',
     boxShadow: pulsing ? undefined : '0 4px 12px rgba(0,0,0,0.4)',
     position: 'relative' as const,
@@ -311,7 +311,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
       position: 'relative',
       width: '100%',
       minHeight: '420px',
-      background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0d1117 100%)',
+      background: 'linear-gradient(180deg, #1a0f0f 0%, #2a0f1f 50%, #1a0f0f 100%)',
       borderRadius: '16px',
       overflow: 'hidden',
       fontFamily: 'Nunito, sans-serif',
@@ -322,7 +322,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(ellipse at 50% 60%, rgba(34,85,34,0.25) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse at 50% 60%, rgba(107,26,58,0.15) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
 
@@ -415,7 +415,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
           <button onClick={hit} disabled={spectator} style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
             padding: '12px 32px', borderRadius: '50px',
-            background: 'linear-gradient(180deg, #2d6a2d 0%, #1a4a1a 100%)',
+            background: 'linear-gradient(180deg, #d4af37 0%, #8b6914 100%)',
             color: '#ffd700', border: '2px solid #d4af37',
             cursor: spectator ? 'not-allowed' : 'pointer',
             boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -428,7 +428,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
           <button onClick={stand} disabled={spectator} style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
             padding: '12px 32px', borderRadius: '50px',
-            background: 'linear-gradient(180deg, #8b1a1a 0%, #5c1010 100%)',
+            background: 'linear-gradient(180deg, #6b1a3a 0%, #3d0f22 100%)',
             color: '#ffd700', border: '2px solid #d4af37',
             cursor: spectator ? 'not-allowed' : 'pointer',
             boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
