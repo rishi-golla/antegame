@@ -6,6 +6,7 @@ import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import type { MinigameTier } from '@/types/game';
 import MinigameResult from './MinigameResult';
+import CountdownTimer from '@/components/Board/CountdownTimer';
 import SlotMachine from './SlotMachine';
 import HigherLower from './HigherLower';
 import Craps from './Craps';
@@ -257,6 +258,15 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
             👁️ Watching {currentPlayerName}
           </div>
         )}
+        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 100 }}>
+          <CountdownTimer
+            duration={30}
+            onExpire={() => {
+              if (!resultLocked) handleResult('catastrophic');
+            }}
+            resetKey={`minigame-${minigame.id}-${state.currentPlayerIndex}`}
+          />
+        </div>
         <div className={spectator ? 'spectatorView' : ''}>
           {renderMinigame()}
         </div>
