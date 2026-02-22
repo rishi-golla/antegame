@@ -460,7 +460,7 @@ export default function Board() {
       return;
     }
     const diceChanged = prevDiceRef.current[0] !== state.dice[0] || prevDiceRef.current[1] !== state.dice[1];
-    if (diceChanged && (prevPhaseRef.current === 'rolling' || prevPhaseRef.current === 'in-jail')) {
+    if (diceChanged && (prevPhaseRef.current === 'rolling' || prevPhaseRef.current === 'pre-roll' || prevPhaseRef.current === 'in-jail')) {
       animateRoll(state.dice);
     }
     prevPhaseRef.current = state.phase;
