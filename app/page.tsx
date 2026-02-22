@@ -32,6 +32,7 @@ import RefundModal from '@/components/Lobby/RefundModal';
 import QuickPlay from '@/components/Lobby/QuickPlay';
 import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
 import TurnSummary from '@/components/UI/TurnSummary';
+import TurnAnnounce from '@/components/TurnAnnounce';
 
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
@@ -184,6 +185,7 @@ function FreePlayScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
       <TradeOfferView myPlayerIndex={null} />
+      <TurnAnnounce />
       <TurnSummary />
       <GameOver onPlayAgain={onPlayAgain} />
     </>
@@ -210,6 +212,7 @@ function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; 
         <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
       )}
       <TradeOfferView myPlayerIndex={myPlayerIndex} />
+      <TurnAnnounce />
       <TurnSummary />
       <GameOver onPlayAgain={onPlayAgain} roomCode={roomCode} />
     </MultiplayerGameProvider>
@@ -242,6 +245,7 @@ function QuickPlayFlow({ onBack }: { onBack: () => void }) {
             <SidePanel />
           </main>
           <TradeOfferView myPlayerIndex={myPlayerIndex} />
+          <TurnAnnounce />
           <TurnSummary />
           <GameOver onPlayAgain={onBack} roomCode={roomState?.code} />
         </MultiplayerGameProvider>

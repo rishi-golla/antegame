@@ -13,7 +13,8 @@ import MoneyFloat, { useMoneyFloats } from './MoneyFloat';
 import RentAnimation from './RentAnimation';
 import ScreenEffects from '@/components/UI/ScreenEffects';
 import TurnTimer from '@/components/UI/TurnTimer';
-import { TILES } from '@/lib/gameData';
+import { TILES, COLOR_GROUPS } from '@/lib/gameData';
+import type { ColorGroup } from '@/types/game';
 // import { particles } from '@/lib/particles';
 
 function buildBoardTiles(): BoardTile[] {
@@ -60,6 +61,12 @@ export default function Board() {
   const [hotProperties, setHotProperties] = useState<Record<number, number>>({}); // tileIndex -> landing count
   const [nearMissAlert, setNearMissAlert] = useState<{ type: 'good' | 'bad'; tile: number; message: string } | null>(null);
   const [declineWarning, setDeclineWarning] = useState<{ tileIndex: number; rent: number } | null>(null);
+  const [purchaseParticles, setPurchaseParticles] = useState<Array<{ id: number; x: number; y: number; color: string }>>([]);
+  const [goShockwave, setGoShockwave] = useState(false);
+  const [monopolyFlash, setMonopolyFlash] = useState<{ color: string } | null>(null);
+  const [shakeBoard, setShakeBoard] = useState(false);
+  const prevCompletedGroupsRef = useRef<Set<string>>(new Set());
+  const particleIdRef = useRef(0);
   const frameRef = useRef<HTMLDivElement>(null);
   const prevDiceRef = useRef<[number, number] | null>(null);
   const prevPhaseRef = useRef(state.phase);
@@ -299,6 +306,29 @@ export default function Board() {
 
     if (newPurchases.size > 0) {
       setRecentPurchases(newPurchases);
+
+      // Spawn burst particles for each purchased tile
+      const GROUP_COLOR_MAP: Record<string, string> = {
+        brown: '#8B4513', 'light-blue': '#87CEEB', pink: '#FF69B4', orange: '#FF8C00',
+        red: '#DC143C', yellow: '#FFD700', green: '#228B22', 'dark-blue': '#1a1acd',
+      };
+      const newParticles: typeof purchaseParticles = [];
+      newPurchases.forEach(tileIdx => {
+        const tileData = TILES[tileIdx];
+        const color = tileData.type === 'property' ? (GROUP_COLOR_MAP[tileData.colorGroup] || '#d4af37') : '#d4af37';
+        const bt = boardTiles.find(t => t.index === tileIdx);
+        if (!bt) return;
+        // Grid position as percentage (13-col grid)
+        const x = ((bt.col - 1 + bt.colSpan / 2) / 13) * 100;
+        const y = ((bt.row - 1 + bt.rowSpan / 2) / 13) * 100;
+        for (let i = 0; i < 12; i++) {
+          newParticles.push({ id: particleIdRef.current++, x, y, color });
+        }
+      });
+      if (newParticles.length > 0) {
+        setPurchaseParticles(newParticles);
+        setTimeout(() => setPurchaseParticles([]), 800);
+      }
       
       // Clear animations after 800ms
       setTimeout(() => {
@@ -307,6 +337,48 @@ export default function Board() {
     }
 
     prevPropertiesRef.current = currentProperties;
+  }, [state.players]);
+
+  // Effect 3: Pass GO shockwave
+  useEffect(() => {
+    if (prevPositionsRef.current.length === 0) return;
+    const currentPositions = state.players.map(p => p.position);
+    for (let i = 0; i < currentPositions.length; i++) {
+      const prev = prevPositionsRef.current[i];
+      const curr = currentPositions[i];
+      if (prev !== undefined && prev > curr && curr !== 10 && !state.players[i].inJail && !state.players[i].bankrupt) {
+        setGoShockwave(true);
+        setTimeout(() => setGoShockwave(false), 800);
+        break;
+      }
+    }
+  }, [positionKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effect 4: Monopoly lightning (color group complete)
+  useEffect(() => {
+    const GROUP_COLOR_MAP: Record<string, string> = {
+      brown: '#8B4513', 'light-blue': '#87CEEB', pink: '#FF69B4', orange: '#FF8C00',
+      red: '#DC143C', yellow: '#FFD700', green: '#228B22', 'dark-blue': '#1a1acd',
+    };
+    const completedGroups = new Set<string>();
+    state.players.forEach(player => {
+      if (player.bankrupt) return;
+      (Object.entries(COLOR_GROUPS) as [ColorGroup, number[]][]).forEach(([group, tiles]) => {
+        if (tiles.every(t => player.properties.includes(t))) {
+          completedGroups.add(group);
+        }
+      });
+    });
+    // Check for newly completed groups
+    completedGroups.forEach(g => {
+      if (!prevCompletedGroupsRef.current.has(g)) {
+        setMonopolyFlash({ color: GROUP_COLOR_MAP[g] || '#d4af37' });
+        setShakeBoard(true);
+        setTimeout(() => setMonopolyFlash(null), 600);
+        setTimeout(() => setShakeBoard(false), 100);
+      }
+    });
+    prevCompletedGroupsRef.current = completedGroups;
   }, [state.players]);
 
   // Phase 3: Track property declines for loss aversion warnings
@@ -398,14 +470,60 @@ export default function Board() {
     position: displayPositions[i] ?? p.position,
   }));
 
+  // Effect 2: Near-bankruptcy vignette
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  const money = currentPlayer?.money ?? 9999;
+  const isBroke = money < 200 && currentPlayer && !currentPlayer.bankrupt;
+  const brokeOpacity = money < 50 ? 0.5 : money < 100 ? 0.3 : 0.15;
+  const brokePulse = money < 50 ? 1 : money < 100 ? 2 : 3;
+
   return (
     <section className="boardWrap">
+      {/* Injected effect styles */}
+      <style>{`
+        @keyframes vfx-burst {
+          0% { transform: translate(0,0) scale(1); opacity: 1; }
+          100% { transform: translate(calc(cos(var(--angle)) * var(--distance)), calc(sin(var(--angle)) * var(--distance))) scale(0); opacity: 0; }
+        }
+        @keyframes vfx-pulse-vignette {
+          0%, 100% { opacity: var(--vfx-broke-opacity); }
+          50% { opacity: calc(var(--vfx-broke-opacity) * 0.3); }
+        }
+        @keyframes vfx-shockwave {
+          0% { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
+          100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+        }
+        @keyframes vfx-flash {
+          0% { opacity: 0.4; }
+          100% { opacity: 0; }
+        }
+        @keyframes vfx-shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          75% { transform: translateX(3px); }
+        }
+      `}</style>
+
+      {/* Effect 2: Bankruptcy vignette */}
+      {isBroke && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50,
+          background: `radial-gradient(ellipse at center, transparent 40%, rgba(255,23,68,${brokeOpacity}) 100%)`,
+          animation: `vfx-pulse-vignette ${brokePulse}s ease-in-out infinite`,
+          ['--vfx-broke-opacity' as string]: brokeOpacity,
+          willChange: 'opacity',
+        }} />
+      )}
+
       {/* Global screen effects overlay */}
       <ScreenEffects />
       <TurnTimer />
       
       <div ref={frameRef} className={`boardFrame ${isDiceFocus ? 'focused' : ''}`}>
-        <div className="boardGrid" style={boardSize ? { width: `${boardSize}px`, height: `${boardSize}px` } : undefined}>
+        <div className="boardGrid" style={{
+          ...(boardSize ? { width: `${boardSize}px`, height: `${boardSize}px` } : {}),
+          ...(shakeBoard ? { animation: 'vfx-shake 0.1s ease-in-out' } : {}),
+        }}>
           {boardTiles.map((tile) => (
             <Tile
               key={tile.index}
@@ -423,6 +541,58 @@ export default function Board() {
           <BoardCenterArt isRolling={isDiceFocus} isAnimating={isAnimating} />
           <MoneyFloat floats={floats} />
           <RentAnimation boardSize={boardSize} />
+
+          {/* Effect 1: Purchase burst particles */}
+          {purchaseParticles.map((p) => {
+            const angle = (p.id % 12) * (Math.PI * 2 / 12) + (Math.random() - 0.5) * 0.5;
+            const dist = 30 + Math.random() * 40;
+            return (
+              <div key={p.id} style={{
+                position: 'absolute',
+                left: `${p.x}%`, top: `${p.y}%`,
+                width: '7px', height: '7px',
+                borderRadius: '50%',
+                background: p.color,
+                boxShadow: `0 0 6px ${p.color}`,
+                pointerEvents: 'none',
+                willChange: 'transform, opacity',
+                ['--angle' as string]: `${angle}rad`,
+                ['--distance' as string]: `${dist}px`,
+                animation: 'vfx-burst 0.8s ease-out forwards',
+                zIndex: 60,
+              }} />
+            );
+          })}
+
+          {/* Effect 3: GO shockwave */}
+          {goShockwave && (
+            <div style={{
+              position: 'absolute',
+              left: '100%', top: '100%',
+              width: `${(boardSize || 400) * 2.5}px`,
+              height: `${(boardSize || 400) * 2.5}px`,
+              border: '2px solid #d4af37',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+              willChange: 'transform, opacity',
+              animation: 'vfx-shockwave 0.8s ease-out forwards',
+              boxShadow: '0 0 15px #d4af3766, inset 0 0 15px #d4af3733',
+              zIndex: 55,
+            }} />
+          )}
+
+          {/* Effect 4: Monopoly flash */}
+          {monopolyFlash && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: monopolyFlash.color,
+              pointerEvents: 'none',
+              willChange: 'opacity',
+              animation: 'vfx-flash 0.6s ease-out forwards',
+              borderRadius: 'inherit',
+              zIndex: 55,
+            }} />
+          )}
         </div>
 
         {/* Phase 3: Near-Miss Alert Overlay */}
