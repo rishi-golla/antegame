@@ -1478,95 +1478,149 @@ input {
   to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
-/* ── BUY ── */
+/* ── BUY — Maroon Powerhouse ── */
 .buyButton {
   position: relative;
-  min-width: 120px;
-  padding: 10px 20px;
+  min-width: 130px;
+  padding: 12px 24px;
   font-family: 'Cinzel', serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: #fff8e7 !important;
-  background: linear-gradient(180deg, #0b3d0b 0%, #1a5c1a 100%) !important;
-  border: 2px solid #d4af37 !important;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #5a1020 0%, #8b1a2b 40%, #6b1525 70%, #3d0a15 100%) !important;
+  border: none !important;
+  border-radius: 12px;
   cursor: pointer;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2) !important;
-  transition: all 0.2s ease;
-  overflow: hidden;
+  text-shadow: 0 0 8px rgba(255, 200, 100, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
+  overflow: visible;
+  z-index: 1;
+  animation: buyPulse 1.5s ease-in-out infinite, buyGlow 2s ease-in-out infinite !important;
+  transition: filter 0.2s;
 }
 
+/* Spinning conic-gradient border */
 .buyButton::before {
-  content: '●';
-  color: #d4af37;
-  font-size: 8px;
-  margin-right: 6px;
-  vertical-align: middle;
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 14px;
+  background: conic-gradient(from var(--buy-angle, 0deg), #d4af37, #8b1a2b, #d4af37, #3d0a15, #d4af37);
+  z-index: -1;
+  animation: buyBorderSpin 3s linear infinite;
+}
+
+/* Inner mask to show border only */
+.buyButton::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5a1020 0%, #8b1a2b 40%, #6b1525 70%, #3d0a15 100%);
+  z-index: -1;
+}
+
+@property --buy-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes buyBorderSpin {
+  to { --buy-angle: 360deg; }
+}
+
+@keyframes buyPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+@keyframes buyGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(139, 26, 43, 0.4), 0 0 30px rgba(139, 26, 43, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(139, 26, 43, 0.8), 0 0 50px rgba(212, 175, 55, 0.3), 0 0 80px rgba(139, 26, 43, 0.2); }
 }
 
 .buyButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 20px rgba(26, 92, 26, 0.5),
-    0 0 30px rgba(212, 175, 55, 0.3) !important;
+  filter: brightness(1.2);
+  animation: buyPulse 0.8s ease-in-out infinite, buyGlow 1s ease-in-out infinite !important;
 }
 
 .buyButton:active:not(:disabled) {
-  transform: translateY(1px) scale(0.97);
+  transform: scale(0.93) !important;
+  filter: brightness(0.9);
   transition-duration: 0.05s;
 }
 
 .buyButton:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  animation: none !important;
+  filter: grayscale(0.5);
 }
 
-/* ── PASS / DECLINE ── */
+/* ── PASS / DECLINE — Smoky Ghost ── */
 .declineButton {
   position: relative;
-  padding: 8px 16px;
+  padding: 10px 20px;
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: #b89a6a !important;
-  background: transparent !important;
-  border: 1px solid rgba(212, 175, 55, 0.25) !important;
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(30,15,15,0.6) 0%, rgba(60,30,30,0.3) 50%, rgba(30,15,15,0.6) 100%) !important;
+  background-size: 200% 200% !important;
+  border: 1px solid rgba(212, 175, 55, 0.15) !important;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: none !important;
-  text-shadow: none;
+  text-shadow: 0 0 6px rgba(184, 154, 106, 0.3);
   min-width: auto;
+  overflow: hidden;
+  animation: passBreathe 2.5s ease-in-out infinite, passSmoke 4s ease-in-out infinite !important;
 }
 
-.declineButton:hover:not(:disabled) {
-  border-color: rgba(212, 175, 55, 0.5) !important;
-}
-
-.declineButton:hover:not(:disabled)::after {
-  content: 'walk away...';
+/* Drifting smoke overlay */
+.declineButton::before {
+  content: '';
   position: absolute;
-  bottom: -16px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Nunito', sans-serif;
-  font-size: 8px;
-  color: #b89a6a;
-  opacity: 0.3;
-  white-space: nowrap;
+  inset: 0;
+  border-radius: 10px;
+  background: radial-gradient(ellipse at 30% 50%, rgba(184, 154, 106, 0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 50%, rgba(184, 154, 106, 0.05) 0%, transparent 60%);
+  animation: passSmokeDrift 6s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
+@keyframes passBreathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.04); }
+}
+
+@keyframes passSmoke {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes passSmokeDrift {
+  from { transform: translateX(-10px); }
+  to { transform: translateX(10px); }
+}
+
+.declineButton:hover:not(:disabled) {
+  opacity: 1 !important;
+  border-color: rgba(212, 175, 55, 0.5) !important;
+  color: #d4af37 !important;
+  animation: passBreathe 1.2s ease-in-out infinite !important;
+  box-shadow: 0 0 15px rgba(184, 154, 106, 0.15) !important;
+}
+
 .declineButton:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.92) !important;
   transition-duration: 0.05s;
 }
 
 .declineButton:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
+  animation: none !important;
 }
 
 .jailActions {
@@ -2610,96 +2664,142 @@ input {
 /* ===== MINIGAME STYLES ===== */
 
 /* ── GAMBLE — THE STAR ── */
+/* ── GAMBLE — Gold Nuclear ── */
 .gambleBtn {
   position: relative;
-  min-width: 160px;
-  padding: 14px 36px;
+  min-width: 170px;
+  padding: 16px 40px;
   font-family: 'Cinzel', serif;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
-  color: #fff !important;
-  background: linear-gradient(135deg, #6b1a3a 0%, #3d0f22 40%, #d4af37 100%) !important;
-  background-size: 300% 300% !important;
-  animation: gambleGradient 4s ease infinite, gambleBreathe 3s ease-in-out infinite, gamblePulse 2s ease-in-out infinite !important;
-  border: 2px solid #d4af37 !important;
-  border-radius: 12px;
+  color: #1a0a00 !important;
+  background: linear-gradient(135deg, #ffd700 0%, #d4af37 25%, #b8860b 50%, #d4af37 75%, #ffd700 100%) !important;
+  background-size: 400% 400% !important;
+  border: none !important;
+  border-radius: 14px;
   cursor: pointer;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3) !important;
-  transition: all 0.2s ease;
+  text-shadow: 0 1px 0 rgba(255, 255, 200, 0.5);
   overflow: visible;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  z-index: 1;
+  animation:
+    gambleGoldShift 2s ease infinite,
+    gambleWobble 1.8s ease-in-out infinite,
+    gambleBloom 1.2s ease-in-out infinite !important;
 }
 
+/* Spinning dashed border ring */
+.gambleBtn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 16px;
+  border: 3px dashed #ffd700;
+  animation: gambleDashMarch 1s linear infinite, gambleRingPulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Subtitle */
 .gambleBtn::after {
-  content: 'RISK IT ALL';
+  content: '✦ RISK IT ALL ✦';
   display: block;
   font-family: 'Nunito', sans-serif;
   font-size: 9px;
-  font-weight: 400;
-  color: #d4af37;
-  letter-spacing: 0.15em;
-  margin-top: 2px;
-  animation: gambleFlicker 2s ease-in-out infinite;
+  font-weight: 700;
+  color: #3d1a00;
+  letter-spacing: 0.2em;
+  margin-top: 3px;
+  animation: gambleSubWave 1.5s ease-in-out infinite;
   pointer-events: none;
 }
 
-/* Suit symbols at corners */
+/* Suit symbols ORBIT the button */
 .gambleSuit {
   position: absolute;
-  font-size: 8px;
-  color: #d4af37;
-  opacity: 0.3;
+  font-size: 11px;
+  color: #ffd700;
+  opacity: 0.7;
   pointer-events: none;
-  animation: gambleSuitSpin 20s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8));
+  animation: gambleSuitOrbit 4s linear infinite;
 }
-.gambleSuitTL { top: 4px; left: 6px; animation-delay: 0s; }
-.gambleSuitTR { top: 4px; right: 6px; animation-delay: -5s; }
-.gambleSuitBL { bottom: 4px; left: 6px; animation-delay: -10s; }
-.gambleSuitBR { bottom: 4px; right: 6px; animation-delay: -15s; }
+.gambleSuitTL { top: -8px; left: 10px; animation-delay: 0s; }
+.gambleSuitTR { top: -8px; right: 10px; animation-delay: -1s; }
+.gambleSuitBL { bottom: -8px; left: 10px; animation-delay: -2s; }
+.gambleSuitBR { bottom: -8px; right: 10px; animation-delay: -3s; }
 
-@keyframes gambleSuitSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes gambleSuitOrbit {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.7; }
+  25% { transform: translateY(-6px) rotate(90deg) scale(1.3); opacity: 1; }
+  50% { transform: translateY(0) rotate(180deg) scale(1); opacity: 0.7; }
+  75% { transform: translateY(6px) rotate(270deg) scale(1.3); opacity: 1; }
+  100% { transform: translateY(0) rotate(360deg) scale(1); opacity: 0.7; }
 }
 
-@keyframes gambleGradient {
+@keyframes gambleGoldShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-@keyframes gambleBreathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+@keyframes gambleWobble {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  15% { transform: scale(1.08) rotate(-1.5deg); }
+  30% { transform: scale(1.05) rotate(1.5deg); }
+  45% { transform: scale(1.1) rotate(-1deg); }
+  60% { transform: scale(1.05) rotate(1deg); }
+  75% { transform: scale(1.08) rotate(-0.5deg); }
 }
 
-@keyframes gamblePulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
-  50% { box-shadow: 0 0 28px rgba(212, 175, 55, 0.6); }
+@keyframes gambleBloom {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(255, 215, 0, 0.4),
+      0 0 30px rgba(212, 175, 55, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(255, 215, 0, 0.8),
+      0 0 60px rgba(255, 215, 0, 0.4),
+      0 0 100px rgba(212, 175, 55, 0.2),
+      inset 0 0 15px rgba(255, 255, 200, 0.1);
+  }
 }
 
-@keyframes gambleFlicker {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+@keyframes gambleDashMarch {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gambleRingPulse {
+  0%, 100% { opacity: 0.5; inset: -4px; }
+  50% { opacity: 1; inset: -7px; }
+}
+
+@keyframes gambleSubWave {
+  0%, 100% { letter-spacing: 0.2em; opacity: 0.7; }
+  50% { letter-spacing: 0.35em; opacity: 1; }
 }
 
 .gambleBtn:hover:not(:disabled) {
-  transform: scale(1.06) !important;
-  border-color: #ffd700 !important;
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5) !important;
-  animation: gambleGradient 2s ease infinite, gamblePulse 1s ease-in-out infinite !important;
+  animation:
+    gambleGoldShift 1s ease infinite,
+    gambleWobble 0.8s ease-in-out infinite,
+    gambleBloom 0.6s ease-in-out infinite !important;
+  filter: brightness(1.15) saturate(1.2);
 }
 
 .gambleBtn:active:not(:disabled) {
-  transform: scale(0.97) !important;
+  transform: scale(0.92) rotate(0deg) !important;
+  filter: brightness(0.85);
   transition-duration: 0.05s;
 }
 
 .gambleBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   animation: none !important;
   cursor: not-allowed;
+  filter: grayscale(0.6);
 }
 
 .payRentPhase {
