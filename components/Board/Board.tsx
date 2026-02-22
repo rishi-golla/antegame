@@ -448,9 +448,9 @@ export default function Board() {
       setTimeout(() => {
         setIsDiceFocus(false);
         setRollPhase('idle');
-      }, 300);
+      }, 800);
     }, 980);
-  }, []);
+  }, [play]);
 
   useEffect(() => {
     if (prevDiceRef.current === null) {
@@ -460,9 +460,7 @@ export default function Board() {
       return;
     }
     const diceChanged = prevDiceRef.current[0] !== state.dice[0] || prevDiceRef.current[1] !== state.dice[1];
-    console.log('[DICE DEBUG]', { diceChanged, prevPhase: prevPhaseRef.current, newPhase: state.phase, prevDice: prevDiceRef.current, newDice: state.dice });
-    if (diceChanged && (prevPhaseRef.current === 'rolling' || prevPhaseRef.current === 'pre-roll' || prevPhaseRef.current === 'in-jail')) {
-      console.log('[DICE DEBUG] → animating roll!');
+    if (diceChanged) {
       animateRoll(state.dice);
     }
     prevPhaseRef.current = state.phase;
