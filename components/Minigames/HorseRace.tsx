@@ -85,7 +85,7 @@ function CardFace({ card, side, result }: { card: CardData; side: 'left' | 'righ
   const color = suitColor(card.suit);
   return (
     <div style={{
-      width: 100, height: 140,
+      width: 120, height: 168,
       background: 'linear-gradient(135deg, #ffffff, #f5f5f0)',
       borderRadius: 10,
       border: '2px solid #ddd',
@@ -127,7 +127,7 @@ function CardFace({ card, side, result }: { card: CardData; side: 'left' | 'righ
 function CardBack() {
   return (
     <div style={{
-      width: 100, height: 140,
+      width: 120, height: 168,
       borderRadius: 10,
       border: '2px solid #d4af37',
       background: `
@@ -236,12 +236,13 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
     <>
       <style>{STYLES}</style>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+        maxWidth: '600px', margin: '0 auto',
       }}>
         {/* Title */}
         <h2 style={{
           fontFamily: 'Cinzel, serif',
-          fontSize: 24,
+          fontSize: 36,
           fontWeight: 900,
           color: '#ffd700',
           letterSpacing: 4,
@@ -254,7 +255,7 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
         {/* Score */}
         <div style={{
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: 800,
           color: '#e0e0e0',
           letterSpacing: 2,
@@ -278,8 +279,8 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
 
         {/* Card arena */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '24px 20px',
+          display: 'flex', alignItems: 'center', gap: 28,
+          padding: '28px 24px',
           background: 'linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1), rgba(0,0,0,0.3))',
           borderRadius: 16,
           position: 'relative',
@@ -360,13 +361,13 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
             disabled={spectator}
             style={{
               fontFamily: 'Nunito, sans-serif',
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 800,
               color: '#1a0f0f',
               background: 'linear-gradient(180deg, #ffd700, #c9a84c)',
               border: 'none',
-              borderRadius: 8,
-              padding: '10px 40px',
+              borderRadius: 12,
+              padding: '14px 48px',
               cursor: spectator ? 'default' : 'pointer',
               letterSpacing: 2,
               boxShadow: '0 4px 12px rgba(255,215,0,0.3)',
@@ -381,10 +382,10 @@ export default function CardWar({ onResult, spectator = false }: CardWarProps) {
         <div style={{
           display: 'flex', flexDirection: 'column', gap: 1,
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 10,
+          fontSize: 14,
           color: '#777',
           textAlign: 'center',
-          padding: '6px 12px',
+          padding: '10px 16px',
           background: 'rgba(0,0,0,0.3)',
           borderRadius: 6,
           border: '1px solid #c9a84c22',

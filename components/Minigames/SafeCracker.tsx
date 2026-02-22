@@ -201,14 +201,15 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
     <>
       <style>{STYLES}</style>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+        maxWidth: '600px', margin: '0 auto',
         animation: failed ? 'scAlarm 0.3s infinite' : 'none',
         position: 'relative',
       }}>
         {/* Title */}
         <h2 style={{
           fontFamily: 'Cinzel, serif',
-          fontSize: 22,
+          fontSize: 36,
           fontWeight: 900,
           color: '#ffd700',
           letterSpacing: 3,
@@ -251,7 +252,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
         {!cracked && !failed && (
           <div style={{
             position: 'relative',
-            width: 200, height: 200,
+            width: 240, height: 240,
             borderRadius: '50%',
             background: 'conic-gradient(from 0deg, #2a0f1f, #3d0f22, #2a0f1f, #2e1a1a, #2a0f1f)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.4), 0 0 0 4px #4a2828, 0 0 0 6px rgba(212,175,55,0.3)',
@@ -266,7 +267,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                 background: i % 10 === 0 ? '#ffd700' : '#b89a6a',
                 top: 6,
                 left: '50%',
-                transformOrigin: '50% 94px',
+                transformOrigin: '50% 114px',
                 transform: `translateX(-50%) rotate(${i * 9}deg)`,
               }} />
             ))}
@@ -274,11 +275,11 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
             {/* Rotating indicator */}
             <div style={{
               position: 'absolute',
-              width: 4, height: 60,
+              width: 4, height: 75,
               background: 'linear-gradient(180deg, #ff4444, #cc2222)',
               top: 16,
               left: '50%',
-              transformOrigin: '50% 84px',
+              transformOrigin: '50% 104px',
               transform: `translateX(-50%) rotate(${dialRotation[selectedDial]}deg)`,
               borderRadius: 2,
               transition: shaking ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.4)',
@@ -299,12 +300,12 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
         {/* Cracked — vault open */}
         {cracked && (
           <div style={{
-            width: 200, height: 200,
+            width: 240, height: 240,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative',
           }}>
             <div style={{
-              width: 180, height: 180,
+              width: 220, height: 220,
               borderRadius: 12,
               background: 'linear-gradient(135deg, #2e1a1a, #2a0f1f)',
               border: '4px solid #d4af37',
@@ -335,12 +336,12 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
         {/* Failed — LOCKED OUT */}
         {failed && (
           <div style={{
-            width: 200, height: 200,
+            width: 240, height: 240,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative',
           }}>
             <div style={{
-              width: 180, height: 180,
+              width: 220, height: 220,
               borderRadius: 12,
               background: 'repeating-linear-gradient(45deg, #3d0f22, #3d0f22 10px, #2a0f1f 10px, #2a0f1f 20px)',
               border: '4px solid #6b1a3a',
@@ -366,7 +367,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
         {/* Dial controls — 3 combination rings */}
         {!cracked && !failed && (
           <div style={{
-            display: 'flex', gap: 12, alignItems: 'center',
+            display: 'flex', gap: 18, alignItems: 'center',
           }}>
             {currentGuess.map((digit, index) => (
               <div key={index} style={{
@@ -391,7 +392,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
                 <div
                   onClick={() => selectDial(index)}
                   style={{
-                    width: 48, height: 48,
+                    width: 56, height: 56,
                     borderRadius: '50%',
                     background: selectedDial === index
                       ? 'radial-gradient(circle, #3d0f22, #2a0f1f)'
@@ -495,8 +496,8 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
 
         {/* Attempts history */}
         <div style={{
-          display: 'flex', flexDirection: 'column', gap: 4,
-          width: '100%', maxWidth: 280,
+          display: 'flex', flexDirection: 'column', gap: 8,
+          width: '100%', maxWidth: 360,
         }}>
           <div style={{
             fontFamily: 'Nunito, sans-serif',
@@ -508,15 +509,15 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
           {attempts.map((attempt, index) => (
             <div key={index} style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '4px 8px',
+              padding: '8px 12px',
               background: 'rgba(0,0,0,0.3)',
               borderRadius: 4,
               border: '1px solid rgba(212,175,55,0.2)',
             }}>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, fontWeight: 700, color: '#b89a6a' }}>#{index + 1}</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 800, color: '#e0e0e0', letterSpacing: 3 }}>{attempt.guess.join(' ')}</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 700, color: '#4ade80' }}>{attempt.correctPosition} exact</span>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 700, color: '#fbbf24' }}>{attempt.correctDigit} close</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700, color: '#b89a6a' }}>#{index + 1}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 16, fontWeight: 800, color: '#e0e0e0', letterSpacing: 3 }}>{attempt.guess.join(' ')}</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700, color: '#4ade80' }}>{attempt.correctPosition} exact</span>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700, color: '#fbbf24' }}>{attempt.correctDigit} close</span>
             </div>
           ))}
           {attempts.length === 0 && (
@@ -527,11 +528,11 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
         {/* Instructions */}
         <div style={{
           fontFamily: 'Nunito, sans-serif',
-          fontSize: 11,
+          fontSize: 14,
           fontWeight: 600,
           color: '#d5c4a1',
           textAlign: 'center',
-          maxWidth: 280,
+          maxWidth: 360,
         }}>
           {cracked ? 'SAFE CRACKED' : failed ? `LOCKED OUT — The code was ${combination.join(' ')}` : 'Guess the 3-digit code (1–4). "Exact" = right number, right spot. "Close" = right number, wrong spot.'}
         </div>

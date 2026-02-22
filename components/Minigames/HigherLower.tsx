@@ -183,8 +183,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
   const isRed = (suit: Suit): boolean => suit === '♥' || suit === '♦';
 
   const cardStyle = (large: boolean, animClass?: string): React.CSSProperties => ({
-    width: large ? '100px' : '80px',
-    height: large ? '140px' : '112px',
+    width: large ? '120px' : '90px',
+    height: large ? '168px' : '126px',
     borderRadius: '10px',
     background: 'linear-gradient(135deg, #fffef5, #f5f0e0)',
     border: '2px solid #c9b06b',
@@ -223,7 +223,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
 
   const cardBackEl = (
     <div style={{
-      width: '100px', height: '140px', borderRadius: '10px',
+      width: '120px', height: '168px', borderRadius: '10px',
       background: 'repeating-conic-gradient(#3d0f22 0% 25%, #2a0f1f 0% 50%) 50% / 16px 16px',
       border: '2px solid #d4af37',
       boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
@@ -255,11 +255,11 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
       {/* Header */}
       <div style={{ textAlign: 'center', padding: '16px 0 4px' }}>
         <h2 style={{
-          fontFamily: 'Cinzel, serif', fontSize: '24px', fontWeight: 900,
+          fontFamily: 'Cinzel, serif', fontSize: '36px', fontWeight: 900,
           color: '#d4af37', textShadow: '0 0 12px rgba(212,175,55,0.5)',
           margin: 0, letterSpacing: '3px',
         }}>HIGHER OR LOWER</h2>
-        <div style={{ fontSize: '13px', color: 'rgba(212,175,55,0.7)', marginTop: '4px', letterSpacing: '1px' }}>
+        <div style={{ fontSize: '16px', color: 'rgba(212,175,55,0.7)', marginTop: '6px', letterSpacing: '1px' }}>
           ROUND {Math.min(round + 1, 3)}/3
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
       </div>
 
       {/* Cards area */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', padding: '16px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '24px 24px' }}>
         {/* Current card */}
         <div style={{ textAlign: 'center' }}>
           {renderCardFace(currentCard, true)}
@@ -342,8 +342,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', padding: '0 16px' }}>
             <button onClick={() => makeGuess(true)} disabled={spectator} style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '15px',
-              padding: '12px 28px', borderRadius: '12px',
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
+              padding: '14px 36px', borderRadius: '12px',
               background: 'linear-gradient(180deg, #d4af37 0%, #a68628 100%)',
               color: '#1a0f0f', border: '2px solid #ffd700',
               cursor: spectator ? 'not-allowed' : 'pointer',
@@ -352,8 +352,8 @@ export default function HigherLower({ onResult, baseAmount, context, spectator =
               transition: 'transform 0.1s',
             }}>▲ HIGHER</button>
             <button onClick={() => makeGuess(false)} disabled={spectator} style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '15px',
-              padding: '12px 28px', borderRadius: '12px',
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: '16px',
+              padding: '14px 36px', borderRadius: '12px',
               background: 'linear-gradient(180deg, #8b6914 0%, #5a4a20 100%)',
               color: '#fff8e7', border: '2px solid #d4af37',
               cursor: spectator ? 'not-allowed' : 'pointer',
