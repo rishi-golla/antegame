@@ -803,16 +803,10 @@ input {
   text-transform: uppercase;
   font-weight: 800;
   font-family: 'Cinzel', serif;
-  color: #fff8e7;
+  color: #ffd700;
   white-space: nowrap;
-  /* Animated gold shimmer text */
-  background: linear-gradient(90deg, #d4af37 0%, #ffd700 25%, #fff8e7 50%, #ffd700 75%, #d4af37 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: hintShimmer 2.5s linear infinite, hintFloat 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.5));
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
+  animation: hintFloat 3s ease-in-out infinite, hintGlow 2s ease-in-out infinite;
 }
 
 .waitingLabel {
@@ -6193,13 +6187,14 @@ input {
   box-shadow: 0 0 12px rgba(212, 175, 55, 0.1), inset 0 0 20px rgba(10, 5, 5, 0.6);
 }
 
-@keyframes hintShimmer {
-  to { background-position: 200% center; }
-}
-
 @keyframes hintFloat {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+@keyframes hintGlow {
+  0%, 100% { text-shadow: 0 0 8px rgba(255, 215, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3); }
+  50% { text-shadow: 0 0 14px rgba(255, 215, 0, 0.9), 0 0 30px rgba(212, 175, 55, 0.5), 0 0 50px rgba(212, 175, 55, 0.2); }
 }
 
 /* ===== PHASE 5.4: Side Panels ===== */
