@@ -20,7 +20,7 @@ const CORNER_TILE_IMAGES: Record<CornerKind, string> = {
 };
 
 const UTILITY_TILE_IMAGES: Record<string, string> = {
-  'Electric Company': '/assets/tiles/utility-electric.webp',
+  'Electric Co': '/assets/tiles/utility-electric.webp',
   'Water Works': '/assets/tiles/utility-water.webp',
 };
 
