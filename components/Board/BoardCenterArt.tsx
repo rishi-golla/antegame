@@ -158,8 +158,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         draggable={false}
       />
 
-      {/* Turn indicator */}
-      <div className="turnIndicator" style={{ '--player-accent': player.color } as React.CSSProperties}>
+      {/* Turn indicator — Casino Dealer Plaque */}
+      <div key={state.currentPlayerIndex} className="turnIndicator" style={{ '--player-accent': player.color } as React.CSSProperties}>
         <div className="turnAvatar" style={{ background: player.color, overflow: 'hidden' }}>
           {player.sprite ? (
             <img src={player.sprite} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as const }} draggable={false} />
@@ -167,10 +167,28 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
             player.name[0]
           )}
         </div>
-        <span className="turnName">{player.name}</span>
+        <div className="turnIndicatorContent">
+          <span className="turnName">{player.name}</span>
+          <span className="turnPhase">
+            {({
+              'pre-roll': 'ROLLING',
+              'rolling': 'ROLLING',
+              'buying': 'BUYING',
+              'paying-rent': 'PAYING RENT',
+              'drawing-card': 'CARD DRAW',
+              'applying-card': 'CARD DRAW',
+              'minigame': 'GAMBLING',
+              'in-jail': 'IN JAIL',
+              'in-debt': 'IN DEBT',
+              'turn-end': 'END TURN',
+              'game-over': 'GAME OVER',
+            } as Record<string, string>)[state.phase] || state.phase.toUpperCase().replace(/-/g, ' ')}
+          </span>
+        </div>
         {state.dice[0] + state.dice[1] > 0 && !isRolling && (
           <span className="turnDice">
-            [{state.dice[0]}][{state.dice[1]}]
+            <span className="turnDie">{state.dice[0]}</span>
+            <span className="turnDie">{state.dice[1]}</span>
           </span>
         )}
       </div>
@@ -226,20 +244,24 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         isMyTurn ? (
           <div className="buyDeclineRow">
             {player.money >= (state.tiles[player.position] as any).price && (
-              <button className="rollButton buyButton" onClick={() => { play('sfx/buy-property'); dispatch({ type: 'BUY' }); }} disabled={isAnimating}>
+              <button className="buyButton" onClick={() => { play('sfx/buy-property'); dispatch({ type: 'BUY' }); }} disabled={isAnimating}>
                 Buy ${(state.tiles[player.position] as any).price}
               </button>
             )}
             {state.minigamesEnabled && (
               <button 
-                className="rollButton gambleBtn" 
+                className="gambleBtn" 
                 onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'buying' }); }} 
                 disabled={isAnimating}
               >
+                <span className="gambleSuit gambleSuitTL">♠</span>
+                <span className="gambleSuit gambleSuitTR">♥</span>
+                <span className="gambleSuit gambleSuitBL">♦</span>
+                <span className="gambleSuit gambleSuitBR">♣</span>
                 Gamble
               </button>
             )}
-            <button className="rollButton declineButton" onClick={() => { play('sfx/decline-property'); dispatch({ type: 'DECLINE' }); }} disabled={isAnimating}>
+            <button className="declineButton" onClick={() => { play('sfx/decline-property'); dispatch({ type: 'DECLINE' }); }} disabled={isAnimating}>
               Pass
             </button>
           </div>
@@ -250,15 +272,19 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         isMyTurn ? (
           <div className="payRentPhase">
             <div className="buyDeclineRow">
-              <button className="rollButton buyButton" onClick={() => { play('sfx/pay-rent'); dispatch({ type: 'PAY_RENT' }); }} disabled={isAnimating}>
+              <button className="buyButton" onClick={() => { play('sfx/pay-rent'); dispatch({ type: 'PAY_RENT' }); }} disabled={isAnimating}>
                 Pay ${state.pendingRent?.amount || 0}
               </button>
               {state.minigamesEnabled && state.pendingRent && (
                 <button 
-                  className="rollButton gambleBtn" 
+                  className="gambleBtn" 
                   onClick={() => { play('minigames/minigame-intro'); dispatch({ type: 'GAMBLE', context: 'rent' }); }} 
                   disabled={isAnimating}
                 >
+                  <span className="gambleSuit gambleSuitTL">♠</span>
+                  <span className="gambleSuit gambleSuitTR">♥</span>
+                  <span className="gambleSuit gambleSuitBL">♦</span>
+                  <span className="gambleSuit gambleSuitBR">♣</span>
                   Gamble
                 </button>
               )}

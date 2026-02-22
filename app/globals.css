@@ -1453,6 +1453,10 @@ input {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+/* ══════════════════════════════════════════
+   BUY / GAMBLE / PASS — Button Row
+   ══════════════════════════════════════════ */
+
 .buyDeclineRow {
   position: absolute;
   left: 50%;
@@ -1460,7 +1464,12 @@ input {
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 12px;
+  border-radius: 12px;
+  border-top: 1px solid rgba(212, 175, 55, 0.15);
   animation: buyRowSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1469,105 +1478,95 @@ input {
   to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
-.buyDeclineRow .rollButton {
+/* ── BUY ── */
+.buyButton {
   position: relative;
-  left: auto;
-  bottom: auto;
-  transform: none;
   min-width: 120px;
-  padding: 14px 20px;
+  padding: 10px 20px;
   font-family: 'Cinzel', serif;
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   letter-spacing: 0.04em;
-  border-radius: 12px;
-  border: 2px solid;
+  color: #fff8e7 !important;
+  background: linear-gradient(180deg, #0b3d0b 0%, #1a5c1a 100%) !important;
+  border: 2px solid #d4af37 !important;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.34, 1.2, 0.64, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2) !important;
+  transition: all 0.2s ease;
   overflow: hidden;
 }
 
-/* Shimmer sweep on all 3 buttons */
-.buyDeclineRow .rollButton::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-  transition: left 0.4s ease;
-  pointer-events: none;
-}
-
-.buyDeclineRow .rollButton:hover:not(:disabled)::before {
-  left: 100%;
-}
-
-.buyDeclineRow .rollButton:hover:not(:disabled) {
-  transform: translateY(-4px) scale(1.04);
-}
-
-.buyDeclineRow .rollButton:active:not(:disabled) {
-  transform: translateY(2px) scale(0.97);
-  transition-duration: 0.05s;
-}
-
-/* ── BUY ── */
-.buyButton {
-  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important;
-  border-color: #4ade80 !important;
-  color: #fff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 6px 0 #166534,
-    0 0 20px rgba(74, 222, 128, 0.25) !important;
+.buyButton::before {
+  content: '●';
+  color: #d4af37;
+  font-size: 8px;
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
 .buyButton:hover:not(:disabled) {
+  transform: translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 8px 0 #166534,
-    0 0 40px rgba(74, 222, 128, 0.4),
-    0 0 80px rgba(74, 222, 128, 0.15) !important;
+    0 0 20px rgba(26, 92, 26, 0.5),
+    0 0 30px rgba(212, 175, 55, 0.3) !important;
 }
 
 .buyButton:active:not(:disabled) {
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 2px 0 #166534,
-    0 0 10px rgba(74, 222, 128, 0.2) !important;
+  transform: translateY(1px) scale(0.97);
+  transition-duration: 0.05s;
 }
 
-/* ── PASS ── */
+.buyButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── PASS / DECLINE ── */
 .declineButton {
-  background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%) !important;
-  border-color: #dc2626 !important;
-  color: #fca5a5 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 6px 0 #450a0a,
-    0 0 16px rgba(220, 38, 38, 0.2) !important;
-  min-width: 90px !important;
-  font-size: 0.82rem !important;
-  opacity: 0.85;
+  position: relative;
+  padding: 8px 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b89a6a !important;
+  background: transparent !important;
+  border: 1px solid rgba(212, 175, 55, 0.25) !important;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: none !important;
+  text-shadow: none;
+  min-width: auto;
 }
 
 .declineButton:hover:not(:disabled) {
-  opacity: 1;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 8px 0 #450a0a,
-    0 0 30px rgba(239, 68, 68, 0.35) !important;
+  border-color: rgba(212, 175, 55, 0.5) !important;
+}
+
+.declineButton:hover:not(:disabled)::after {
+  content: 'walk away...';
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Nunito', sans-serif;
+  font-size: 8px;
+  color: #b89a6a;
+  opacity: 0.3;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .declineButton:active:not(:disabled) {
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.4),
-    0 2px 0 #450a0a,
-    0 0 8px rgba(239, 68, 68, 0.15) !important;
+  transform: scale(0.95);
+  transition-duration: 0.05s;
+}
+
+.declineButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .jailActions {
@@ -1837,7 +1836,27 @@ input {
   transform: translateY(1px);
 }
 
-/* ===== TURN INDICATOR ===== */
+/* ===== TURN INDICATOR — Casino Dealer Plaque ===== */
+
+@keyframes plaqueFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-2px); }
+}
+
+@keyframes plaqueFlipIn {
+  0% { transform: translateX(-50%) scaleX(0); opacity: 0; }
+  100% { transform: translateX(-50%) scaleX(1); opacity: 1; }
+}
+
+@keyframes chipRingSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes phasePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
 
 .turnIndicator {
   position: absolute;
@@ -1846,19 +1865,94 @@ input {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   z-index: 3;
-  background:
-    linear-gradient(135deg, rgba(40, 18, 30, 0.95) 0%, rgba(20, 10, 16, 0.95) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 28px;
-  padding: 8px 20px 8px 8px;
-  backdrop-filter: blur(12px);
+  background: conic-gradient(from 0deg at 50% 50%, #2a0f1f, #1a0f0f, #2e1a1a, #1a0f0f, #2a0f1f);
+  border: 2px solid #d4af37;
+  border-radius: 24px;
+  padding: 6px 20px 6px 8px;
   box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(212, 175, 55, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: all 0.3s var(--ease-out);
+    inset 0 1px 0 rgba(212,175,55,0.2),
+    0 0 12px rgba(var(--player-accent-rgb, 212,175,55), 0.2),
+    0 4px 16px rgba(0,0,0,0.5);
+  animation: plaqueFloat 3s ease-in-out infinite, plaqueFlipIn 0.3s ease-out;
+}
+
+.turnIndicatorContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.turnAvatar {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  border: 2px solid var(--player-accent, #d4af37);
+  flex-shrink: 0;
+  transition: background 0.3s var(--ease-out);
+}
+
+.turnAvatar::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: chipRingSpin 20s linear infinite;
+  pointer-events: none;
+}
+
+.turnName {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--player-accent, #d4af37);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.turnPhase {
+  font-family: 'Nunito', sans-serif;
+  font-size: 9px;
+  color: #b89a6a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: phasePulse 2s ease-in-out infinite;
+  line-height: 1;
+}
+
+.turnDice {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin-left: 2px;
+}
+
+.turnDie {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  background: #1a0f0f;
+  border: 1px solid #d4af37;
+  border-radius: 3px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffd700;
+  line-height: 1;
 }
 
 .roundIndicator {
@@ -1895,31 +1989,6 @@ input {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
-}
-
-.turnAvatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.74rem;
-  box-shadow: inset 0 -2px 3px rgba(0,0,0,0.2);
-  transition: background 0.3s var(--ease-out);
-}
-
-.turnName {
-  font-weight: 800;
-  font-size: 0.85rem;
-  font-family: 'Cinzel', serif;
-}
-
-.turnDice {
-  font-size: 0.72rem;
-  color: var(--muted);
-  font-weight: 700;
 }
 
 /* ===== TILE OWNERSHIP ===== */
@@ -5989,14 +6058,7 @@ input {
   }
 }
 
-/* Turn indicator with player color accent */
-.turnIndicator {
-  border-left: 3px solid var(--player-accent, var(--gold));
-}
-
-.turnName {
-  color: var(--ink);
-}
+/* Turn indicator — overrides removed, styles consolidated above */
 
 /* Phase hint styling */
 .rollHint {
