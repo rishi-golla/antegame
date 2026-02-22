@@ -452,10 +452,10 @@ export default function Board() {
     }, 980);
   }, [play]);
 
-  const isFirstRender = useRef(true);
+  const isFirstDiceRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (isFirstDiceRender.current) {
+      isFirstDiceRender.current = false;
       prevDiceRef.current = state.dice;
       prevPhaseRef.current = state.phase;
       return;
