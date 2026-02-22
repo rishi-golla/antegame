@@ -856,43 +856,48 @@ input {
   bottom: 22%;
   transform: translateX(-50%);
   z-index: 4;
-  border: 3px solid var(--gold);
-  border-radius: var(--radius-lg);
-  padding: 12px 24px;
-  color: #fff;
+  border: none;
+  border-top: 1px solid rgba(255, 240, 180, 0.35);
+  border-bottom: 1px solid rgba(80, 65, 15, 0.5);
+  border-radius: 12px;
+  padding: 14px 32px;
+  color: #2a1800;
   font-family: 'Cinzel', serif;
   font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  background: linear-gradient(180deg, #d4af37, #8b7320);
+  letter-spacing: 0.05em;
+  background: linear-gradient(180deg, #ffe066 0%, #d4af37 35%, #b8960b 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 8px 0 rgba(80, 65, 15, 0.6),
-    0 0 24px rgba(212, 175, 55, 0.35);
+    0 5px 0 #7a6318,
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
   cursor: pointer;
-  transition: transform 0.1s var(--ease-out), box-shadow 0.1s var(--ease-out), filter 0.1s;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, filter 0.2s ease;
+  will-change: transform;
 }
 
 .rollButton:hover:not(:disabled) {
   transform: translateX(-50%) translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 10px 0 rgba(80, 65, 15, 0.6),
-    0 0 32px rgba(212, 175, 55, 0.5);
-  filter: brightness(1.08);
+    0 7px 0 #7a6318,
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(212, 175, 55, 0.15);
+  filter: brightness(1.06);
 }
 
 .rollButton:active:not(:disabled) {
-  transform: translateX(-50%) translateY(2px);
+  transform: translateX(-50%) translateY(3px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 4px 0 rgba(80, 65, 15, 0.6),
-    0 0 12px rgba(212, 175, 55, 0.25);
+    0 1px 0 #7a6318,
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: brightness(0.92);
+  transition-duration: 0.06s;
 }
 
 .rollButton:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: default;
+  filter: grayscale(0.3);
 }
 
 .diceFocusLayer {
@@ -1487,132 +1492,118 @@ input {
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(10, 5, 8, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 14px 18px;
-  border-radius: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  animation: buyRowSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(8, 4, 6, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: buyRowIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes buyRowSlideUp {
-  from { opacity: 0; transform: translateX(-50%) translateY(24px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+@keyframes buyRowIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
-/* ── Shared button base ── */
+/* ── Shared button reset ── */
 .buyButton,
 .gambleBtn,
 .declineButton {
   position: relative;
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  border: none !important;
   cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, filter 0.3s ease;
+  border: none !important;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
   will-change: transform;
-  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* Shared glossy highlight */
-.buyButton::after,
-.gambleBtn::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 45%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-/* ── BUY — Rich Crimson ── */
+/* ── BUY — Solid Crimson Chip ── */
 .buyButton {
-  min-width: 140px;
-  padding: 13px 28px;
-  font-size: 16px;
-  color: #fff8e7 !important;
-  background: linear-gradient(180deg, #8b1a2b 0%, #6b1525 50%, #4a0e1a 100%) !important;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: 12px 24px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff !important;
+  background: linear-gradient(180deg, #9b2335 0%, #7a1a2a 40%, #5c1220 100%) !important;
+  border-radius: 10px;
+  border-top: 1px solid rgba(255, 180, 180, 0.2) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4) !important;
   box-shadow:
-    0 1px 0 rgba(212, 175, 55, 0.25) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
-    0 4px 16px rgba(139, 26, 43, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    0 4px 0 #3d0a15,
+    0 6px 20px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, filter 0.2s ease;
 }
 
 .buyButton:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 1px 0 rgba(212, 175, 55, 0.3) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
-    0 8px 24px rgba(139, 26, 43, 0.5),
-    0 2px 6px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(212, 175, 55, 0.12);
-  filter: brightness(1.12);
+    0 6px 0 #3d0a15,
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 0 16px rgba(155, 35, 53, 0.25);
+  filter: brightness(1.1);
 }
 
 .buyButton:active:not(:disabled) {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(2px);
   box-shadow:
-    0 1px 0 rgba(212, 175, 55, 0.15) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.4) inset,
-    0 2px 8px rgba(139, 26, 43, 0.3);
-  filter: brightness(0.92);
-  transition-duration: 0.08s;
+    0 1px 0 #3d0a15,
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: brightness(0.9);
+  transition-duration: 0.06s;
 }
 
 .buyButton:disabled {
   opacity: 0.35;
   cursor: not-allowed;
-  filter: grayscale(0.4) brightness(0.8);
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: grayscale(0.5) brightness(0.7);
+  box-shadow: 0 2px 0 #3d0a15, 0 3px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* ── PASS / DECLINE — Understated ── */
+/* ── PASS / DECLINE — Quiet outline ── */
 .declineButton {
-  padding: 10px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
   font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: rgba(212, 175, 55, 0.6) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(212, 175, 55, 0.12) !important;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(200, 180, 150, 0.55) !important;
+  background: transparent !important;
+  border: 1px solid rgba(200, 180, 150, 0.15) !important;
+  border-radius: 8px;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
 }
 
 .declineButton:hover:not(:disabled) {
-  color: rgba(212, 175, 55, 0.85) !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-  border-color: rgba(212, 175, 55, 0.3) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  color: rgba(212, 175, 55, 0.8) !important;
+  border-color: rgba(212, 175, 55, 0.35) !important;
+  background: rgba(212, 175, 55, 0.06) !important;
 }
 
 .declineButton:active:not(:disabled) {
-  transform: translateY(1px);
-  background: rgba(255, 255, 255, 0.02) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  transition-duration: 0.08s;
+  transform: scale(0.95);
+  transition-duration: 0.06s;
 }
 
 .declineButton:disabled {
-  opacity: 0.25;
+  opacity: 0.2;
   cursor: not-allowed;
-  transform: none;
 }
 
 .jailActions {
@@ -2661,82 +2652,98 @@ input {
 
 /* ===== MINIGAME STYLES ===== */
 
-/* ── GAMBLE — Gold Premium ── */
+/* ── GAMBLE — Gold Chip ── */
 .gambleBtn {
-  min-width: 150px;
-  padding: 13px 30px;
-  font-size: 17px;
-  color: #1a0a00 !important;
-  background: linear-gradient(180deg, #ffd700 0%, #d4af37 40%, #b8860b 100%) !important;
-  border-radius: 12px;
-  text-shadow: 0 1px 0 rgba(255, 255, 200, 0.6);
-  letter-spacing: 0.08em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  padding: 12px 26px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #2a1800 !important;
+  background: linear-gradient(180deg, #ffe066 0%, #d4af37 35%, #b8960b 100%) !important;
+  border-radius: 10px;
+  border-top: 1px solid rgba(255, 240, 180, 0.5) !important;
+  border-bottom: 1px solid rgba(120, 90, 10, 0.6) !important;
   box-shadow:
-    0 1px 0 rgba(255, 255, 200, 0.4) inset,
-    0 -1px 0 rgba(139, 115, 32, 0.5) inset,
-    0 4px 16px rgba(212, 175, 55, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.3);
+    0 4px 0 #8b7320,
+    0 6px 20px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, filter 0.2s ease;
+  overflow: hidden;
 }
 
-/* Shimmer sweep */
+/* Slow shimmer */
 .gambleBtn::before {
   content: '';
   position: absolute;
-  top: 0; left: -75%;
-  width: 50%; height: 100%;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%);
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.2) 50%, transparent 65%);
   transform: skewX(-20deg);
-  animation: gambleShimmer 4s ease-in-out infinite;
+  animation: gambleShimmer 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   pointer-events: none;
 }
 
-/* Subtitle line */
+/* Glossy top half */
+.gambleBtn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%);
+  border-radius: 10px 10px 0 0;
+  pointer-events: none;
+}
+
 .gambleBtn .gambleSub {
   display: block;
   font-family: 'Nunito', sans-serif;
-  font-size: 8px;
-  font-weight: 700;
-  color: rgba(80, 40, 0, 0.5);
-  letter-spacing: 0.25em;
-  margin-top: 2px;
+  font-size: 7px;
+  font-weight: 800;
+  color: rgba(100, 60, 0, 0.45);
+  letter-spacing: 0.3em;
+  margin-top: 1px;
 }
 
-/* Suit symbols — static, decorative */
+/* Suit symbols — faint corner accents */
 .gambleSuit {
   position: absolute;
-  font-size: 8px;
-  color: rgba(139, 115, 32, 0.3);
+  font-size: 7px;
+  color: rgba(139, 100, 20, 0.2);
   pointer-events: none;
+  z-index: 2;
 }
-.gambleSuitTL { top: 5px; left: 7px; }
-.gambleSuitTR { top: 5px; right: 7px; }
-.gambleSuitBL { bottom: 5px; left: 7px; }
-.gambleSuitBR { bottom: 5px; right: 7px; }
+.gambleSuitTL { top: 4px; left: 6px; }
+.gambleSuitTR { top: 4px; right: 6px; }
+.gambleSuitBL { bottom: 4px; left: 6px; }
+.gambleSuitBR { bottom: 4px; right: 6px; }
 
 @keyframes gambleShimmer {
-  0%, 100% { left: -75%; }
-  50% { left: 125%; }
+  0% { left: -100%; }
+  40%, 100% { left: 150%; }
 }
 
 .gambleBtn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 200, 0.5) inset,
-    0 -1px 0 rgba(139, 115, 32, 0.5) inset,
-    0 8px 28px rgba(212, 175, 55, 0.45),
-    0 2px 6px rgba(0, 0, 0, 0.25),
-    0 0 24px rgba(255, 215, 0, 0.15);
+    0 6px 0 #8b7320,
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 0 20px rgba(212, 175, 55, 0.2);
   filter: brightness(1.08);
 }
 
 .gambleBtn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(2px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 200, 0.2) inset,
-    0 -1px 0 rgba(139, 115, 32, 0.6) inset,
-    0 2px 8px rgba(212, 175, 55, 0.25);
-  filter: brightness(0.92);
-  transition-duration: 0.08s;
+    0 1px 0 #8b7320,
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: brightness(0.9);
+  transition-duration: 0.06s;
 }
 
 .gambleBtn:disabled {
@@ -7259,8 +7266,7 @@ button:active:not(:disabled) {
 
 /* Button hover: neon glow intensifies */
 .setupStartBtn:hover,
-.neonBtn:hover,
-.rollButton:hover:not(:disabled) {
+.neonBtn:hover {
   filter: brightness(1.1);
 }
 
@@ -7343,24 +7349,22 @@ button:active:not(:disabled) {
     0 0 24px rgba(212, 175, 55, 0.08) !important;
 }
 
-/* Roll button pulse when enabled */
+/* Roll button — subtle ambient glow when enabled */
 .rollButton:not(:disabled) {
-  animation: rollPulse 2s ease-in-out infinite;
+  animation: rollGlow 3s ease-in-out infinite;
 }
 
-@keyframes rollPulse {
+@keyframes rollGlow {
   0%, 100% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      0 8px 0 rgba(80, 65, 15, 0.6),
-      0 0 24px rgba(212, 175, 55, 0.35);
+      0 5px 0 #7a6318,
+      0 8px 24px rgba(0, 0, 0, 0.45);
   }
   50% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      0 8px 0 rgba(80, 65, 15, 0.6),
-      0 0 36px rgba(212, 175, 55, 0.55),
-      0 0 60px rgba(212, 175, 55, 0.15);
+      0 5px 0 #7a6318,
+      0 8px 24px rgba(0, 0, 0, 0.45),
+      0 0 20px rgba(212, 175, 55, 0.15);
   }
 }
 
