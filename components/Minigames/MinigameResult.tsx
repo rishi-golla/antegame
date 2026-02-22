@@ -123,7 +123,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(onDismiss, 8000);
+    const t = setTimeout(onDismiss, 2000);
     return () => clearTimeout(t);
   }, [onDismiss]);
 
@@ -603,7 +603,7 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
                 <div style={{
                   height: '100%',
                   background: `linear-gradient(90deg, ${config.borderColor}, ${config.amountColor})`,
-                  animation: 'mr-progressRing 8s linear forwards',
+                  animation: 'mr-progressRing 2s linear forwards',
                   willChange: 'width',
                 }} />
               </div>
