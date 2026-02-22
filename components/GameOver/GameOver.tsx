@@ -83,7 +83,7 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
   return (
     <div className="gameOverOverlay casinoBackdrop jackpotOverlay">
       <div className="gameOverCard jackpotCard">
-        <div className="jackpotLights" />
+        {/* jackpotLights removed */}
         
         {/* Winner crown - SVG instead of emoji */}
         <svg className="gameOverCrownSvg" width="64" height="48" viewBox="0 0 64 48" fill="none">
