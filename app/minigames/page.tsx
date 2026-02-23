@@ -20,7 +20,7 @@ const minigames = [
   { name: 'Wheel of Fortune', desc: 'Spin the wheel. Multipliers from 0.25x to 5x. One spin decides your fate.', image: '/assets/landing/minigames/wheel.webp' },
   { name: 'Craps', desc: 'Roll the dice. Hit your number or bust. Classic casino energy.', image: '/assets/landing/minigames/craps.webp' },
   { name: 'Coin Flip', desc: 'Heads or tails. Best of three. Simple, brutal, effective.', image: '/assets/landing/minigames/coinflip.webp' },
-  { name: 'Horse Race', desc: 'Pick your horse and watch them run. The fastest one pays out.', image: '/assets/landing/minigames/horse.webp' },
+  { name: 'Card War', desc: 'You vs. the house — flip cards over 3 rounds. Highest total wins.', image: '/assets/landing/minigames/cardwar.webp' },
   { name: 'Dart Throw', desc: 'Aim for the bullseye. Closer you land, bigger the payout.', image: '/assets/landing/minigames/darts.webp' },
   { name: 'Minesweeper', desc: 'Reveal gems, dodge mines. Cash out anytime or push your luck.', image: '/assets/landing/minigames/minesweeper.webp' },
   { name: 'Safe Cracker', desc: 'Crack the combination before time runs out. Pressure makes diamonds.', image: '/assets/landing/minigames/safecracker.webp' },

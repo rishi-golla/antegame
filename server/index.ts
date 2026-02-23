@@ -107,7 +107,7 @@ nextApp.prepare().then(() => {
 
   // M1: Security headers
   app.use(helmet({
-    contentSecurityPolicy: {
+    contentSecurityPolicy: dev ? false : {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],

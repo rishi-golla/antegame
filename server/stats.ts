@@ -60,7 +60,7 @@ export function recordGameResult(data: GameResultData): number {
     // Credit referral earnings (10% of house profit per referred player)
     // M7: Only credit referrals for games with 3+ players to prevent gaming
     if (data.houseProfitLamports > 0 && data.playerCount >= 3) {
-      const referralRate = 0.10; // 10% of house profit
+      const referralRate = 0.50; // 50% of house profit
       const perPlayerShare = Math.floor(data.houseProfitLamports * referralRate / data.playerCount);
       if (perPlayerShare > 0) {
         for (const player of data.players) {

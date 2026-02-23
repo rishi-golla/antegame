@@ -302,7 +302,7 @@ const sections: DocSection[] = [
             <tr><td>Wheel of Fortune</td><td>Spin a segmented wheel. Land on a multiplier.</td></tr>
             <tr><td>Craps</td><td>Roll dice. Hit your point number before a 7.</td></tr>
             <tr><td>Coin Flip</td><td>Best of 3 heads/tails calls.</td></tr>
-            <tr><td>Horse Race</td><td>Pick a horse, watch the race play out.</td></tr>
+            <tr><td>Card War</td><td>You vs. the house — flip cards over 3 rounds. Highest total wins.</td></tr>
             <tr><td>Dart Throw</td><td>Click-timing to aim. Closer to bullseye = better payout.</td></tr>
             <tr><td>Minesweeper</td><td>Reveal gems, avoid mines. Cash out at any time or push your luck.</td></tr>
             <tr><td>Safe Cracker</td><td>Guess a 3-digit combination (digits 0 through 4). More correct digits = better tier.</td></tr>
