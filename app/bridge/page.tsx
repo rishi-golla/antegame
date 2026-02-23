@@ -1,26 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
   PublicKey,
   Transaction,
   SystemProgram,
   LAMPORTS_PER_SOL,
   VersionedTransaction,
-  Connection,
 } from "@solana/web3.js";
 import Link from "next/link";
 
 const TREASURY_WALLET = new PublicKey("E6hWHJc6J3zzAGDgg9xphZtpBveAqZ8eNMwmFDeJ6TK8");
 const FEE_PERCENT = 1;
-const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
 
 type BridgeStatus = "idle" | "awaiting_fee" | "confirming_fee" | "verifying_fee" | "awaiting_bridge" | "confirming_bridge" | "polling" | "complete" | "error";
-
-function getPhantom(): any {
-  if (typeof window === "undefined") return null;
-  return (window as any).solana ?? (window as any).phantom?.solana ?? null;
-}
 
 function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
@@ -50,7 +45,8 @@ async function pollBridgeStatus(orderId: string): Promise<string> {
 }
 
 export default function BridgePage() {
-  const [publicKey, setPublicKey] = useState<PublicKey | null>(null);
+  const { publicKey, connected, sendTransaction, signTransaction } = useWallet();
+  const { connection } = useConnection();
   const [amount, setAmount] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
   const [status, setStatus] = useState<BridgeStatus>("idle");
@@ -60,22 +56,10 @@ export default function BridgePage() {
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [estimatedEth, setEstimatedEth] = useState<string | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-
-  const connected = !!publicKey;
-  const connection = new Connection(RPC_URL);
-
-  // Check if Phantom already connected
-  useEffect(() => {
-    const phantom = getPhantom();
-    if (phantom?.isConnected && phantom?.publicKey) {
-      setPublicKey(new PublicKey(phantom.publicKey.toString()));
-    }
-  }, []);
 
   // Fetch SOL balance
   useEffect(() => {
-    if (!publicKey) { setSolBalance(null); return; }
+    if (!publicKey || !connected) { setSolBalance(null); return; }
     const fetch_ = async () => {
       try {
         const bal = await connection.getBalance(publicKey);
@@ -85,7 +69,7 @@ export default function BridgePage() {
     fetch_();
     const id = setInterval(fetch_, 10000);
     return () => clearInterval(id);
-  }, [publicKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [publicKey, connected, connection]);
 
   // Fetch estimated ETH
   useEffect(() => {
@@ -116,8 +100,6 @@ export default function BridgePage() {
   // Auto-populate EVM destination
   useEffect(() => {
     try {
-      const wagmi = require("wagmi");
-      // Can't call hooks here, check window ethereum
       const eth = (window as any).ethereum;
       if (eth?.selectedAddress) setDestinationAddress(eth.selectedAddress);
     } catch {}
@@ -129,27 +111,8 @@ export default function BridgePage() {
   const isValidDestination = /^0x[a-fA-F0-9]{40}$/.test(destinationAddress);
   const canBridge = connected && isValidAmount && isValidDestination && status === "idle";
 
-  const handleConnect = async () => {
-    const phantom = getPhantom();
-    if (!phantom) { window.open("https://phantom.app/", "_blank"); return; }
-    setConnecting(true);
-    try {
-      const resp = await phantom.connect();
-      setPublicKey(new PublicKey(resp.publicKey.toString()));
-    } catch (e: any) {
-      if (!e?.message?.includes("rejected")) console.warn("[Bridge] connect:", e);
-    } finally { setConnecting(false); }
-  };
-
-  const handleDisconnect = async () => {
-    const phantom = getPhantom();
-    if (phantom) await phantom.disconnect();
-    setPublicKey(null);
-  };
-
   const handleBridge = useCallback(async () => {
-    const phantom = getPhantom();
-    if (!publicKey || !phantom) return;
+    if (!publicKey || !connected || !signTransaction) return;
     setErrorMsg(""); setBridgeOrderId(null);
 
     try {
@@ -160,10 +123,7 @@ export default function BridgePage() {
       const feeTx = new Transaction().add(
         SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: TREASURY_WALLET, lamports: feeLamports })
       );
-      feeTx.feePayer = publicKey;
-      feeTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      const signedFee = await phantom.signAndSendTransaction(feeTx);
-      const feeSig = signedFee.signature;
+      const feeSig = await sendTransaction(feeTx, connection);
 
       setStatus("confirming_fee");
       setStatusMsg(`Fee tx sent (${feeSig.slice(0, 8)}...). Confirming...`);
@@ -198,7 +158,7 @@ export default function BridgePage() {
       const vtx = VersionedTransaction.deserialize(txBytes);
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       vtx.message.recentBlockhash = blockhash;
-      const signed = await phantom.signTransaction(vtx);
+      const signed = await signTransaction(vtx);
 
       setStatus("confirming_bridge");
       setStatusMsg("Bridge tx sent. Confirming on Solana...");
@@ -219,7 +179,7 @@ export default function BridgePage() {
       setErrorMsg(msg);
       setStatusMsg("");
     }
-  }, [publicKey, amount, destinationAddress, feeAmount, bridgeAmount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [publicKey, connected, signTransaction, sendTransaction, connection, amount, destinationAddress, feeAmount, bridgeAmount]);
 
   const reset = () => { setStatus("idle"); setStatusMsg(""); setErrorMsg(""); setBridgeOrderId(null); };
 
@@ -229,16 +189,9 @@ export default function BridgePage() {
         <h1 style={s.title}>BRIDGE TO BASE</h1>
         <p style={s.subtitle}>Bridge SOL to ETH and jump into a game</p>
 
+        {/* Use the same WalletMultiButton as the rest of the site */}
         <div style={s.walletRow}>
-          {connected && publicKey ? (
-            <button onClick={handleDisconnect} style={s.connectedBtn}>
-              {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)} ✓
-            </button>
-          ) : (
-            <button onClick={handleConnect} disabled={connecting} style={{ ...s.connectBtn, opacity: connecting ? 0.6 : 1 }}>
-              {connecting ? "Connecting..." : "Connect Wallet"}
-            </button>
-          )}
+          <WalletMultiButton style={s.walletBtn} />
         </div>
 
         <div style={s.section}>
@@ -275,10 +228,16 @@ export default function BridgePage() {
           </div>
         )}
 
-        {status === "idle" && (
+        {status === "idle" && !connected && (
+          <p style={{ color: "#666", fontSize: 11, textAlign: "center" as const, marginTop: 16 }}>
+            Connect your Solana wallet above to start bridging
+          </p>
+        )}
+
+        {status === "idle" && connected && (
           <button onClick={canBridge ? handleBridge : undefined}
             style={{ ...s.btn, ...(canBridge ? {} : s.btnDisabled) }} disabled={!canBridge}>
-            {!connected ? "CONNECT WALLET" : "BRIDGE TO BASE"}
+            BRIDGE TO BASE
           </button>
         )}
 
@@ -317,8 +276,7 @@ const s = {
   title: { fontFamily: "'Press Start 2P', monospace", color: "#d4a843", fontSize: 18, textAlign: "center" as const, margin: 0, marginBottom: 8 } as React.CSSProperties,
   subtitle: { color: "#aaa", fontSize: 12, textAlign: "center" as const, marginBottom: 24, fontFamily: "'Press Start 2P', monospace" } as React.CSSProperties,
   walletRow: { display: "flex", justifyContent: "center", marginBottom: 20 } as React.CSSProperties,
-  connectBtn: { background: "linear-gradient(135deg, #9945FF, #7B3FE4)", border: "none", borderRadius: 8, padding: "12px 24px", color: "#fff", fontFamily: "'Press Start 2P', monospace", fontSize: 12, cursor: "pointer", fontWeight: 700 } as React.CSSProperties,
-  connectedBtn: { background: "#111", border: "1px solid #d4a843", borderRadius: 8, padding: "10px 20px", color: "#d4a843", fontFamily: "'Press Start 2P', monospace", fontSize: 11, cursor: "pointer" } as React.CSSProperties,
+  walletBtn: { borderRadius: 8, fontFamily: "'Press Start 2P', monospace", fontSize: 11 } as React.CSSProperties,
   section: { marginBottom: 16 } as React.CSSProperties,
   labelRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } as React.CSSProperties,
   label: { color: "#888", fontSize: 11, marginBottom: 6, display: "block" } as React.CSSProperties,
