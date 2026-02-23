@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 import { useWalletClient, useBalance, useAccount, useSwitchChain } from 'wagmi';
@@ -29,11 +29,19 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const currentChainId = useChainId();
   const targetChainId = getChainId();
   const wrongChain = currentChainId !== targetChainId;
-  const { data: balance } = useBalance({
+  const { data: balance, refetch: refetchBalance } = useBalance({
     address: connectedAddress,
     chainId: getChainId(),
-    query: { refetchInterval: 10_000 },
+    query: { refetchInterval: 10_000, staleTime: 0 },
   });
+
+  // Force refetch on mount (wagmi caches stale 0 from before wallet was ready)
+  useEffect(() => {
+    if (connectedAddress) {
+      const t = setTimeout(() => refetchBalance(), 500);
+      return () => clearTimeout(t);
+    }
+  }, [connectedAddress, refetchBalance]);
 
   const [name, setName] = useState(user?.displayName ?? '');
   const [selectedChar, setSelectedChar] = useState(
