@@ -7,9 +7,11 @@ import { CHARACTERS } from '@/lib/assetMap';
 export default function ProfileSetup() {
   const { updateProfile } = useMultiChain();
   const [displayName, setDisplayName] = useState('');
-  const [selectedChar, setSelectedChar] = useState(CHARACTERS[0].id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Default to first character — no selection needed
+  const defaultChar = CHARACTERS[0].id;
 
   const handleSave = async () => {
     if (!displayName.trim()) {
@@ -19,7 +21,7 @@ export default function ProfileSetup() {
     setSaving(true);
     setError('');
     try {
-      await updateProfile(displayName.trim(), selectedChar);
+      await updateProfile(displayName.trim(), defaultChar);
     } catch {
       setError('Failed to save profile');
     } finally {
@@ -30,36 +32,23 @@ export default function ProfileSetup() {
   return (
     <div className="setupScreen">
       <div className="setupCard">
-        <h1 className="setupTitle marqueeTitle">Welcome, High Roller</h1>
-        <p className="setupSubtitle casinoSubtitle">Set up your profile</p>
+        <h1 className="setupTitle marqueeTitle">Welcome</h1>
+        <p className="setupSubtitle casinoSubtitle">Choose a display name</p>
 
         <input
           className="setupPlayerInput"
           placeholder="Display name"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && displayName.trim()) handleSave(); }}
           maxLength={20}
-          style={{ marginBottom: 16, textAlign: 'center' }}
+          autoFocus
+          style={{ marginBottom: 24, textAlign: 'center' }}
         />
-
-        <div className="characterGrid">
-          {CHARACTERS.map((c) => (
-            <div
-              key={c.id}
-              className={`characterCard ${selectedChar === c.id ? 'characterCardSelected' : ''}`}
-              onClick={() => setSelectedChar(c.id)}
-            >
-              <img src={c.sprite} alt={c.name} className="characterCardSprite" draggable={false} />
-              <span className="characterCardName">{c.name}</span>
-              <span className="characterCardBuff">{c.buff.name}</span>
-              <span className="characterCardBuffDesc">{c.buff.description}</span>
-            </div>
-          ))}
-        </div>
 
         {error && <p className="lobbyError">{error}</p>}
 
-        <button className="setupStartBtn" onClick={handleSave} disabled={saving}>
+        <button className="setupStartBtn" onClick={handleSave} disabled={saving || !displayName.trim()}>
           {saving ? 'Saving...' : 'Enter the Casino'}
         </button>
       </div>
