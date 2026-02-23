@@ -125,7 +125,11 @@ nextApp.prepare().then(() => {
     credentials: true,
   }));
 
-  app.use(express.json());
+  // Skip express.json for Next.js API routes (body must remain unconsumed)
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/rpc')) return next();
+    express.json()(req, res, next);
+  });
 
   // Health check — Railway uses this for deployment readiness
   app.get('/api/health', (_req, res) => {

@@ -31,6 +31,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const { data: balance } = useBalance({
     address: connectedAddress,
     chainId: getChainId(),
+    query: { refetchInterval: 10_000 },
   });
 
   const [name, setName] = useState(user?.displayName ?? '');
@@ -45,6 +46,8 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
   const isBase = activeChain === 'base';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
+  // Debug: remove after fixing
+  console.log('[QuickPlay] address:', connectedAddress, 'chainId:', getChainId(), 'currentChainId:', currentChainId, 'balance:', balance?.formatted, 'balanceEth:', balanceEth);
   const walletReady = !isBase || (evmConnected && walletClient);
 
   const handleFindMatch = async () => {
@@ -179,8 +182,8 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
           ))}
         </div>
 
-        {isBase && (
-          <div className="setupPlayerCount">
+        {/* Buy-in selector — Base is the only active chain */}
+        <div className="setupPlayerCount">
             <label>Buy-In (ETH)</label>
             <div className="setupCountBtns">
               {BUY_IN_OPTIONS.map((amt) => (
@@ -199,9 +202,8 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
               {balanceEth < parseFloat(buyIn) && <span style={{ color: '#ff4444' }}> (insufficient)</span>}
             </p>
           </div>
-        )}
 
-        {isBase && !walletReady && (
+        {!walletReady && (
           <p className="lobbyError" style={{ color: '#d4a843' }}>
             Wallet not connected.{' '}
             <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => openConnectModal?.()}>
