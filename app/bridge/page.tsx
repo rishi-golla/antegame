@@ -25,7 +25,7 @@ const FEE_PERCENT = 1;
 type BridgeStatus = "idle" | "awaiting_fee" | "confirming_fee" | "verifying_fee" | "awaiting_bridge" | "confirming_bridge" | "polling" | "complete" | "error";
 
 function SolanaConnectButton() {
-  const { connected, connecting, publicKey, disconnect, select, wallets, wallet, connect } = useWallet();
+  const { connected, connecting, publicKey, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
 
   if (connected && publicKey) {
@@ -43,22 +43,8 @@ function SolanaConnectButton() {
     );
   }
 
-  const handleConnect = async () => {
-    // If Phantom is available, select it then connect
-    const phantom = wallets.find(w => w.adapter.name === 'Phantom');
-    if (phantom) {
-      try {
-        select(phantom.adapter.name);
-        // Give the adapter a tick to register, then force connect
-        await new Promise(r => setTimeout(r, 100));
-        await phantom.adapter.connect();
-      } catch (e: any) {
-        // User rejected or already connected
-        if (!e?.message?.includes('rejected')) console.warn('[Bridge] Phantom connect:', e);
-      }
-      return;
-    }
-    // Otherwise open the modal
+  const handleConnect = () => {
+    // Open the wallet modal — Wallet Standard auto-detects installed wallets
     setVisible(true);
   };
 
