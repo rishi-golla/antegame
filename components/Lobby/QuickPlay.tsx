@@ -46,8 +46,6 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
   const isBase = activeChain === 'base';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
-  // Debug: remove after fixing
-  console.log('[QuickPlay] address:', connectedAddress, 'chainId:', getChainId(), 'currentChainId:', currentChainId, 'balance:', balance?.formatted, 'balanceEth:', balanceEth);
   const walletReady = !isBase || (evmConnected && walletClient);
 
   const handleFindMatch = async () => {
