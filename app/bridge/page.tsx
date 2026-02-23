@@ -73,7 +73,7 @@ function SolanaConnectButton() {
         opacity: connecting ? 0.6 : 1,
       }}
     >
-      {connecting ? 'Connecting...' : 'Connect Phantom'}
+      {connecting ? 'Connecting...' : 'Connect Wallet'}
     </button>
   );
 }
