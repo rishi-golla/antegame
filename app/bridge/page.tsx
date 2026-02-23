@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import {
   PublicKey,
   Transaction,
@@ -23,6 +23,50 @@ const TREASURY_WALLET = new PublicKey("E6hWHJc6J3zzAGDgg9xphZtpBveAqZ8eNMwmFDeJ6
 const FEE_PERCENT = 1;
 
 type BridgeStatus = "idle" | "awaiting_fee" | "confirming_fee" | "verifying_fee" | "awaiting_bridge" | "confirming_bridge" | "polling" | "complete" | "error";
+
+function SolanaConnectButton() {
+  const { connected, publicKey, disconnect, select, wallets } = useWallet();
+  const { setVisible } = useWalletModal();
+
+  if (connected && publicKey) {
+    const addr = publicKey.toBase58();
+    return (
+      <button
+        onClick={disconnect}
+        style={{
+          background: '#111', border: '1px solid #d4a843', borderRadius: 8, padding: '10px 20px',
+          color: '#d4a843', fontFamily: "'Press Start 2P', monospace", fontSize: 11, cursor: 'pointer',
+        }}
+      >
+        {addr.slice(0, 4)}...{addr.slice(-4)} ✓
+      </button>
+    );
+  }
+
+  const handleConnect = () => {
+    // If Phantom is available, try connecting directly
+    const phantom = wallets.find(w => w.adapter.name === 'Phantom');
+    if (phantom) {
+      select(phantom.adapter.name);
+      return;
+    }
+    // Otherwise open the modal
+    setVisible(true);
+  };
+
+  return (
+    <button
+      onClick={handleConnect}
+      style={{
+        background: 'linear-gradient(135deg, #9945FF, #7B3FE4)', border: 'none', borderRadius: 8,
+        padding: '12px 24px', color: '#fff', fontFamily: "'Press Start 2P', monospace",
+        fontSize: 12, cursor: 'pointer', fontWeight: 700,
+      }}
+    >
+      Connect Phantom
+    </button>
+  );
+}
 
 function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
@@ -411,7 +455,7 @@ export default function BridgePage() {
         <p style={s.subtitle}>Bridge SOL to ETH and jump into a game</p>
 
         <div style={s.walletRow}>
-          <WalletMultiButton />
+          <SolanaConnectButton />
         </div>
 
         <div style={s.section}>
