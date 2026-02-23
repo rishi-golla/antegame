@@ -139,6 +139,10 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 
         {/* Secondary row */}
         <div className="menuSecondaryRow">
+          <a href="/bridge" className="menuGhostBtn" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <span style={{ fontSize: 18, marginRight: 4 }}>🌉</span>
+            Bridge
+          </a>
           <button className="menuGhostBtn" onClick={() => onNavigate('free-play-setup')}>
             <img src="/assets/menu-icons/free-play.webp" alt="" className="menuGhostImg" />
             Free Play

@@ -10,6 +10,7 @@ import { getChainId } from '@/lib/contracts/addresses';
 import { createGameOnChain, joinGameOnChain } from '@/lib/contracts/monopolyGame';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useChainId } from 'wagmi';
+import Link from 'next/link';
 
 const BUY_IN_OPTIONS = ['0.001', '0.01', '0.05', '0.25', '0.5'];
 const TX_RECEIPT_TIMEOUT = 60_000;
@@ -197,7 +198,15 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
             </div>
             <p style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 4 }}>
               Balance: {balanceEth.toFixed(4)} ETH
-              {balanceEth < parseFloat(buyIn) && <span style={{ color: '#ff4444' }}> (insufficient)</span>}
+              {balanceEth < parseFloat(buyIn) && (
+                <>
+                  <span style={{ color: '#ff4444' }}> (insufficient)</span>
+                  {' '}
+                  <Link href="/bridge" style={{ color: '#d4a843', textDecoration: 'underline', fontSize: '0.7rem' }}>
+                    Need ETH? Bridge from SOL →
+                  </Link>
+                </>
+              )}
             </p>
           </div>
 

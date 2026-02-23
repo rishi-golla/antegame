@@ -127,7 +127,7 @@ nextApp.prepare().then(() => {
 
   // Skip express.json for Next.js API routes (body must remain unconsumed)
   app.use((req, res, next) => {
-    if (req.path.startsWith('/api/rpc')) return next();
+    if (req.path.startsWith('/api/rpc') || req.path.startsWith('/api/bridge')) return next();
     express.json()(req, res, next);
   });
 
