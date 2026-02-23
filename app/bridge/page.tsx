@@ -25,7 +25,7 @@ const FEE_PERCENT = 1;
 type BridgeStatus = "idle" | "awaiting_fee" | "confirming_fee" | "verifying_fee" | "awaiting_bridge" | "confirming_bridge" | "polling" | "complete" | "error";
 
 function SolanaConnectButton() {
-  const { connected, publicKey, disconnect, select, wallets } = useWallet();
+  const { connected, connecting, publicKey, disconnect, select, wallets, wallet, connect } = useWallet();
   const { setVisible } = useWalletModal();
 
   if (connected && publicKey) {
@@ -43,11 +43,19 @@ function SolanaConnectButton() {
     );
   }
 
-  const handleConnect = () => {
-    // If Phantom is available, try connecting directly
+  const handleConnect = async () => {
+    // If Phantom is available, select it then connect
     const phantom = wallets.find(w => w.adapter.name === 'Phantom');
     if (phantom) {
-      select(phantom.adapter.name);
+      try {
+        select(phantom.adapter.name);
+        // Give the adapter a tick to register, then force connect
+        await new Promise(r => setTimeout(r, 100));
+        await phantom.adapter.connect();
+      } catch (e: any) {
+        // User rejected or already connected
+        if (!e?.message?.includes('rejected')) console.warn('[Bridge] Phantom connect:', e);
+      }
       return;
     }
     // Otherwise open the modal
@@ -57,13 +65,15 @@ function SolanaConnectButton() {
   return (
     <button
       onClick={handleConnect}
+      disabled={connecting}
       style={{
         background: 'linear-gradient(135deg, #9945FF, #7B3FE4)', border: 'none', borderRadius: 8,
         padding: '12px 24px', color: '#fff', fontFamily: "'Press Start 2P', monospace",
-        fontSize: 12, cursor: 'pointer', fontWeight: 700,
+        fontSize: 12, cursor: connecting ? 'wait' : 'pointer', fontWeight: 700,
+        opacity: connecting ? 0.6 : 1,
       }}
     >
-      Connect Phantom
+      {connecting ? 'Connecting...' : 'Connect Phantom'}
     </button>
   );
 }
