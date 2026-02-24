@@ -97,6 +97,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
           color: char.color,
           buyInEth: buyIn,
           walletAddress: user?.walletAddress,
+          characterId: selectedChar,
         }, (res: any) => { clearTimeout(timeout); resolve(res); });
       });
 

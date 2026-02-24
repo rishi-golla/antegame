@@ -330,7 +330,7 @@ function AuthGate() {
   const initial = pathToScreen();
   const [screen, setScreen] = useState<Screen>(initial.screen);
   const [pendingRoomCode, setPendingRoomCode] = useState<string | undefined>(initial.roomCode);
-  const [freePlayConfig, setFreePlayConfig] = useState<{ names: string[]; sprites: string[]; colors: string[] } | null>(null);
+  const [freePlayConfig, setFreePlayConfig] = useState<{ names: string[]; sprites: string[]; colors: string[]; characterIds: string[] } | null>(null);
   const suppressPushRef = useRef(false);
 
   // Push browser history on screen change
@@ -385,8 +385,8 @@ function AuthGate() {
     case 'free-play-setup':
       return (
         <GameSetup
-          onStart={(names, sprites, colors) => {
-            setFreePlayConfig({ names, sprites, colors });
+          onStart={(names, sprites, colors, characterIds) => {
+            setFreePlayConfig({ names, sprites, colors, characterIds });
             navigate('free-play-game');
           }}
         />
@@ -399,7 +399,7 @@ function AuthGate() {
         return null;
       }
       return (
-        <GameProvider playerNames={freePlayConfig.names} playerSprites={freePlayConfig.sprites} playerColors={freePlayConfig.colors}>
+        <GameProvider playerNames={freePlayConfig.names} playerSprites={freePlayConfig.sprites} playerColors={freePlayConfig.colors} playerCharacterIds={freePlayConfig.characterIds}>
           <FreePlayScreen onPlayAgain={() => navigate('menu')} />
         </GameProvider>
       );

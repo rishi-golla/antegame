@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { CHARACTERS, type CharacterDef } from '@/lib/assetMap';
 
 interface GameSetupProps {
-  onStart: (names: string[], sprites: string[], colors: string[]) => void;
+  onStart: (names: string[], sprites: string[], colors: string[], characterIds: string[]) => void;
 }
 
 interface PlayerSetup {
@@ -54,7 +54,8 @@ export default function GameSetup({ onStart }: GameSetupProps) {
       const char = CHARACTERS.find((c) => c.id === p.characterId);
       return char?.color ?? ['#ff6b6b', '#5cd6c0', '#ffd166', '#8fb8ff', '#c084fc', '#fb923c'][0];
     });
-    onStart(finalNames, finalSprites, finalColors);
+    const finalCharacterIds = activePlayers.map((p) => p.characterId ?? '');
+    onStart(finalNames, finalSprites, finalColors, finalCharacterIds);
   };
 
   const [activePlayerTab, setActivePlayerTab] = useState(0);

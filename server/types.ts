@@ -73,7 +73,7 @@ export interface ClientToServerEvents {
   'game:pay-rent': () => void;
   'game:minigame-action': (data: any) => void;
   'chat:send': (data: { text: string }) => void;
-  'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
+  'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number; characterId?: string }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
   'room:deposit': (data: { txSignature: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
   'room:base-deposit': (data: { txHash: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
 }

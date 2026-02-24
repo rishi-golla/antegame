@@ -72,6 +72,7 @@ export const quickPlayBaseSchema = z.object({
   color: z.string().min(1).max(20),
   buyInEth: z.string().min(1).max(20),
   walletAddress: z.string().max(100),
+  characterId: z.string().optional(),
 });
 
 export const validateJoinSchema = z.object({
@@ -84,4 +85,5 @@ export const quickPlaySchema = z.object({
   color: z.string().min(1).max(20),
   entryFeeLamports: z.number().int().min(0),
   walletAddress: z.string().max(100),
+  characterId: z.string().optional(),
 });

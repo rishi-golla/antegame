@@ -169,7 +169,7 @@ export default function SafeCracker({ onResult, baseAmount, context, spectator =
       setCracked(true);
       endedRef.current = true;
       setGameEnded(true);
-      setTimeout(() => onResult(ca <= 2 ? 'win' : ca === 3 ? 'close-win' : 'close-loss'), 1500);
+      setTimeout(() => onResult(ca <= 2 ? 'win' : 'close-win'), 1500);
     } else if (ca >= 4) {
       endedRef.current = true;
       setGameEnded(true);

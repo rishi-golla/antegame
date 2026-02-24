@@ -86,6 +86,7 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
         const result = await createRoom(playerName, char.color, maxPlayers, {
           walletAddress: user?.walletAddress,
           buyInEth: buyIn,
+          characterId: selectedChar,
         });
         if (!result.ok || !result.code) {
           setError(result.error ?? 'Failed to create room');
@@ -136,7 +137,7 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
         onCreated();
       } else {
         // Non-Base flow (Solana or free play)
-        const result = await createRoom(playerName, char.color, maxPlayers);
+        const result = await createRoom(playerName, char.color, maxPlayers, { characterId: selectedChar });
         if (result.ok) {
           onCreated();
         } else {

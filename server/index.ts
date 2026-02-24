@@ -1272,7 +1272,7 @@ nextApp.prepare().then(() => {
     });
 
     // Quick Play
-    (socket as any).on('room:quick-play-base', (data: { name: string; color: string; buyInEth: string; walletAddress: string }, cb: (res: any) => void) => {
+    (socket as any).on('room:quick-play-base', (data: { name: string; color: string; buyInEth: string; walletAddress: string; characterId?: string }, cb: (res: any) => void) => {
       const qpParsed = quickPlayBaseSchema.safeParse(data);
       if (!qpParsed.success) { cb({ ok: false, error: 'Invalid input' }); return; }
       const existing = rm.findQuickPlayRoomByEth(qpParsed.data.buyInEth);
@@ -1284,6 +1284,7 @@ nextApp.prepare().then(() => {
         }
         const joinResult = rm.joinRoom(existing.code, socket.id, qpParsed.data.name, qpParsed.data.color, {
           walletAddress: qpParsed.data.walletAddress,
+          characterId: qpParsed.data.characterId,
         });
         if (joinResult.ok) {
           socket.join(existing.code);
@@ -1297,7 +1298,7 @@ nextApp.prepare().then(() => {
           cb(joinResult);
         }
       } else {
-        const result = rm.createQuickPlayRoomBase(socket.id, qpParsed.data.name, qpParsed.data.color, qpParsed.data.buyInEth, qpParsed.data.walletAddress);
+        const result = rm.createQuickPlayRoomBase(socket.id, qpParsed.data.name, qpParsed.data.color, qpParsed.data.buyInEth, qpParsed.data.walletAddress, qpParsed.data.characterId);
         if (result.ok && result.code) {
           socket.join(result.code);
           broadcastRoomState(result.code);
@@ -1311,10 +1312,11 @@ nextApp.prepare().then(() => {
     socket.on('room:quick-play', (data, cb) => {
       const existing = rm.findQuickPlayRoom(data.entryFeeLamports);
       if (existing) {
-        const joinResult = rm.joinRoom(existing.code, socket.id, data.name, data.color);
+        const joinResult = rm.joinRoom(existing.code, socket.id, data.name, data.color, {
+          walletAddress: data.walletAddress,
+          characterId: data.characterId,
+        });
         if (joinResult.ok) {
-          const player = rm.getPlayerInRoom(existing.code, socket.id);
-          if (player) player.walletAddress = data.walletAddress;
           socket.join(existing.code);
           const room = rm.getRoom(existing.code);
           if (room) socket.emit('chat:history', room.chatHistory);
@@ -1330,7 +1332,7 @@ nextApp.prepare().then(() => {
           cb(joinResult);
         }
       } else {
-        const result = rm.createQuickPlayRoom(socket.id, data.name, data.color, data.entryFeeLamports, data.walletAddress);
+        const result = rm.createQuickPlayRoom(socket.id, data.name, data.color, data.entryFeeLamports, data.walletAddress, data.characterId);
         if (result.ok && result.code) {
           socket.join(result.code);
           broadcastRoomState(result.code);

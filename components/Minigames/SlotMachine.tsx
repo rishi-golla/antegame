@@ -113,16 +113,8 @@ export default function SlotMachine({ onResult, baseAmount, context, spectator =
     if (r1 === 'skull' && r2 === 'skull' && r3 === 'skull') { onResult('catastrophic'); return; }
     if (r1 === r2 && r2 === r3) { setJackpot(true); onResult('win'); return; }
 
-    const idx = (s: SlotSymbol) => SYMBOLS.indexOf(s);
-    if (r1 === r2) {
-      const d = Math.abs(idx(r2) - idx(r3));
-      if (d === 1 || d === SYMBOL_COUNT - 1) { onResult('close-win'); return; }
-    }
-    if (r2 === r3) {
-      const d = Math.abs(idx(r1) - idx(r2));
-      if (d === 1 || d === SYMBOL_COUNT - 1) { onResult('close-win'); return; }
-    }
-    if (r1 === r2 || r2 === r3 || r1 === r3) { onResult('close-loss'); return; }
+    // Two matching reels = close-win (player was close to a triple)
+    if (r1 === r2 || r2 === r3 || r1 === r3) { onResult('close-win'); return; }
     onResult('loss');
   }, [onResult]);
 

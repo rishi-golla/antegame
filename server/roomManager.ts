@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import type { Room, ServerPlayer, ChatMessage } from './types';
 import { createGame } from '@/lib/gameEngine';
+import { CHARACTERS } from '@/lib/assetMap';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -161,10 +162,13 @@ export class RoomManager {
     const names = room.players.map((p) => p.name);
     const gameState = createGame(names);
 
-    // Apply player colors and character IDs from lobby
+    // Apply player colors, character IDs, and sprites from lobby
     gameState.players.forEach((gp, i) => {
+      const charId = room.players[i].characterId;
       gp.color = room.players[i].color;
-      gp.characterId = room.players[i].characterId;
+      gp.characterId = charId;
+      const char = CHARACTERS.find((c) => c.id === charId);
+      if (char) gp.sprite = char.sprite;
     });
 
     room.gameState = gameState;
@@ -271,9 +275,10 @@ export class RoomManager {
     name: string,
     color: string,
     entryFeeLamports: number,
-    walletAddress: string
+    walletAddress: string,
+    characterId?: string
   ): { ok: boolean; code?: string; error?: string } {
-    const result = this.createRoom(socketId, name, color, 4);
+    const result = this.createRoom(socketId, name, color, 4, { characterId });
     if (result.ok && result.code) {
       const room = this.rooms.get(result.code)!;
       room.isQuickPlay = true;
@@ -290,9 +295,10 @@ export class RoomManager {
     name: string,
     color: string,
     buyInEth: string,
-    walletAddress: string
+    walletAddress: string,
+    characterId?: string
   ): { ok: boolean; code?: string; error?: string } {
-    const result = this.createRoom(socketId, name, color, 6);
+    const result = this.createRoom(socketId, name, color, 6, { characterId });
     if (result.ok && result.code) {
       const room = this.rooms.get(result.code)!;
       room.isQuickPlay = true;

@@ -560,6 +560,9 @@ export function attemptJailEscape(
 ): GameState {
   const player = currentPlayer(state);
 
+  // Guard: ignore if player isn't actually in jail (prevents double-dispatch issues)
+  if (!player.inJail) return state;
+
   if (method === 'bail') {
     if (player.money < JAIL_BAIL) {
       return addLog(state, `${player.name} cannot afford bail ($${JAIL_BAIL}).`, state.currentPlayerIndex);

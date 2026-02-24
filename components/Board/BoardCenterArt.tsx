@@ -527,7 +527,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       {/* Jail escape options */}
       {state.phase === 'in-jail' && !isRolling && !isAnimating && (
         <div className="jailActions">
-          <button className="jailBtn" onClick={() => { play('sfx/collect-money'); dispatch({ type: 'JAIL_ESCAPE', method: 'bail' }); }}>
+          <button className="jailBtn" disabled={player.money < 50} onClick={() => { play('sfx/collect-money'); dispatch({ type: 'JAIL_ESCAPE', method: 'bail' }); }}>
             Pay $50 Bail
           </button>
           {player.getOutOfJailCards > 0 && (

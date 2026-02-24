@@ -135,6 +135,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         // Step 4: On-chain deposit CONFIRMED — now join the server room
         const result = await joinRoom(roomCode, playerName, char.color, {
           walletAddress: user?.walletAddress,
+          characterId: selectedChar,
         });
         if (!result.ok) {
           setError(result.error ?? 'Failed to join room');
@@ -151,7 +152,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         onJoined();
       } else {
         // Non-Base flow (Solana or free play)
-        const result = await joinRoom(roomCode, playerName, char.color);
+        const result = await joinRoom(roomCode, playerName, char.color, { characterId: selectedChar });
         if (result.ok) {
           onJoined();
         } else {

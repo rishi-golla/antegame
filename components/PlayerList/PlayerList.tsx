@@ -10,7 +10,7 @@ import { COLOR_GROUPS, RAILROAD_INDICES, UTILITY_INDICES } from '@/lib/gameData'
 import AssetsModal from '@/components/PropertyCard/AssetsModal';
 
 const TOTAL_PURCHASABLE = 28; // 22 properties + 4 railroads + 2 utilities
-const SUIT_SYMBOLS = ['♠', '♥', '♣', '♦'];
+const SUIT_SYMBOLS = ['♠', '♥', '♣', '♦'] as const;
 
 interface PlayerListProps {
   onTrade?: (playerIndex: number) => void;
@@ -92,9 +92,11 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
     prevPlayerRef.current = state.currentPlayerIndex;
   }, [state.players, state.phase, state.currentPlayerIndex, state.activeMinigame]);
 
-  // Compute net worths for bar proportions
+  // Compute net worths for bar proportions.
+  // Use ratio to max so the bars honestly represent proportional wealth.
   const allWorths = state.players.map(p => getNetWorth(state, p.id));
-  const maxWorth = Math.max(...allWorths, 1);
+  const maxWorth = Math.max(...allWorths.filter((_, i) => !state.players[i].bankrupt), 1);
+  const showSuits = state.players.length <= 4;
 
   // Helper: money color
   const getMoneyColor = (amount: number) => {
@@ -158,7 +160,7 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
           return (
             <li
               key={player.id}
-              data-suit={SUIT_SYMBOLS[player.id % 4]}
+              data-suit={showSuits ? SUIT_SYMBOLS[player.id % 4] : undefined}
               className={`vipBadge ${isActive ? 'activePlayer vipActive' : ''} ${player.bankrupt ? 'bankruptPlayer vipBankrupt' : ''} ${!player.bankrupt ? 'clickablePlayer' : ''} ${dangerClass}`}
               style={{
                 background: `radial-gradient(circle at 15% 15%, ${player.color}0F, transparent 70%), linear-gradient(135deg, #1a0f0f, #2a0f1f)`,
@@ -256,9 +258,17 @@ export default function PlayerList({ onTrade, myPlayerIndex = null }: PlayerList
                 )}
               </div>
               {/* Net worth bar */}
-              <div className="vipNetBar">
-                <div className="vipNetBarFill" style={{ width: `${worthPct}%` }} />
-              </div>
+              {!player.bankrupt && (
+                <div className="vipNetBar">
+                  <div
+                    className="vipNetBarFill"
+                    style={{
+                      width: `${worthPct}%`,
+                      background: `linear-gradient(90deg, ${player.color}CC, ${player.color})`,
+                    }}
+                  />
+                </div>
+              )}
             </li>
           );
         });

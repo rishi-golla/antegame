@@ -27,8 +27,8 @@ interface SocketContextValue {
   turnTimer: { remaining: number; total: number } | null;
   minigameServerResult: MinigameServerResult | null;
   clearMinigameServerResult: () => void;
-  createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
-  joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; error?: string }>;
+  createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
+  joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string; characterId?: string }) => Promise<{ ok: boolean; error?: string }>;
   leaveRoom: () => void;
   toggleReady: () => void;
   startGame: () => Promise<{ ok: boolean; error?: string }>;
@@ -105,7 +105,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createRoom = useCallback(
-    (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }) => {
+    (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }) => {
       return new Promise<{ ok: boolean; code?: string; error?: string }>((resolve) => {
         const socket = getSocket();
         socket.emit('room:create', { name, color, maxPlayers, ...opts }, (res) => {
@@ -117,7 +117,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   );
 
   const joinRoom = useCallback(
-    (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string }) => {
+    (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string; characterId?: string }) => {
       return new Promise<{ ok: boolean; error?: string }>((resolve) => {
         const socket = getSocket();
         socket.emit('room:join', { code, name, color, ...opts }, (res) => {
@@ -192,7 +192,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         const walletAddress = (window as any).__monopolyWallet ?? '';
         const name = (window as any).__monopolyName ?? 'Player';
         const color = (window as any).__monopolyColor ?? '#ff6b6b';
-        socket.emit('room:quick-play', { walletAddress, name, color, entryFeeLamports }, (res) => {
+        const characterId = (window as any).__monopolyCharacterId ?? '';
+        socket.emit('room:quick-play', { walletAddress, name, color, entryFeeLamports, characterId }, (res) => {
           resolve(res);
         });
       });
