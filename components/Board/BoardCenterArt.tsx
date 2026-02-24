@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
+import { useSocket } from '@/context/SocketContext';
 import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
 import MinigameOverlay, { preloadAllMinigameBackgrounds } from '@/components/Minigames/MinigameOverlay';
 import CardDrawOverlay from '@/components/Board/CardDrawOverlay';
@@ -18,6 +19,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   const { state, dispatch } = useGame();
   const { play } = useAudio();
   const { isMyTurn } = useMultiplayerTurn();
+  const { roomState } = useSocket();
+  const isMultiplayer = !!roomState;
 
   // Block actions while turn announcement is playing
   const [turnAnnouncing, setTurnAnnouncing] = useState(false);
@@ -70,34 +73,181 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   }, [state.phase, isAnimating, dispatch]);
 
   // Auto-advance turn-end (server handles this for multiplayer;
-  // for free-play/local, auto-advance after 2.5s)
+  // for free-play/local, auto-advance after 2.5s — or instantly if idle-chaining)
   const turnEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleAutoPlayingRef = useRef(false);
   useEffect(() => {
-    if (state.phase === 'turn-end') {
+    if (state.phase === 'turn-end' && !isMultiplayer) {
+      const delay = idleAutoPlayingRef.current ? 200 : 2500;
       turnEndTimerRef.current = setTimeout(() => {
-        play('sfx/turn-start');
+        if (!idleAutoPlayingRef.current) play('sfx/turn-start');
         dispatch({ type: 'END_TURN' });
-      }, 2500);
+      }, delay);
     }
     return () => {
       if (turnEndTimerRef.current) clearTimeout(turnEndTimerRef.current);
     };
-  }, [state.phase, dispatch, play]);
+  }, [state.phase, dispatch, play, isMultiplayer]);
   const player = state.players[state.currentPlayerIndex];
-  const disabled = isRolling || isAnimating || turnAnnouncing || state.phase === 'game-over';
+  const disabled = isRolling || isAnimating || turnAnnouncing || state.phase === 'game-over' || idleAutoPlayingRef.current;
 
   // Countdown timer config per phase
-  // Server bankrupts idle players after 45s — show visual countdown
-  // Timer resets each time the player changes (server restarts its timer on actions)
+  // Timer resets each time the player or phase changes
   const timerDuration = (state.phase !== 'game-over' && state.phase !== 'minigame') ? 45 : 0;
   const showTimer = timerDuration > 0 && !isRolling && !isAnimating && !turnAnnouncing;
-  const timerResetKey = `${state.currentPlayerIndex}-${state.roundNumber}`;
+  const timerResetKey = `${state.currentPlayerIndex}-${state.phase}-${state.roundNumber}`;
+
+  // === FREE PLAY IDLE SYSTEM ===
+  // Timestamp-based: tracks when the current phase started, fires after deadline.
+  // Once a player gets a warning, subsequent phases auto-play instantly
+  // so the entire turn resolves quickly instead of dragging across multiple timeouts.
+  const MAX_IDLE_WARNINGS = 3;
+  const IDLE_TIMEOUT_MS = 45_000;
+  const idleWarningsRef = useRef<number[]>([]);  // warnings[playerIndex] = count
+  const idleDeadlineRef = useRef(Date.now() + IDLE_TIMEOUT_MS);
+  const idlePhaseKeyRef = useRef('');
+  // idleAutoPlayingRef is declared above (near turnEndTimerRef) so turn-end can use it
+  const [idleWarningBanner, setIdleWarningBanner] = useState<string | null>(null);
+
+  // Reset idle deadline whenever the game phase or player changes
+  useEffect(() => {
+    const key = `${state.currentPlayerIndex}:${state.phase}`;
+    if (idlePhaseKeyRef.current !== key) {
+      const prevPlayer = idlePhaseKeyRef.current.split(':')[0];
+      const newPlayer = String(state.currentPlayerIndex);
+      idlePhaseKeyRef.current = key;
+
+      if (prevPlayer !== newPlayer) {
+        // Player changed — stop auto-chain, give full 45s
+        idleAutoPlayingRef.current = false;
+        idleDeadlineRef.current = Date.now() + IDLE_TIMEOUT_MS;
+      } else if (idleAutoPlayingRef.current) {
+        // Same player, mid-auto-chain — instant deadline so next interval tick auto-plays
+        idleDeadlineRef.current = 0;
+      } else {
+        // Same player, new phase, not auto-chaining — full 45s
+        idleDeadlineRef.current = Date.now() + IDLE_TIMEOUT_MS;
+      }
+    }
+  }, [state.currentPlayerIndex, state.phase]);
+
+  // Refs for stable access inside the interval
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
+
+  useEffect(() => {
+    if (isMultiplayer) return;
+
+    // Initialize warning array for all players
+    const s = stateRef.current;
+    if (idleWarningsRef.current.length !== s.players.length) {
+      idleWarningsRef.current = new Array(s.players.length).fill(0);
+    }
+
+    const interval = setInterval(() => {
+      const s = stateRef.current;
+      const skippedPhases = ['game-over', 'turn-end', 'minigame', 'trading'];
+      if (skippedPhases.includes(s.phase)) return;
+
+      if (Date.now() < idleDeadlineRef.current) return;
+
+      // Deadline reached — player is idle
+      const playerIdx = s.currentPlayerIndex;
+      const p = s.players[playerIdx];
+      if (p.bankrupt) return;
+
+      // Ensure array is big enough
+      while (idleWarningsRef.current.length <= playerIdx) {
+        idleWarningsRef.current.push(0);
+      }
+
+      // Only increment the warning counter on the FIRST timeout of this idle stretch
+      // (when not already auto-chaining). Follow-up auto-plays in the same turn don't
+      // count as additional warnings — they're just finishing the turn.
+      const isChaining = idleAutoPlayingRef.current;
+      let newCount = idleWarningsRef.current[playerIdx];
+      if (!isChaining) {
+        newCount += 1;
+        idleWarningsRef.current[playerIdx] = newCount;
+      }
+
+      // Mark that we're auto-playing this player's turn
+      idleAutoPlayingRef.current = true;
+
+      // Push deadline to 0 so the next interval tick auto-plays the next phase instantly
+      idleDeadlineRef.current = 0;
+
+      if (!isChaining) {
+        console.warn(`[idle] ${p.name} timed out in "${s.phase}" — strike ${newCount}/${MAX_IDLE_WARNINGS}`);
+      }
+
+      if (newCount > MAX_IDLE_WARNINGS) {
+        // Strike 4+: forced bankruptcy
+        idleWarningsRef.current[playerIdx] = 0;
+        idleAutoPlayingRef.current = false;
+        dispatchRef.current({ type: 'SYSTEM_LOG', message: `${p.name} was bankrupted for being idle! (${MAX_IDLE_WARNINGS} warnings exceeded)`, playerIndex: playerIdx });
+        setIdleWarningBanner(`${p.name} was bankrupted for being idle!`);
+        setTimeout(() => setIdleWarningBanner(null), 3000);
+        dispatchRef.current({ type: 'BANKRUPTCY' });
+        return;
+      }
+
+      // Auto-play the current phase
+      const phase = s.phase;
+      switch (phase) {
+        case 'rolling':
+          dispatchRef.current({ type: 'ROLL' });
+          break;
+        case 'buying':
+          dispatchRef.current({ type: 'DECLINE' });
+          break;
+        case 'paying-rent':
+          dispatchRef.current({ type: 'PAY_RENT' });
+          break;
+        case 'drawing-card':
+          // Card flow is 3 steps: DRAW_CARD → APPLY_CARD → RESOLVE_CARD
+          // drawCard() keeps phase as 'drawing-card' but sets drawnCard
+          if (s.drawnCard) {
+            dispatchRef.current({ type: 'APPLY_CARD' });
+          } else {
+            dispatchRef.current({ type: 'DRAW_CARD' });
+          }
+          break;
+        case 'applying-card':
+          dispatchRef.current({ type: 'RESOLVE_CARD' });
+          break;
+        case 'in-jail':
+          dispatchRef.current({ type: 'JAIL_ESCAPE', method: 'roll' });
+          break;
+        case 'in-debt':
+          dispatchRef.current({ type: 'BANKRUPTCY' });
+          break;
+        default:
+          break;
+      }
+
+      // Only show warning banner/log on the initial timeout, not on follow-up chain actions
+      if (!isChaining) {
+        const bannerMsg = newCount === MAX_IDLE_WARNINGS
+          ? `FINAL WARNING for ${p.name}! Next idle timeout = bankruptcy.`
+          : `${p.name} was idle — auto-action taken. Warning ${newCount}/${MAX_IDLE_WARNINGS}.`;
+        const logMsg = newCount === MAX_IDLE_WARNINGS
+          ? `FINAL WARNING: ${p.name} was idle (${newCount}/${MAX_IDLE_WARNINGS}). Next timeout = forced bankruptcy!`
+          : `${p.name} was idle — auto-action taken. Warning ${newCount}/${MAX_IDLE_WARNINGS}.`;
+
+        dispatchRef.current({ type: 'SYSTEM_LOG', message: logMsg, playerIndex: playerIdx });
+        setIdleWarningBanner(bannerMsg);
+        setTimeout(() => setIdleWarningBanner(null), 4000);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isMultiplayer]);
 
   const handleTimerExpire = () => {
-    // Client timer is visual only — server handles idle bankruptcy after 45s
-    // No auto-play actions; idle players get bankrupted by the server
-    if (false) {
-    }
+    // Timer expiry is handled by the idle system above — this is just visual
   };
 
   const handleMainAction = () => {
@@ -387,6 +537,36 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
           )}
         </div>
       )}
+
+      {/* Idle warning banner */}
+      {idleWarningBanner && (
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: idleWarningBanner.includes('bankrupted') ? 'rgba(220,38,38,0.95)' : 'rgba(245,158,11,0.95)',
+          color: '#fff',
+          padding: '8px 16px',
+          borderRadius: 8,
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          fontFamily: 'Nunito, sans-serif',
+          textAlign: 'center',
+          zIndex: 100,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          animation: 'idleBannerIn 0.3s ease-out',
+        }}>
+          {idleWarningBanner}
+        </div>
+      )}
+      <style>{`
+        @keyframes idleBannerIn {
+          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

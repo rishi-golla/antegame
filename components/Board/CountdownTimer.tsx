@@ -23,7 +23,7 @@ export default function CountdownTimer({ duration, onExpire, resetKey }: Countdo
   const serverTotal = turnTimer ? Math.ceil(turnTimer.total / 1000) : null;
   const [remaining, setRemaining] = useState(duration);
 
-  // Sync with server timer ticks
+  // Sync with server timer ticks (multiplayer)
   useEffect(() => {
     if (serverSeconds !== null) {
       setRemaining(serverSeconds);
@@ -34,10 +34,28 @@ export default function CountdownTimer({ duration, onExpire, resetKey }: Countdo
     }
   }, [serverSeconds]);
 
-  // Reset expired flag when resetKey changes
+  // Local countdown fallback (free play — no server timer)
+  useEffect(() => {
+    if (serverSeconds !== null) return; // server is driving the timer
+    setRemaining(duration);
+    const interval = setInterval(() => {
+      setRemaining((prev) => {
+        const next = prev - 1;
+        if (next <= 0 && !expiredRef.current) {
+          expiredRef.current = true;
+          setTimeout(() => onExpireRef.current(), 0);
+        }
+        return Math.max(0, next);
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resetKey, duration, serverSeconds]);
+
+  // Reset expired flag and remaining when resetKey changes
   useEffect(() => {
     expiredRef.current = false;
-  }, [resetKey]);
+    setRemaining(duration);
+  }, [resetKey, duration]);
 
   const radius = 18;
   const circumference = 2 * Math.PI * radius;

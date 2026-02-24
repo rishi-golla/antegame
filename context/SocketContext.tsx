@@ -13,12 +13,20 @@ import type { RoomClientState, ChatMessage } from '@/server/types';
 import type { GameState } from '@/types/game';
 import type { Socket } from 'socket.io-client';
 
+interface MinigameServerResult {
+  tier: import('@/types/game').MinigameTier;
+  secret: any;
+  commitHash: string;
+}
+
 interface SocketContextValue {
   connected: boolean;
   roomState: RoomClientState | null;
   gameState: GameState | null;
   chatMessages: ChatMessage[];
   turnTimer: { remaining: number; total: number } | null;
+  minigameServerResult: MinigameServerResult | null;
+  clearMinigameServerResult: () => void;
   createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
   joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string }) => Promise<{ ok: boolean; error?: string }>;
   leaveRoom: () => void;
@@ -45,6 +53,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [turnTimer, setTurnTimer] = useState<{ remaining: number; total: number } | null>(null);
   const [pendingRefund, setPendingRefund] = useState<{ nonce: string; signature: string; gameId: string; roomCode: string } | null>(null);
   const clearPendingRefund = useCallback(() => setPendingRefund(null), []);
+  const [minigameServerResult, setMinigameServerResult] = useState<MinigameServerResult | null>(null);
+  const clearMinigameServerResult = useCallback(() => setMinigameServerResult(null), []);
 
   useEffect(() => {
     const socket = getSocket();
@@ -76,6 +86,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setPendingRefund(data);
     });
 
+    socket.on('game:minigame-server-result' as any, (data: MinigameServerResult) => {
+      setMinigameServerResult(data);
+    });
+
     return () => {
       socket.off('connect');
       socket.off('disconnect');
@@ -84,7 +98,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off('chat:message');
       socket.off('chat:history');
       socket.off('turn:timer');
-      socket.off('game:cancellation:signature');
+      socket.off('game:cancellation:signature' as any);
+      socket.off('game:minigame-server-result' as any);
       disconnectSocket();
     };
   }, []);
@@ -259,6 +274,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         sendDeposit,
         pendingRefund,
         clearPendingRefund,
+        minigameServerResult,
+        clearMinigameServerResult,
         rawSocket: getSocket(),
       }}
     >
@@ -288,6 +305,8 @@ const FALLBACK: SocketContextValue = {
   sendDeposit: noopAsync as any,
   pendingRefund: null,
   clearPendingRefund: noop,
+  minigameServerResult: null,
+  clearMinigameServerResult: noop,
   rawSocket: null,
 };
 

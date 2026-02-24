@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
+import { useSocket } from '@/context/SocketContext';
 import type { MinigameTier } from '@/types/game';
+import { getBuffModifier } from '@/lib/buffs';
 import MinigameResult from './MinigameResult';
 import CountdownTimer from '@/components/Board/CountdownTimer';
 import SlotMachine from './SlotMachine';
@@ -70,12 +72,21 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const [curtainOpen, setCurtainOpen] = useState(false);
   const [resultLocked, setResultLocked] = useState(false);
   const { isMyTurn } = useMultiplayerTurn();
+  const { minigameServerResult, clearMinigameServerResult, roomState } = useSocket();
+  const isMultiplayer = !!roomState;
 
   const [bgReady, setBgReady] = useState(false);
   const bgCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const minigame = state.activeMinigame;
   const currentPlayerName = state.players[state.currentPlayerIndex]?.name || 'Player';
+  const currentPlayerMinigameBoost = getBuffModifier(state.players[state.currentPlayerIndex], 'minigame-boost');
+
+  // Persist minigame data so the result overlay can display after activeMinigame is cleared
+  const savedMinigameRef = useRef(minigame);
+  if (minigame) {
+    savedMinigameRef.current = minigame;
+  }
 
   // Preload all backgrounds on first mount & check active minigame bg
   useEffect(() => {
@@ -104,18 +115,52 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     return () => { if (bgCheckRef.current) clearInterval(bgCheckRef.current); };
   }, [minigame?.id]);
 
+  // Reset state when a new minigame starts
   useEffect(() => {
     if (minigame?.status === 'intro') {
       playMusic('music/bgm-minigame');
+      setResultLocked(false);
+      setResultTier(null);
+      setShowResult(false);
+      clearMinigameServerResult();
       setTimeout(() => setCurtainOpen(true), 100);
       const timer = setTimeout(() => {
         setShowIntro(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [minigame?.status, playMusic]);
+  }, [minigame?.status, playMusic, clearMinigameServerResult]);
 
-  if (!minigame) return null;
+  // In multiplayer, show result overlay once we receive the server-authoritative tier
+  useEffect(() => {
+    if (!isMultiplayer || !resultLocked || showResult) return;
+
+    if (minigameServerResult) {
+      const serverTier = minigameServerResult.tier;
+      setResultTier(serverTier);
+      setShowResult(true);
+
+      if (serverTier === 'win') play('minigames/tier-win');
+      else if (serverTier === 'close-win') play('minigames/tier-close-win');
+      else if (serverTier === 'close-loss') play('minigames/tier-close-loss');
+      else if (serverTier === 'loss') play('minigames/tier-loss');
+      else if (serverTier === 'catastrophic') play('minigames/tier-catastrophic');
+      return;
+    }
+
+    // Fallback: if server result doesn't arrive in 3s, show client tier
+    const timeout = setTimeout(() => {
+      if (resultTier && !showResult) {
+        setShowResult(true);
+      }
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [isMultiplayer, minigameServerResult, resultLocked, showResult, resultTier, play]);
+
+  // Keep overlay visible while result is showing, even after activeMinigame is cleared
+  if (!minigame && !showResult && !resultLocked) return null;
+  const displayMinigame = minigame ?? savedMinigameRef.current;
+  if (!displayMinigame) return null;
 
   // Show loading screen while background image loads
   if (!bgReady) {
@@ -165,24 +210,41 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     );
   }
 
-  const handleResult = (tier: MinigameTier) => {
+  const handleResult = (clientTier: MinigameTier) => {
     // Prevent double-result from timeout + game completion race
     if (resultLocked) return;
     setResultLocked(true);
-    setResultTier(tier);
+
+    // In multiplayer, the client sends its result to the server, which responds
+    // with the authoritative tier. We dispatch MINIGAME_RESULT to trigger the
+    // server round-trip, then wait for minigameServerResult before showing UI.
+    if (isMultiplayer) {
+      // Dispatch sends game:minigame-result to server; store client tier as pending
+      setResultTier(clientTier);
+      dispatch({ type: 'MINIGAME_RESULT', tier: clientTier });
+      return;
+    }
+
+    // Free play: use the client tier directly
+    setResultTier(clientTier);
     setShowResult(true);
-    
-    if (tier === 'win') play('minigames/tier-win');
-    else if (tier === 'close-win') play('minigames/tier-close-win');
-    else if (tier === 'close-loss') play('minigames/tier-close-loss');
-    else if (tier === 'loss') play('minigames/tier-loss');
-    else if (tier === 'catastrophic') play('minigames/tier-catastrophic');
+
+    if (clientTier === 'win') play('minigames/tier-win');
+    else if (clientTier === 'close-win') play('minigames/tier-close-win');
+    else if (clientTier === 'close-loss') play('minigames/tier-close-loss');
+    else if (clientTier === 'loss') play('minigames/tier-loss');
+    else if (clientTier === 'catastrophic') play('minigames/tier-catastrophic');
   };
 
   const handleDismissResult = () => {
     if (resultTier) {
       playMusic('music/bgm-game');
-      dispatch({ type: 'MINIGAME_RESULT', tier: resultTier });
+      // In multiplayer, the server already resolved the game state when we
+      // dispatched MINIGAME_RESULT earlier. In free play, dispatch now.
+      if (!isMultiplayer) {
+        dispatch({ type: 'MINIGAME_RESULT', tier: resultTier });
+      }
+      clearMinigameServerResult();
       setShowResult(false);
       setResultTier(null);
     }
@@ -193,11 +255,11 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     const isSpectator = !isMyTurn;
     const props = {
       onResult: isSpectator ? noOp : handleResult,
-      baseAmount: minigame.baseAmount,
-      context: minigame.context,
+      baseAmount: displayMinigame.baseAmount,
+      context: displayMinigame.context,
       spectator: isSpectator,
     };
-    switch (minigame.id) {
+    switch (displayMinigame.id) {
       case 'slots': return <SlotMachine {...props} />;
       case 'higher-lower': return <HigherLower {...props} />;
       case 'craps': return <Craps {...props} />;
@@ -220,39 +282,45 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
 
   if (showResult && resultTier) {
     return (
-      <MinigameResult tier={resultTier} baseAmount={minigame.baseAmount} context={minigame.context} onDismiss={handleDismissResult} />
+      <MinigameResult tier={resultTier} baseAmount={displayMinigame.baseAmount} context={displayMinigame.context} onDismiss={handleDismissResult} minigameBoost={currentPlayerMinigameBoost} />
     );
   }
 
   if (showIntro) {
     return (
-      <div className={`minigameOverlay pixelOverlay mg-${minigame.id}`}>
+      <div className={`minigameOverlay pixelOverlay mg-${displayMinigame.id}`}>
         <div className={`minigameCurtain ${curtainOpen ? 'open' : ''}`}>
           <div className="curtainLeft"></div>
           <div className="curtainRight"></div>
         </div>
         <div className={`minigameIntro ${curtainOpen ? 'visible' : ''}`}>
-          <h2 className="minigameIntroTitle">{MINIGAME_NAMES[minigame.id] || minigame.id.replace('-', ' ').toUpperCase()}</h2>
-          <p className="minigameStakes">${minigame.baseAmount} on the line</p>
-          <p className="minigameContext">{minigame.context === 'buying' ? 'property purchase' : 'rent payment'}</p>
+          <h2 className="minigameIntroTitle">{MINIGAME_NAMES[displayMinigame.id] || displayMinigame.id.replace('-', ' ').toUpperCase()}</h2>
+          <p className="minigameStakes">${displayMinigame.baseAmount} on the line</p>
+          <p className="minigameContext">{displayMinigame.context === 'buying' ? 'property purchase' : 'rent payment'}</p>
           <div className="minigameTierInfo">
-            {minigame.context === 'buying' ? (
-              <>
-                <div className="tierRow tier-win">Win — Get it FREE!</div>
-                <div className="tierRow tier-close-win">Close — Buy for ${Math.floor(minigame.baseAmount * 0.5)} (half off)</div>
-                <div className="tierRow tier-close-loss">Almost — Lose ${Math.floor(minigame.baseAmount * 1.5)}, no property</div>
-                <div className="tierRow tier-loss">Loss — Lose ${Math.floor(minigame.baseAmount * 2)}, no property</div>
-                <div className="tierRow tier-catastrophic">Disaster — Lose ${Math.floor(minigame.baseAmount * 5)}, no property</div>
-              </>
-            ) : (
-              <>
-                <div className="tierRow tier-win">Win — No rent!</div>
-                <div className="tierRow tier-close-win">Close — Pay ${Math.floor(minigame.baseAmount * 0.5)} rent</div>
-                <div className="tierRow tier-close-loss">Almost — Pay ${Math.floor(minigame.baseAmount * 1.5)} rent</div>
-                <div className="tierRow tier-loss">Loss — Pay ${Math.floor(minigame.baseAmount * 2)} rent</div>
-                <div className="tierRow tier-catastrophic">Disaster — Pay ${Math.floor(minigame.baseAmount * 5)} rent</div>
-              </>
-            )}
+            {(() => {
+              const ba = displayMinigame.baseAmount;
+              const b = currentPlayerMinigameBoost;
+              // Loss tiers get buff discount (matches server logic)
+              const disc = (amt: number) => b > 0 ? Math.floor(amt * (1 - b)) : amt;
+              return displayMinigame.context === 'buying' ? (
+                <>
+                  <div className="tierRow tier-win">Win — Get it FREE!</div>
+                  <div className="tierRow tier-close-win">Close — Buy for ${Math.floor(ba * 0.5)} (half off)</div>
+                  <div className="tierRow tier-close-loss">Almost — Lose ${disc(Math.floor(ba * 1.5))}, no property</div>
+                  <div className="tierRow tier-loss">Loss — Lose ${disc(Math.floor(ba * 2))}, no property</div>
+                  <div className="tierRow tier-catastrophic">Disaster — Lose ${disc(Math.floor(ba * 5))}, no property</div>
+                </>
+              ) : (
+                <>
+                  <div className="tierRow tier-win">Win — No rent!</div>
+                  <div className="tierRow tier-close-win">Close — Pay ${Math.floor(ba * 0.5)} rent</div>
+                  <div className="tierRow tier-close-loss">Almost — Pay ${disc(Math.floor(ba * 1.5))} rent</div>
+                  <div className="tierRow tier-loss">Loss — Pay ${disc(Math.floor(ba * 2))} rent</div>
+                  <div className="tierRow tier-catastrophic">Disaster — Pay ${disc(Math.floor(ba * 5))} rent</div>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -264,10 +332,10 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
 
   return (
     <>
-      <div className={`minigameOverlay pixelOverlay mg-${minigame.id}`}>
+      <div className={`minigameOverlay pixelOverlay mg-${displayMinigame.id}`}>
         {spectator && (
           <div className="spectatorBanner">
-            ◉ Watching {currentPlayerName}
+            Watching {currentPlayerName}
           </div>
         )}
         <div className="minigameTimerWrapper">
@@ -276,7 +344,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
             onExpire={() => {
               if (!resultLocked) handleResult('catastrophic');
             }}
-            resetKey={`minigame-${minigame.id}-${state.currentPlayerIndex}`}
+            resetKey={`minigame-${displayMinigame.id}-${state.currentPlayerIndex}`}
           />
         </div>
         <div className={spectator ? 'spectatorView' : ''}>

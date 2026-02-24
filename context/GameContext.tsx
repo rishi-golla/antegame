@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useReducer,
-  useEffect,
   type ReactNode,
   type Dispatch,
 } from 'react';
@@ -51,7 +50,8 @@ type GameAction =
   | { type: 'GAMBLE'; context: MinigameContext }
   | { type: 'MINIGAME_RESULT'; tier: MinigameTier }
   | { type: 'PAY_RENT' }
-  | { type: 'RESOLVE_DEBT' };
+  | { type: 'RESOLVE_DEBT' }
+  | { type: 'SYSTEM_LOG'; message: string; playerIndex?: number };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -99,6 +99,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return payRentNormally(state);
     case 'RESOLVE_DEBT':
       return resolveDebt(state);
+    case 'SYSTEM_LOG':
+      return {
+        ...state,
+        log: [...state.log, { message: action.message, playerIndex: action.playerIndex, timestamp: Date.now() }],
+      };
     default:
       return state;
   }
@@ -145,13 +150,9 @@ export function GameProvider({
     createGameWithSprites,
   );
 
-  // Auto-advance turn after 2.5s when turn-end phase (no doubles)
-  useEffect(() => {
-    if (state.phase === 'turn-end' && state.doublesCount === 0) {
-      const timer = setTimeout(() => dispatch({ type: 'END_TURN' }), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [state.phase, state.doublesCount]);
+  // Turn-end auto-advance is handled by BoardCenterArt (supports idle-chaining).
+  // Do NOT add a duplicate END_TURN timer here — two timers firing at ~2500ms causes
+  // a double-dispatch that bounces the turn back to the same player in 2-player games.
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

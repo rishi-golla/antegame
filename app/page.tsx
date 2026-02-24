@@ -20,7 +20,6 @@ import CreateRoom from '@/components/Lobby/CreateRoom';
 import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
 import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
-import TurnTimer from '@/components/UI/TurnTimer';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
 import LandingPage from '@/components/Landing/LandingPage';
 import ProfileSetup from '@/components/Auth/ProfileSetup';
@@ -206,7 +205,6 @@ function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; 
 
   return (
     <MultiplayerGameProvider>
-      <TurnTimer />
       <main className="gameScreen">
         <PlayerList onTrade={setTradeTarget} myPlayerIndex={myPlayerIndex} />
         <Board />
@@ -242,7 +240,6 @@ function QuickPlayFlow({ onBack }: { onBack: () => void }) {
     case 'game':
       return (
         <MultiplayerGameProvider>
-          <TurnTimer />
           <main className="gameScreen">
             <PlayerList myPlayerIndex={myPlayerIndex} />
             <Board />

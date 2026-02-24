@@ -22,9 +22,9 @@ type GameAction =
   | 'resolve-card'
   | 'resolve-debt';
 
-/** Auto-advance past turn-end when no doubles */
+/** Auto-advance past turn-end (handles both doubles and no-doubles) */
 export function autoAdvanceTurnEnd(state: GameState): GameState {
-  if (state.phase === 'turn-end' && state.doublesCount === 0) {
+  if (state.phase === 'turn-end') {
     return endTurn(state);
   }
   return state;

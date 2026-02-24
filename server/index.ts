@@ -8,7 +8,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { getSessionFromCookie, validateSession } from './auth';
 import { RoomManager } from './roomManager';
 import { applyGameAction, applyJailEscape, isCurrentPlayer, autoAdvanceTurnEnd } from './gameManager';
-import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally, endTurn, declinePurchase, drawCard, resolveCard, attemptJailEscape, rollDice, resolveLanding } from '@/lib/gameEngine';
+import { declareBankruptcy, startMinigame, resolveMinigame, payRentNormally, endTurn, declinePurchase, drawCard, applyDrawnCard, resolveCard, attemptJailEscape, rollDice, resolveLanding } from '@/lib/gameEngine';
 import { buildHouse, sellHouse, mortgageProperty, unmortgageProperty } from '@/lib/propertyActions';
 import { proposeTrade, acceptTrade, rejectTrade, cancelTrade, counterTrade } from '@/lib/trading';
 import authRouter, { sessionMiddleware } from './routes/auth';
@@ -258,6 +258,27 @@ nextApp.prepare().then(() => {
     }
   }
 
+  // Per-room per-player idle warning counters: Map<roomCode, Map<playerIndex, warningCount>>
+  // Players get 3 warnings (auto-action), 4th timeout = forced bankruptcy
+  const idleWarnings = new Map<string, Map<number, number>>();
+
+  function getIdleWarnings(code: string, playerIndex: number): number {
+    return idleWarnings.get(code)?.get(playerIndex) ?? 0;
+  }
+
+  function incrementIdleWarning(code: string, playerIndex: number): number {
+    if (!idleWarnings.has(code)) idleWarnings.set(code, new Map());
+    const roomWarnings = idleWarnings.get(code)!;
+    const current = roomWarnings.get(playerIndex) ?? 0;
+    const next = current + 1;
+    roomWarnings.set(playerIndex, next);
+    return next;
+  }
+
+  function resetIdleWarnings(code: string, playerIndex: number) {
+    idleWarnings.get(code)?.delete(playerIndex);
+  }
+
   // Cleanup stale rooms every 5 minutes
   setInterval(() => {
     const removed = rm.cleanup();
@@ -266,6 +287,7 @@ nextApp.prepare().then(() => {
       cancelQuickPlayCountdown(code);
       lastTimerState.delete(code);
       recordedRooms.delete(code);
+      idleWarnings.delete(code);
       // Clean up disconnect timers for removed rooms
       for (const [key] of disconnectTimers) {
         if (key.startsWith(`${code}:`)) clearDisconnectTimer(key);
@@ -315,81 +337,97 @@ nextApp.prepare().then(() => {
       if (player.bankrupt) return;
 
       const phase = r.gameState.phase;
-      console.log(`[turn-timer] ${player.name} timed out in phase "${phase}" — auto-advancing`);
+
+      // Non-idle phases: always handle immediately (no warning needed)
+      if (phase === 'turn-end') {
+        r.gameState = endTurn(r.gameState);
+        broadcastGameState(code);
+        if (r.gameState.phase === 'game-over') {
+          r.phase = 'finished';
+          tryRecordGameResult(r);
+          broadcastRoomState(code);
+        } else {
+          startTurnTimer(code);
+        }
+        return;
+      }
+      if (phase === 'trading') {
+        if (r.gameState.activeTradeOffer) {
+          r.gameState = cancelTrade(r.gameState);
+        }
+        broadcastGameState(code);
+        startTurnTimer(code);
+        return;
+      }
+
+      // Idle timeout: increment warning counter
+      const warnings = incrementIdleWarning(code, currentIdx);
+      const MAX_WARNINGS = 3;
+      console.log(`[turn-timer] ${player.name} timed out in phase "${phase}" — warning ${warnings}/${MAX_WARNINGS}`);
 
       try {
-        switch (phase) {
-          case 'rolling':
-            // Auto-roll for them
-            r.gameState = rollDice(r.gameState);
-            break;
-          case 'landed':
-          case 'buying':
-            // Decline purchase (or skip if not a buyable tile), end turn
-            try {
-              r.gameState = declinePurchase(r.gameState);
-            } catch { /* not buyable, just end turn */ }
-            if (r.gameState.phase !== 'turn-end' && r.gameState.phase !== 'game-over') {
-              r.gameState = { ...r.gameState, phase: 'turn-end' as any };
-            }
-            r.gameState = autoAdvanceTurnEnd(r.gameState);
-            break;
-          case 'paying-rent':
-            // Force pay rent
-            r.gameState = autoAdvanceTurnEnd(payRentNormally(r.gameState));
-            break;
-          case 'drawing-card':
-          case 'applying-card': {
-            // Draw + apply card, then end turn
-            if (!r.gameState.drawnCard) {
-              r.gameState = drawCard(r.gameState);
-            }
-            r.gameState = resolveCard(r.gameState);
-            r.gameState = autoAdvanceTurnEnd(r.gameState);
-            break;
-          }
-          case 'in-jail':
-            // Auto-attempt roll to escape
-            r.gameState = attemptJailEscape(r.gameState, 'roll');
-            r.gameState = autoAdvanceTurnEnd(r.gameState);
-            break;
-          case 'in-debt':
-            // Can't resolve debt in time — bankrupt
-            r.gameState = declareBankruptcy(r.gameState, currentIdx);
-            if (r.gameState.phase !== 'game-over') {
-              r.gameState = endTurn(r.gameState);
-            }
-            break;
-          case 'turn-end':
-            // Just end the turn
+        if (warnings > MAX_WARNINGS) {
+          // 4th timeout: forced bankruptcy
+          console.log(`[turn-timer] ${player.name} exceeded ${MAX_WARNINGS} warnings — declaring bankruptcy`);
+          const bankruptMsg = `${player.name} was bankrupted for being idle (${MAX_WARNINGS} warnings exceeded).`;
+          r.gameState = declareBankruptcy(r.gameState, currentIdx);
+          r.gameState = { ...r.gameState, log: [...r.gameState.log, { message: bankruptMsg, playerIndex: currentIdx, timestamp: Date.now() }] };
+          systemMessage(code, bankruptMsg);
+          resetIdleWarnings(code, currentIdx);
+          if (r.gameState.phase !== 'game-over') {
             r.gameState = endTurn(r.gameState);
-            break;
-          case 'minigame':
-            // Timeout in minigame = catastrophic loss (server-authoritative)
-            cleanupMinigame(code);
-            r.gameState = autoAdvanceTurnEnd(resolveMinigame(r.gameState, 'catastrophic'));
-            break;
-          case 'trading':
-            // Cancel any active trade and return to previous phase
-            if (r.gameState.activeTradeOffer) {
-              r.gameState = cancelTrade(r.gameState);
-            }
-            break;
-          default:
-            // Fallback: bankrupt
-            console.log(`[turn-timer] Unknown phase "${phase}" — bankrupting`);
-            r.gameState = declareBankruptcy(r.gameState, currentIdx);
-            if (r.gameState.phase !== 'game-over') {
+          }
+        } else {
+          // Warnings 1-3: auto-play the current phase and warn
+          switch (phase) {
+            case 'rolling':
+              r.gameState = resolveLanding(rollDice(r.gameState));
+              break;
+            case 'buying':
+              r.gameState = declinePurchase(r.gameState);
+              break;
+            case 'paying-rent':
+              r.gameState = payRentNormally(r.gameState);
+              break;
+            case 'drawing-card':
+              r.gameState = applyDrawnCard(drawCard(r.gameState));
+              break;
+            case 'applying-card':
+              r.gameState = applyDrawnCard(r.gameState);
+              break;
+            case 'in-jail':
+              r.gameState = attemptJailEscape(r.gameState, 'roll');
+              break;
+            case 'in-debt':
+              r.gameState = declareBankruptcy(r.gameState, currentIdx);
+              break;
+            case 'minigame':
+              cleanupMinigame(code);
+              r.gameState = autoAdvanceTurnEnd(resolveMinigame(r.gameState, 'catastrophic'));
+              break;
+            default:
+              // Unknown phase: force end turn
               r.gameState = endTurn(r.gameState);
-            }
-            break;
+              break;
+          }
+          // Auto-advance turn-end if the auto-play landed there
+          r.gameState = autoAdvanceTurnEnd(r.gameState);
+
+          const warnMsg = warnings === MAX_WARNINGS
+            ? `FINAL WARNING: ${player.name} was idle (${warnings}/${MAX_WARNINGS}). Next timeout = forced bankruptcy!`
+            : `${player.name} was idle — auto-action taken. Warning ${warnings}/${MAX_WARNINGS}.`;
+          systemMessage(code, warnMsg);
+          // Also add to game log
+          r.gameState = { ...r.gameState, log: [...r.gameState.log, { message: warnMsg, playerIndex: currentIdx, timestamp: Date.now() }] };
         }
       } catch (e: any) {
         console.error(`[turn-timer] Error auto-advancing phase "${phase}":`, e.message);
-        // Fallback: bankrupt on error
-        r.gameState = declareBankruptcy(r.gameState, currentIdx);
-        if (r.gameState.phase !== 'game-over') {
-          r.gameState = endTurn(r.gameState);
+        // Fallback: bankrupt on error (guard against double-bankruptcy)
+        if (!r.gameState.players[currentIdx].bankrupt) {
+          r.gameState = declareBankruptcy(r.gameState, currentIdx);
+          if (r.gameState.phase !== 'game-over') {
+            r.gameState = endTurn(r.gameState);
+          }
         }
       }
 
@@ -766,23 +804,27 @@ nextApp.prepare().then(() => {
         const result = applyGameAction(room, socket.id, action);
 
         if (result.ok) {
+          // Player took a manual action — reset their idle warnings
+          if (room.gameState) {
+            resetIdleWarnings(code, room.gameState.currentPlayerIndex);
+          }
           broadcastGameState(code);
           if (room.phase === 'finished') {
             broadcastRoomState(code);
           }
-          // Auto-advance turn after 2.5s when turn-end (no doubles)
-          if (room.gameState && room.gameState.phase === 'turn-end' && room.gameState.doublesCount === 0) {
+          // Auto-advance turn after 2.5s when turn-end (handles both doubles and no-doubles)
+          if (room.gameState && room.gameState.phase === 'turn-end') {
             setTimeout(() => {
               const r = rm.getRoom(code);
               if (!r?.gameState || r.gameState.phase !== 'turn-end') return;
               r.gameState = endTurn(r.gameState);
+              // Force timer restart even if same player returns to rolling (doubles)
+              lastTimerState.delete(code);
               broadcastGameState(code);
               if (r.gameState.phase === 'game-over') {
                 r.phase = 'finished';
                 tryRecordGameResult(r);
                 broadcastRoomState(code);
-              } else {
-                startTurnTimer(code);
               }
             }, 2500);
           }
@@ -803,6 +845,7 @@ nextApp.prepare().then(() => {
 
       const result = applyJailEscape(room, socket.id, parsed.data.method);
       if (result.ok) {
+        if (room.gameState) resetIdleWarnings(code, room.gameState.currentPlayerIndex);
         broadcastGameState(code);
       } else {
         socket.emit('room:error', result.error ?? 'Action failed');
@@ -938,6 +981,7 @@ nextApp.prepare().then(() => {
       const player = room.players.find((p) => p.id === socket.id);
       if (!player) return;
       try {
+        resetIdleWarnings(code, room.gameState.currentPlayerIndex);
         const fns = {
           'build-house': () => buildHouse(room.gameState!, player.playerIndex, data.tileIndex),
           'sell-house': () => sellHouse(room.gameState!, player.playerIndex, data.tileIndex),
@@ -1113,6 +1157,7 @@ nextApp.prepare().then(() => {
         return;
       }
       try {
+        resetIdleWarnings(code, room.gameState.currentPlayerIndex);
         room.gameState = startMinigame(room.gameState, data.context);
         room.lastActivity = Date.now();
 
@@ -1172,6 +1217,7 @@ nextApp.prepare().then(() => {
         return;
       }
       try {
+        resetIdleWarnings(code, room.gameState.currentPlayerIndex);
         // H2: Resolve server-side — ignore client-sent tier
         const serverResult = resolveServerMinigame(code);
         const tier = serverResult?.tier ?? 'loss'; // fallback if no server state
@@ -1211,6 +1257,7 @@ nextApp.prepare().then(() => {
         return;
       }
       try {
+        resetIdleWarnings(code, room.gameState.currentPlayerIndex);
         room.gameState = autoAdvanceTurnEnd(payRentNormally(room.gameState));
         room.lastActivity = Date.now();
         broadcastGameState(code);

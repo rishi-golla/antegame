@@ -9,6 +9,8 @@ interface MinigameResultProps {
   baseAmount: number;
   context: MinigameContext;
   onDismiss: () => void;
+  /** Card Shark buff discount rate (0.0 - 1.0), applied to loss penalties */
+  minigameBoost?: number;
 }
 
 function useCountUp(target: number, duration = 600, startDelay = 300) {
@@ -75,7 +77,7 @@ const TIERS: Record<MinigameTier, {
   },
 };
 
-export default function MinigameResult({ tier, baseAmount, context, onDismiss }: MinigameResultProps) {
+export default function MinigameResult({ tier, baseAmount, context, onDismiss, minigameBoost = 0 }: MinigameResultProps) {
   const { play } = useAudio();
   const hasPlayed = useRef(false);
   const [visible, setVisible] = useState(false);
@@ -83,7 +85,18 @@ export default function MinigameResult({ tier, baseAmount, context, onDismiss }:
   const multipliers: Record<MinigameTier, number> = {
     win: 0, 'close-win': 0.5, 'close-loss': 1.5, loss: 2, catastrophic: 5,
   };
-  const amount = Math.floor(baseAmount * multipliers[tier]);
+  let amount = Math.floor(baseAmount * multipliers[tier]);
+  // Match server logic: Card Shark buff reduces loss penalties
+  const isLossTier = tier === 'close-loss' || tier === 'loss' || tier === 'catastrophic';
+  if (minigameBoost > 0 && isLossTier) {
+    if (context === 'buying') {
+      // Buying: buff applies to all loss tiers
+      amount = Math.floor(amount * (1 - minigameBoost));
+    } else if (context === 'rent') {
+      // Rent: buff applies to close-loss, loss, catastrophic
+      amount = Math.floor(amount * (1 - minigameBoost));
+    }
+  }
   const displayAmount = useCountUp(amount, 600, 400);
   const config = TIERS[tier];
   const isGood = tier === 'win' || tier === 'close-win';

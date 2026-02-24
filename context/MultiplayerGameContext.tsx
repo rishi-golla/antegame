@@ -27,7 +27,8 @@ type GameAction =
   | { type: 'GAMBLE'; context: MinigameContext }
   | { type: 'MINIGAME_RESULT'; tier: MinigameTier }
   | { type: 'PAY_RENT' }
-  | { type: 'RESOLVE_DEBT' };
+  | { type: 'RESOLVE_DEBT' }
+  | { type: 'SYSTEM_LOG'; message: string; playerIndex?: number };
 
 export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
   const { gameState, sendGameAction, sendPropertyAction, sendTradeAction } = useSocket();
@@ -105,6 +106,9 @@ export function MultiplayerGameProvider({ children }: { children: ReactNode }) {
         break;
       case 'RESOLVE_DEBT':
         sendGameAction('resolve-debt');
+        break;
+      case 'SYSTEM_LOG':
+        // System log is local-only (free play); in multiplayer the server sends system messages
         break;
     }
   };
