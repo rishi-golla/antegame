@@ -670,7 +670,7 @@ nextApp.prepare().then(() => {
           // Warnings 1-3: auto-play the current phase and warn
           switch (phase) {
             case 'rolling':
-              r.gameState = resolveLanding(rollDice(r.gameState));
+              r.gameState = rollDice(r.gameState);
               break;
             case 'buying':
               r.gameState = declinePurchase(r.gameState);

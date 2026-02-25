@@ -226,8 +226,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
 
   const handleDismissResult = () => {
     const tier = resultTier;
-    if (!tier) return;
-    // Clear state first to prevent stale closures and re-triggers
+    // Always clean up overlay state to prevent softlock, even if tier is null
     setResultTier(null);
     setResultLocked(false);
     setShowResult(false);
@@ -236,7 +235,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     playMusic('music/bgm-game');
     // In multiplayer, the server already resolved the game state when we
     // dispatched MINIGAME_RESULT earlier. In free play, dispatch now.
-    if (!isMultiplayer) {
+    if (tier && !isMultiplayer) {
       dispatch({ type: 'MINIGAME_RESULT', tier });
     }
   };
