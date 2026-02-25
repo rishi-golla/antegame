@@ -5,6 +5,7 @@ import { useSocket } from '@/context/SocketContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
+import { preloadAllMinigameBackgrounds } from '@/components/Minigames/MinigameOverlay';
 
 interface RoomLobbyProps {
   onLeave?: () => void;
@@ -14,6 +15,9 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
   const { roomState, toggleReady, startGame, leaveRoom, sendChat, chatMessages } = useSocket();
   const { play } = useAudio();
   const [chatInput, setChatInput] = useState('');
+
+  // Preload minigame backgrounds while players wait in lobby
+  useEffect(() => { preloadAllMinigameBackgrounds(); }, []);
   const prevPlayerCountRef = useRef(0);
   const [startError, setStartError] = useState('');
   const [copied, setCopied] = useState(false);

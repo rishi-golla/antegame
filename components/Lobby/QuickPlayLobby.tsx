@@ -5,6 +5,7 @@ import { useSocket } from '@/context/SocketContext';
 import { useAudio } from '@/context/AudioContext';
 import { CHARACTERS } from '@/lib/assetMap';
 import ChatView from '@/components/SidePanel/ChatView';
+import { preloadAllMinigameBackgrounds } from '@/components/Minigames/MinigameOverlay';
 
 interface QuickPlayLobbyProps {
   onLeave: () => void;
@@ -16,6 +17,9 @@ export default function QuickPlayLobby({ onLeave, onGameStart }: QuickPlayLobbyP
   const { play } = useAudio();
   const [countdown, setCountdown] = useState<number | null>(null);
   const prevPlayerCount = useRef(0);
+
+  // Preload minigame backgrounds while players wait in lobby
+  useEffect(() => { preloadAllMinigameBackgrounds(); }, []);
 
   // Listen for countdown events
   useEffect(() => {

@@ -34,6 +34,57 @@ const MINIGAME_BG_PATHS: Record<string, string> = {
   'safe-cracker': '/assets/minigames/backgrounds/safe-cracker.png',
 };
 
+// All in-game minigame assets (sprites, UI elements)
+const MINIGAME_ASSET_PATHS = [
+  // Cards
+  '/assets/minigames/cards/card-back.png',
+  '/assets/minigames/cards/card-table.png',
+  '/assets/minigames/cards/deck.png',
+  // Coin flip
+  '/assets/minigames/coin/coin-heads.png',
+  '/assets/minigames/coin/coin-tails.png',
+  // Darts
+  '/assets/minigames/darts/dart.png',
+  '/assets/minigames/darts/dartboard.png',
+  // Dice
+  '/assets/minigames/dice/dice-1.png',
+  '/assets/minigames/dice/dice-2.png',
+  '/assets/minigames/dice/dice-3.png',
+  '/assets/minigames/dice/dice-4.png',
+  '/assets/minigames/dice/dice-5.png',
+  '/assets/minigames/dice/dice-6.png',
+  '/assets/minigames/dice/dice-cup.png',
+  // Horses (card war)
+  '/assets/minigames/horses/horse-1.png',
+  '/assets/minigames/horses/horse-2.png',
+  '/assets/minigames/horses/horse-3.png',
+  '/assets/minigames/horses/track.png',
+  // Minesweeper
+  '/assets/minigames/minesweeper/gem.png',
+  '/assets/minigames/minesweeper/mine.png',
+  '/assets/minigames/minesweeper/tile-hidden.png',
+  '/assets/minigames/minesweeper/tile-revealed.png',
+  // Results
+  '/assets/minigames/results/jackpot.png',
+  '/assets/minigames/results/lose-banner.png',
+  '/assets/minigames/results/win-banner.png',
+  // Safe cracker
+  '/assets/minigames/safe/dial.png',
+  '/assets/minigames/safe/safe-closed.png',
+  '/assets/minigames/safe/safe-open.png',
+  // Slots
+  '/assets/minigames/slots/bar.png',
+  '/assets/minigames/slots/cherry.png',
+  '/assets/minigames/slots/diamond.png',
+  '/assets/minigames/slots/seven.png',
+  '/assets/minigames/slots/skull.png',
+  '/assets/minigames/slots/slot-machine.png',
+  // Wheel
+  '/assets/minigames/wheel/wheel-pointer.png',
+  '/assets/minigames/wheel/wheel-stand.png',
+  '/assets/minigames/wheel/wheel.png',
+];
+
 // Global cache so images are only preloaded once across mounts
 let _preloadStarted = false;
 const _loadedImages = new Set<string>();
@@ -41,9 +92,15 @@ const _loadedImages = new Set<string>();
 export function preloadAllMinigameBackgrounds() {
   if (_preloadStarted) return;
   _preloadStarted = true;
+  // Preload backgrounds first (higher priority)
   Object.entries(MINIGAME_BG_PATHS).forEach(([id, src]) => {
     const img = new Image();
     img.onload = () => _loadedImages.add(id);
+    img.src = src;
+  });
+  // Then preload all in-game assets
+  MINIGAME_ASSET_PATHS.forEach((src) => {
+    const img = new Image();
     img.src = src;
   });
 }
