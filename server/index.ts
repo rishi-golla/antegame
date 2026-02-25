@@ -1135,9 +1135,11 @@ nextApp.prepare().then(() => {
         // Only sign cancellation if the leaving player actually deposited on-chain
         const playerDeposited = player?.deposited === true;
         const anyDeposited = room?.players.some((p: any) => p.deposited) ?? false;
+        console.log(`[room:leave] ${player?.name} left ${code}: deposited=${playerDeposited}, deleted=${result.deleted}, phase=${room?.phase}, isOnChain=${room?.isOnChain}`);
         if (playerDeposited && (result.deleted || (room && room.phase === 'lobby'))) {
           try {
             const cancellation = await signCancellation(code);
+            console.log(`[room:leave] signCancellation result for ${code}:`, cancellation ? 'OK' : 'NULL (signer not configured)');
             if (cancellation) {
               const gameId = roomCodeToGameId(code);
               // Persist refund for the leaving player
@@ -1170,6 +1172,7 @@ nextApp.prepare().then(() => {
                 }
               }
               // Emit to the leaving player so they can claim refund (emit BEFORE persist so client always gets notified)
+              console.log(`[room:leave] Emitting game:cancellation:signature to ${socket.id} for ${code}`);
               socket.emit('game:cancellation:signature', {
                 nonce: cancellation.nonce,
                 signature: cancellation.signature,
@@ -1214,6 +1217,8 @@ nextApp.prepare().then(() => {
           } catch (err) {
             console.error('Failed to sign cancellation for room', code, err);
           }
+        } else {
+          console.log(`[room:leave] Skipped cancellation for ${code}: playerDeposited=${playerDeposited}, deleted=${result.deleted}, phase=${room?.phase}`);
         }
       }
     });

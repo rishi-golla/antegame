@@ -145,6 +145,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
 
     socket.on('game:cancellation:signature' as any, (data: { nonce: string; signature: string; gameId: string; roomCode: string }) => {
+      console.log('[SocketContext] Received game:cancellation:signature', data?.roomCode);
       setPendingRefund(data);
     });
 
