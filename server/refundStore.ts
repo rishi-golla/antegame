@@ -36,3 +36,11 @@ export function findSettlement(roomCode: string, walletAddress: string): any | u
       r.walletAddress?.toLowerCase() === walletAddress.toLowerCase()
   );
 }
+
+/** Find an existing cancellation signature for a room (any player). */
+export function findCancellation(roomCode: string): any | undefined {
+  const refunds = readPendingRefunds();
+  return refunds.find(
+    (r: any) => r.type !== 'settlement' && r.roomCode === roomCode && r.nonce && r.signature
+  );
+}

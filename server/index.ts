@@ -1474,6 +1474,12 @@ nextApp.prepare().then(() => {
       if (!code) return;
       const room = rm.getRoom(code);
       if (!room?.gameState) return;
+      // H2: Block trades during phases that shouldn't allow them
+      const disallowedPhases = ['minigame', 'in-debt', 'game-over', 'drawing-card', 'applying-card'];
+      if (disallowedPhases.includes(room.gameState.phase)) {
+        socket.emit('room:error', 'Cannot trade during this phase');
+        return;
+      }
       // Verify the proposer is actually the fromPlayer
       const proposer = room.players.find((p) => p.id === socket.id);
       if (!proposer || proposer.playerIndex !== parsed.data.offer.fromPlayer) {

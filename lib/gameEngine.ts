@@ -149,12 +149,9 @@ export function createGame(playerNames: string[]): GameState {
 }
 
 function cryptoRoll(): number {
-  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
-    const arr = new Uint32Array(1);
-    globalThis.crypto.getRandomValues(arr);
-    return (arr[0] % 6) + 1;
-  }
-  return Math.ceil(Math.random() * 6);
+  const arr = new Uint32Array(1);
+  (globalThis.crypto ?? require('crypto')).getRandomValues(arr);
+  return (arr[0] % 6) + 1;
 }
 
 export function rollDice(state: GameState): GameState {
@@ -1003,7 +1000,10 @@ export function startMinigame(state: GameState, context: MinigameContext): GameS
   
   // Exclude last 3 recent minigames
   const available = allMinigames.filter(id => !state.recentMinigames.slice(-3).includes(id));
-  const selectedId = available[Math.floor(Math.random() * available.length)];
+  // Use CSPRNG for minigame selection (real-money fairness)
+  const rngBuf = new Uint32Array(1);
+  (globalThis.crypto ?? require('crypto')).getRandomValues(rngBuf);
+  const selectedId = available[rngBuf[0] % available.length];
   
   // Calculate base amount
   let baseAmount = 0;
@@ -1068,13 +1068,20 @@ export function resolveMinigame(state: GameState, tier: MinigameTier): GameState
         s = addLog(s, `${player.name} won the minigame! Got ${tile.name} for FREE!`, state.currentPlayerIndex);
       }
     } else if (tier === 'close-win') {
-      // Get property at 50% price
+      // Get property at 50% price -- only if player can afford it
       if (tile.type === 'property' || tile.type === 'railroad' || tile.type === 'utility') {
-        s = updateCurrentPlayer(s, {
-          money: player.money - actualAmount,
-          properties: [...player.properties, tileIndex],
-        });
-        s = addLog(s, `${player.name} almost won! Got ${tile.name} for $${actualAmount} (50% off)!`, state.currentPlayerIndex);
+        if (player.money >= actualAmount) {
+          s = updateCurrentPlayer(s, {
+            money: player.money - actualAmount,
+            properties: [...player.properties, tileIndex],
+          });
+          s = addLog(s, `${player.name} almost won! Got ${tile.name} for $${actualAmount} (50% off)!`, state.currentPlayerIndex);
+        } else {
+          // Cannot afford even at discount -- treat as loss (no property, pay what they have)
+          const penalty = Math.min(actualAmount, player.money);
+          s = updateCurrentPlayer(s, { money: player.money - penalty });
+          s = addLog(s, `${player.name} almost won but couldn't afford ${tile.name}! Paid $${penalty} penalty.`, state.currentPlayerIndex);
+        }
       }
     } else {
       // No property, pay penalty (Card Shark pays less on losses)

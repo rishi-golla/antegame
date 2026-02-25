@@ -6,7 +6,7 @@
 import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
 import { getSessionFromCookie, validateSession } from '../auth';
-import { appendPendingRefunds, findSettlement } from '../refundStore';
+import { appendPendingRefunds, findSettlement, findCancellation } from '../refundStore';
 import { db } from '../db';
 import type { RoomManager } from '../roomManager';
 
@@ -91,12 +91,15 @@ router.post('/settlement-signature', async (req: Request, res: Response) => {
     if (room.gameState?.phase === 'game-over' && room.phase !== 'finished') {
       room.phase = 'finished';
     }
-    if (room.gameState?.winner !== null && room.gameState?.winner !== undefined) {
-      const winnerPlayer = room.players[room.gameState.winner];
-      if (winnerPlayer?.walletAddress?.toLowerCase() !== winnerAddress.toLowerCase()) {
-        res.status(403).json({ error: 'You are not the winner' });
-        return;
-      }
+    // C1: Reject if no winner determined (prevents fund theft on cancelled games)
+    if (room.gameState?.winner === null || room.gameState?.winner === undefined) {
+      res.status(400).json({ error: 'No winner determined for this game' });
+      return;
+    }
+    const winnerPlayer = room.players[room.gameState.winner];
+    if (winnerPlayer?.walletAddress?.toLowerCase() !== winnerAddress.toLowerCase()) {
+      res.status(403).json({ error: 'You are not the winner' });
+      return;
     }
   }
 
@@ -180,13 +183,31 @@ router.post('/cancellation-signature', async (req: Request, res: Response) => {
     }
   }
 
+  const gameId = roomCodeToGameId(roomCode);
+
+  // H1: Return existing cancellation signature if one was already generated (idempotent)
+  const existingCancel = findCancellation(roomCode);
+  if (existingCancel) {
+    res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
+    return;
+  }
+
   const result = await signCancellation(roomCode);
   if (!result) {
     res.status(503).json({ error: 'Signing not available -- signer key not configured' });
     return;
   }
 
-  const gameId = roomCodeToGameId(roomCode);
+  // Persist so future requests return the same signature
+  await appendPendingRefunds([{
+    roomCode,
+    gameId,
+    nonce: result.nonce,
+    signature: result.signature,
+    timestamp: Date.now(),
+    reason: 'cancellation',
+  }]);
+
   res.json({ nonce: result.nonce, signature: result.signature, gameId });
 });
 
