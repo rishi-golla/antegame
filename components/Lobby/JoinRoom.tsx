@@ -13,6 +13,22 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 
 const TX_RECEIPT_TIMEOUT = 60_000; // 60 seconds
 
+function CampaignStrip() {
+  const [label, setLabel] = useState<string | null>(null);
+  useEffect(() => {
+    fetch('/api/auth/referrals/campaign')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        if (d.phase === 'boost') setLabel('Referral Boost LIVE -- Earn 50% of house fees!');
+        else if (d.phase === 'normal') setLabel('Referral Campaign LIVE -- Earn 10% + compete for 1% lifetime rev');
+      })
+      .catch(() => {});
+  }, []);
+  if (!label) return null;
+  return <div className="campaignStrip">{label}</div>;
+}
+
 interface JoinRoomProps {
   onJoined: () => void;
   onBack: () => void;
@@ -191,6 +207,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
       <div className="setupCard">
         <h1 className="setupTitle marqueeTitle">Join Room</h1>
         <p className="setupSubtitle casinoSubtitle">Pick your character</p>
+        <CampaignStrip />
 
         <div className="setupPlayerRow" style={{ marginBottom: 16 }}>
           <div

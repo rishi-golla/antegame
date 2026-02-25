@@ -71,10 +71,20 @@ export default function ReferralButton() {
     return n < 0.0001 ? '<0.0001' : n.toFixed(4);
   };
 
+  // Fetch campaign status on mount so the badge shows without clicking
+  useEffect(() => {
+    fetch('/api/auth/referrals/campaign')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setCampaign(data); })
+      .catch(() => {});
+  }, []);
+
+  const campaignLive = campaign && (campaign.phase === 'boost' || campaign.phase === 'normal');
+
   return (
     <div className="referralBtnWrap" ref={ref}>
-      <button className="referralBtn" onClick={handleOpen}>
-        🔗 Refer
+      <button className={`referralBtn ${campaignLive ? 'referralBtnLive' : ''}`} onClick={handleOpen}>
+        {campaignLive ? 'Refer -- LIVE' : 'Refer'}
       </button>
       {open && (
         <div className="referralPanel">
