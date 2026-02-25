@@ -1,5 +1,19 @@
 import { db, getReferrer, recordReferralEarning } from './db';
 
+const CAMPAIGN_BOOST_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getCampaignStartTime(): number {
+  const env = process.env.CAMPAIGN_START_UTC;
+  if (!env) return Date.now();
+  const parsed = Date.parse(env);
+  return isNaN(parsed) ? Date.now() : parsed;
+}
+
+export function getCampaignReferralRate(): number {
+  const elapsed = Date.now() - getCampaignStartTime();
+  return elapsed < CAMPAIGN_BOOST_DURATION_MS ? 0.50 : 0.10;
+}
+
 export interface GameResultData {
   roomCode?: string;
   durationMs: number;
@@ -57,10 +71,11 @@ export function recordGameResult(data: GameResultData): number {
 
     const gameId = result.lastInsertRowid as number;
 
-    // Credit referral earnings (10% of house profit per referred player)
+    // Credit referral earnings per referred player
+    // Rate: 50% of house profit during first 24h of campaign, 10% after
     // M7: Only credit referrals for games with 3+ players to prevent gaming
     if (data.houseProfitLamports > 0 && data.playerCount >= 3) {
-      const referralRate = 0.50; // 50% of house profit
+      const referralRate = getCampaignReferralRate();
       const perPlayerShare = Math.floor(data.houseProfitLamports * referralRate / data.playerCount);
       if (perPlayerShare > 0) {
         for (const player of data.players) {

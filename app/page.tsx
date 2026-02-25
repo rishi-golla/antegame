@@ -27,6 +27,7 @@ import ProfileScreen from '@/components/Auth/ProfileScreen';
 import AudioControls from '@/components/UI/AudioControls';
 import WalletButton from '@/components/Auth/WalletButton';
 import ReferralButton from '@/components/Auth/ReferralButton';
+import CampaignLeaderboardScreen from '@/components/Auth/CampaignLeaderboardScreen';
 import RefundModal from '@/components/Lobby/RefundModal';
 import QuickPlay from '@/components/Lobby/QuickPlay';
 import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
@@ -55,6 +56,69 @@ function LobbyMusic({ screen }: { screen: Screen }) {
   }, [screen, playMusic, stopMusic]);
 
   return null;
+}
+
+function CampaignBanner({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
+  const [phase, setPhase] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState('');
+  const [boostEnd, setBoostEnd] = useState<number | null>(null);
+  const [campaignEnd, setCampaignEnd] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/referrals/campaign')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || data.phase === 'none') return;
+        setPhase(data.phase);
+        if (data.boostEndsUtc) setBoostEnd(new Date(data.boostEndsUtc).getTime());
+        if (data.campaignEndUtc) setCampaignEnd(new Date(data.campaignEndUtc).getTime());
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!phase || phase === 'none' || phase === 'ended') return;
+    const target = phase === 'boost' ? boostEnd : campaignEnd;
+    if (!target) return;
+    function tick() {
+      const diff = Math.max(0, target! - Date.now());
+      if (diff <= 0) { setCountdown('00:00:00'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(d > 0 ? `${d}d ${h}h ${m}m` : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [phase, boostEnd, campaignEnd]);
+
+  if (!phase || phase === 'none') return null;
+
+  return (
+    <button
+      className="campaignBanner"
+      onClick={() => onNavigate('leaderboard')}
+    >
+      {phase === 'boost' ? (
+        <>
+          <span className="campaignBannerTag">LIVE</span>
+          <span>Referral Boost -- 50% fees for {countdown}</span>
+        </>
+      ) : phase === 'normal' ? (
+        <>
+          <span className="campaignBannerTag">LIVE</span>
+          <span>Referral Campaign -- {countdown} left</span>
+        </>
+      ) : phase === 'upcoming' ? (
+        <span>Referral Campaign starting soon</span>
+      ) : (
+        <span>Referral Campaign ended -- View results</span>
+      )}
+      <span className="campaignBannerArrow">&rarr;</span>
+    </button>
+  );
 }
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
@@ -110,6 +174,8 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
             </div>
           )}
         </div>
+
+        <CampaignBanner onNavigate={onNavigate} />
 
         {/* Main action cards */}
         <div className="menuActionCards">
@@ -330,6 +396,14 @@ function AuthGate() {
   const initial = pathToScreen();
   const [screen, setScreen] = useState<Screen>(initial.screen);
   const [pendingRoomCode, setPendingRoomCode] = useState<string | undefined>(initial.roomCode);
+
+  // Save ref param synchronously before replaceState strips it from the URL
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      const ref = new URLSearchParams(window.location.search).get('ref');
+      if (ref) sessionStorage.setItem('ref', ref);
+    }
+  });
   const [freePlayConfig, setFreePlayConfig] = useState<{ names: string[]; sprites: string[]; colors: string[]; characterIds: string[] } | null>(null);
   const suppressPushRef = useRef(false);
 
@@ -423,16 +497,11 @@ function AuthGate() {
       );
 
     case 'leaderboard':
-      // Placeholder until batch 9.5
       return (
-        <div className="setupScreen">
+        <>
           <div className="topBarBtns"><ReferralButton /><WalletButton /></div>
-          <div className="setupCard">
-            <h1 className="setupTitle">Leaderboard</h1>
-            <p className="setupSubtitle casinoSubtitle">Coming soon...</p>
-            <button className="lobbyBackBtn" onClick={() => navigate('menu')}>Back</button>
-          </div>
-        </div>
+          <CampaignLeaderboardScreen onBack={() => navigate('menu')} />
+        </>
       );
 
     case 'create':

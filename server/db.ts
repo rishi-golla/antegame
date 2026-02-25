@@ -161,10 +161,11 @@ export function setReferral(refereeWallet: string, referrerWallet: string): bool
   // Only set once (first referrer wins)
   const existing = db.prepare('SELECT 1 FROM referrals WHERE referee_wallet = ?').get(refereeWallet);
   if (existing) return false;
-  // Referrer must exist
-  const referrer = getUser(referrerWallet);
+  // Referrer must exist (case-insensitive lookup for EVM addresses)
+  const referrer = getUser(referrerWallet)
+    ?? (db.prepare('SELECT * FROM users WHERE LOWER(wallet_address) = LOWER(?)').get(referrerWallet) as DbUser | undefined);
   if (!referrer) return false;
-  db.prepare('INSERT INTO referrals (referee_wallet, referrer_wallet) VALUES (?, ?)').run(refereeWallet, referrerWallet);
+  db.prepare('INSERT INTO referrals (referee_wallet, referrer_wallet) VALUES (?, ?)').run(refereeWallet, referrer.wallet_address);
   return true;
 }
 
@@ -209,6 +210,35 @@ export function getUnpaidReferralPayouts(): Array<{ referrer_wallet: string; tot
 export function markReferralsPaid(referrerWallet: string): number {
   const result = db.prepare('UPDATE referral_earnings SET paid_out = 1 WHERE referrer_wallet = ? AND paid_out = 0').run(referrerWallet);
   return result.changes;
+}
+
+export interface CampaignLeaderboardEntry {
+  referrer_wallet: string;
+  display_name: string | null;
+  referral_count: number;
+  total_volume: number;
+}
+
+export function getCampaignLeaderboard(startTime: number, endTime: number, limit = 10): CampaignLeaderboardEntry[] {
+  return db.prepare(`
+    SELECT combined.referrer_wallet,
+           u.display_name,
+           combined.referral_count,
+           combined.total_volume
+    FROM (
+      SELECT r.referrer_wallet,
+             COUNT(DISTINCT r.referee_wallet) as referral_count,
+             COALESCE(SUM(gh.entry_fee_lamports * gh.player_count), 0) as total_volume
+      FROM referrals r
+      LEFT JOIN referral_earnings re ON re.referrer_wallet = r.referrer_wallet
+      LEFT JOIN game_history gh ON re.game_id = gh.id
+        AND gh.finished_at >= ? AND gh.finished_at < ?
+      GROUP BY r.referrer_wallet
+    ) combined
+    LEFT JOIN users u ON combined.referrer_wallet = u.wallet_address
+    ORDER BY combined.total_volume DESC, combined.referral_count DESC
+    LIMIT ?
+  `).all(startTime, endTime, limit) as CampaignLeaderboardEntry[];
 }
 
 export { db };

@@ -69,6 +69,15 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
         </motion.p>
 
         <motion.div
+          className="heroCampaignNotice"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+        >
+          Referral Campaign Live -- Earn up to 50% of house fees + 1% lifetime revenue
+        </motion.div>
+
+        <motion.div
           className="heroButtons"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

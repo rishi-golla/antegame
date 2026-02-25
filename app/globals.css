@@ -8100,6 +8100,255 @@ img[src*="/assets/"] {
   font-style: italic;
 }
 
+/* ===== CAMPAIGN BANNER (Main Menu) ===== */
+
+.campaignBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 16px;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.06) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #d4af37;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  position: relative;
+  z-index: 1;
+}
+
+.campaignBanner:hover {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+  border-color: rgba(212, 175, 55, 0.55);
+  transform: translateY(-1px);
+}
+
+.campaignBannerTag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #d4af37;
+  color: #1a0a00;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  animation: campaignPulse 2s ease-in-out infinite;
+}
+
+@keyframes campaignPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.campaignBannerArrow {
+  font-size: 1.1rem;
+  opacity: 0.6;
+}
+
+/* ===== REFERRAL CAMPAIGN BADGE (Panel) ===== */
+
+.referralCampaignBadge {
+  background: linear-gradient(90deg, #d4af37 0%, #f5d76e 50%, #d4af37 100%);
+  color: #1a0a00;
+  font-weight: 800;
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  margin-bottom: 12px;
+  font-family: 'Nunito', sans-serif;
+  letter-spacing: 0.03em;
+}
+
+/* ===== CAMPAIGN LEADERBOARD SCREEN ===== */
+
+.campaignBoostBanner {
+  background: linear-gradient(90deg, #d4af37 0%, #f5d76e 50%, #d4af37 100%);
+  color: #1a0a00;
+  font-weight: 800;
+  text-align: center;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  font-family: 'Nunito', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.campaignStatusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.campaignStatusBar > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.campaignStatusLabel {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.campaignCountdown {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #d4af37;
+}
+
+.campaignRateValue {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #d4af37;
+  text-align: right;
+}
+
+.campaignPrizeInfo {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #d4af37;
+  text-align: center;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.campaignLeaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.campaignLbHeader {
+  display: grid;
+  grid-template-columns: 36px 1fr 50px 90px;
+  padding: 8px 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.campaignLbRow {
+  display: grid;
+  grid-template-columns: 36px 1fr 50px 90px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  transition: background 0.15s;
+}
+
+.campaignLbRow:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.campaignLbTop3 {
+  background: rgba(212, 175, 55, 0.04);
+}
+
+.campaignLbRowMe {
+  background: rgba(212, 175, 55, 0.1) !important;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.campaignLbRank {
+  font-weight: 800;
+  color: #888;
+}
+
+.campaignLbPlayer {
+  color: #ccc;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaignLbYou {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.campaignLbRefs {
+  color: #888;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.campaignLbVol {
+  color: #d4af37;
+  font-weight: 700;
+  text-align: right;
+}
+
+.campaignEmptyState {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.campaignHowItWorks {
+  margin-top: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  margin-bottom: 16px;
+}
+
+.campaignHowItWorks h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  color: #d4af37;
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.campaignHowItWorks ul {
+  margin: 0;
+  padding-left: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.78rem;
+  color: #999;
+  line-height: 1.8;
+  text-align: left;
+  list-style-position: outside;
+}
+
+.campaignHowItWorks li::marker {
+  color: rgba(212, 175, 55, 0.4);
+}
+
 /* ===== QUICK PLAY / FEE CHIPS ===== */
 
 .feeChips {
@@ -8201,16 +8450,24 @@ img[src*="/assets/"] {
 
 .profileName {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.7rem;
+  font-size: 1rem;
   color: var(--gold-bright);
 }
 
 .profileAddr {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.35rem;
+  font-size: 0.7rem;
   color: #888;
   word-break: break-all;
   margin-top: 4px;
+}
+
+.profileReferralSection {
+  margin: 16px 0;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
 }
 
 .statsGrid {
@@ -9484,6 +9741,20 @@ img[src*="/assets/"] {
   gap: 16px;
   justify-content: center;
   margin-bottom: 32px;
+}
+
+.heroCampaignNotice {
+  display: inline-block;
+  padding: 8px 20px;
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.06) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #d4af37;
+  letter-spacing: 0.03em;
+  margin-bottom: 20px;
 }
 
 .heroBtnPrimary {

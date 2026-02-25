@@ -9,12 +9,21 @@ interface ReferralData {
   earnings: { totalWei: string; unpaidWei: string; paidWei: string };
 }
 
+interface CampaignInfo {
+  active: boolean;
+  phase: string;
+  referralRatePercent?: number;
+  boostTimeRemainingMs?: number;
+  timeRemainingMs?: number;
+}
+
 export default function ReferralButton() {
   const { user } = useMultiChain();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<ReferralData | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [campaign, setCampaign] = useState<CampaignInfo | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,8 +40,12 @@ export default function ReferralButton() {
     if (data) return; // already loaded
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/referrals', { credentials: 'include' });
-      if (res.ok) setData(await res.json());
+      const [refRes, campRes] = await Promise.all([
+        fetch('/api/auth/referrals', { credentials: 'include' }),
+        fetch('/api/auth/referrals/campaign'),
+      ]);
+      if (refRes.ok) setData(await refRes.json());
+      if (campRes.ok) setCampaign(await campRes.json());
     } catch { /* ignore */ }
     setLoading(false);
   };
@@ -42,7 +55,7 @@ export default function ReferralButton() {
     if (!open) fetchData();
   };
 
-  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/join?ref=${user.walletAddress}`;
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${user.walletAddress}`;
 
   const handleCopy = async () => {
     try {
@@ -66,8 +79,16 @@ export default function ReferralButton() {
       {open && (
         <div className="referralPanel">
           <div className="referralPanelTitle">Referral Program</div>
+          {campaign && (campaign.phase === 'boost' || campaign.phase === 'normal') && (
+            <div className="referralCampaignBadge">
+              {campaign.phase === 'boost'
+                ? 'BOOST ACTIVE -- Earn 50% of house fees!'
+                : 'Campaign Live -- Earn 10% + compete for 1% lifetime rev'}
+            </div>
+          )}
           <p className="referralPanelDesc">
-            Earn <strong>10%</strong> of the house fee from every game your referrals play.
+            Earn <strong>{campaign?.phase === 'boost' ? '50%' : '10%'}</strong> of the house fee from every game your referrals play.
+            {campaign?.active && ' Top 3 referrers by volume win 1% lifetime revenue.'}
           </p>
 
           <div className="referralLinkRow">

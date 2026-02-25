@@ -27,6 +27,31 @@ interface HistoryEntry {
   players: string; // JSON string
 }
 
+interface ReferralInfo {
+  referredBy: { wallet: string; displayName: string | null } | null;
+  referralCode: string;
+  count: number;
+}
+
+interface CampaignLeaderboardEntry {
+  referrer_wallet: string;
+  display_name: string | null;
+  referral_count: number;
+  total_volume: number;
+}
+
+interface CampaignData {
+  active: boolean;
+  phase: 'upcoming' | 'boost' | 'normal' | 'ended' | 'none';
+  campaignStartUtc?: string;
+  campaignEndUtc?: string;
+  boostEndsUtc?: string;
+  timeRemainingMs?: number;
+  boostTimeRemainingMs?: number;
+  referralRatePercent?: number;
+  leaderboard: CampaignLeaderboardEntry[];
+}
+
 interface ProfileScreenProps {
   onBack: () => void;
 }
@@ -38,6 +63,10 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(user?.displayName ?? '');
   const [editChar, setEditChar] = useState(user?.characterId ?? '');
+  const [referralInfo, setReferralInfo] = useState<ReferralInfo | null>(null);
+  const [refCopied, setRefCopied] = useState(false);
+  const [campaign, setCampaign] = useState<CampaignData | null>(null);
+  const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
     fetch('/api/stats/me')
@@ -47,7 +76,38 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
         if (data?.history) setHistory(data.history);
       })
       .catch(() => {});
+    fetch('/api/auth/referrals', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setReferralInfo({ referredBy: data.referredBy, referralCode: data.referralCode, count: data.count });
+      })
+      .catch(() => {});
+    fetch('/api/auth/referrals/campaign')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setCampaign(data); })
+      .catch(() => {});
   }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!campaign || campaign.phase === 'none' || campaign.phase === 'ended') return;
+    const targetMs = campaign.phase === 'boost'
+      ? new Date(campaign.boostEndsUtc!).getTime()
+      : new Date(campaign.campaignEndUtc!).getTime();
+
+    function tick() {
+      const diff = Math.max(0, targetMs - Date.now());
+      if (diff <= 0) { setCountdown('00:00:00'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(d > 0 ? `${d}d ${h}h ${m}m` : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [campaign]);
 
   const handleSave = async () => {
     await updateProfile(editName, editChar);
@@ -70,6 +130,128 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
             <div className="profileAddr">{user?.walletAddress ?? ''}</div>
           </div>
         </div>
+
+        {referralInfo && (
+          <div className="profileReferralSection">
+            <div className="referralStatRow" style={{ marginBottom: 8 }}>
+              <span>Referred by</span>
+              <span className="referralStatVal">
+                {referralInfo.referredBy
+                  ? `${referralInfo.referredBy.wallet.slice(0, 6)}...${referralInfo.referredBy.wallet.slice(-4)}`
+                  : 'None'}
+              </span>
+            </div>
+            <div className="referralStatRow" style={{ marginBottom: 8 }}>
+              <span>Your Referrals</span>
+              <span className="referralStatVal">{referralInfo.count}</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#bbb', fontFamily: "'Nunito', sans-serif", fontWeight: 600, marginBottom: 6 }}>
+              Your Referral Link
+            </div>
+            <div className="referralLinkRow">
+              <input
+                className="referralLinkInput"
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${referralInfo.referralCode}`}
+                readOnly
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <button
+                className="referralCopyBtn"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(`${window.location.origin}/?ref=${referralInfo.referralCode}`);
+                    setRefCopied(true);
+                    setTimeout(() => setRefCopied(false), 2000);
+                  } catch { /* ignore */ }
+                }}
+              >
+                {refCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {campaign && campaign.phase !== 'none' && (
+          <div className="profileReferralSection" style={{ marginTop: 16 }}>
+            {campaign.phase === 'boost' && (
+              <div style={{
+                background: 'linear-gradient(90deg, #d4af37 0%, #f5d76e 50%, #d4af37 100%)',
+                color: '#1a0a00',
+                fontWeight: 800,
+                textAlign: 'center',
+                padding: '8px 12px',
+                borderRadius: 8,
+                fontSize: '0.9rem',
+                marginBottom: 12,
+                fontFamily: "'Nunito', sans-serif",
+              }}>
+                REFERRAL BOOST ACTIVE - 50% fees!
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#d4af37', fontFamily: "'Nunito', sans-serif" }}>
+                Referral Campaign
+              </span>
+              <span style={{ fontSize: '0.8rem', color: '#bbb', fontFamily: "'Nunito', sans-serif" }}>
+                {campaign.phase === 'ended'
+                  ? 'Campaign ended'
+                  : campaign.phase === 'upcoming'
+                    ? 'Starting soon'
+                    : countdown}
+              </span>
+            </div>
+            {campaign.phase !== 'ended' && (
+              <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 8, fontFamily: "'Nunito', sans-serif" }}>
+                {campaign.phase === 'boost'
+                  ? `Boost ends in ${countdown} -- Rate: 50%`
+                  : `Campaign ends in ${countdown} -- Rate: 10%`}
+              </div>
+            )}
+            <div style={{ fontSize: '0.75rem', color: '#d4af37', marginBottom: 10, fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
+              Top 3 earn 1% lifetime revenue
+            </div>
+            {campaign.leaderboard.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {campaign.leaderboard.slice(0, 10).map((entry, i) => {
+                  const isMe = entry.referrer_wallet === user?.walletAddress;
+                  const truncWallet = `${entry.referrer_wallet.slice(0, 6)}...${entry.referrer_wallet.slice(-4)}`;
+                  const volEth = (entry.total_volume / 1e9).toFixed(4);
+                  return (
+                    <div key={entry.referrer_wallet} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      background: isMe ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
+                      border: isMe ? '1px solid rgba(212,175,55,0.4)' : '1px solid transparent',
+                      fontSize: '0.8rem',
+                      fontFamily: "'Nunito', sans-serif",
+                    }}>
+                      <span style={{ color: i < 3 ? '#d4af37' : '#888', fontWeight: i < 3 ? 800 : 600, minWidth: 24 }}>
+                        #{i + 1}
+                      </span>
+                      <span style={{ flex: 1, color: isMe ? '#d4af37' : '#ccc', fontWeight: isMe ? 700 : 400, marginLeft: 8 }}>
+                        {entry.display_name || truncWallet}
+                        {isMe && ' (you)'}
+                      </span>
+                      <span style={{ color: '#888', fontSize: '0.7rem', marginRight: 8 }}>
+                        {entry.referral_count} refs
+                      </span>
+                      <span style={{ color: '#d4af37', fontWeight: 700 }}>
+                        {volEth} ETH
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.8rem', color: '#666', textAlign: 'center', padding: 12, fontFamily: "'Nunito', sans-serif" }}>
+                No referral activity yet. Share your link to get started!
+              </div>
+            )}
+          </div>
+        )}
 
         {stats && (
           <div className="statsGrid">
@@ -157,7 +339,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
             <button className="lobbyBackBtn" onClick={() => setEditing(false)}>Cancel</button>
           </div>
         ) : (
-          <button className="setupStartBtn" onClick={() => setEditing(true)} style={{ marginTop: 12, fontSize: '0.7rem' }}>
+          <button className="setupStartBtn" onClick={() => setEditing(true)} style={{ marginTop: 12 }}>
             Edit Profile
           </button>
         )}

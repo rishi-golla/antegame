@@ -10,7 +10,7 @@ import {
   destroySession,
   getSessionFromCookie,
 } from '../auth';
-import { upsertUser, getUser, getUserStats, setReferral, getReferrer, getReferralCount, getReferrals, getReferralEarnings, getUnpaidReferralPayouts, markReferralsPaid, db } from '../db';
+import { upsertUser, getUser, getUserStats, setReferral, getReferrer, getReferralCount, getReferrals, getReferralEarnings, getUnpaidReferralPayouts, markReferralsPaid, getCampaignLeaderboard, db } from '../db';
 import type { DbUser } from '../db';
 
 const router = Router();
@@ -120,8 +120,10 @@ router.post('/verify-wallet', async (req: Request, res: Response) => {
   const isNewUser = !user.display_name;
   const token = createSession(walletAddress);
 
-  // Track referral on first signup
-  if (isNewUser && ref) {
+  // Track referral (setReferral prevents duplicates and self-referral)
+  const isValidRef = (r: string) =>
+    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(r) || /^0x[0-9a-fA-F]{40}$/.test(r);
+  if (ref && typeof ref === 'string' && isValidRef(ref)) {
     setReferral(walletAddress, ref);
   }
 
@@ -238,7 +240,12 @@ router.get('/referrals', (req: Request, res: Response) => {
   const count = getReferralCount(user.wallet_address);
   const referrals = getReferrals(user.wallet_address);
   const earnings = getReferralEarnings(user.wallet_address);
-  const myReferrer = getReferrer(user.wallet_address);
+  const myReferrerWallet = getReferrer(user.wallet_address);
+  let referredBy: { wallet: string; displayName: string | null } | null = null;
+  if (myReferrerWallet) {
+    const referrerUser = getUser(myReferrerWallet);
+    referredBy = { wallet: myReferrerWallet, displayName: referrerUser?.display_name ?? null };
+  }
 
   // Enrich referral list with display names
   const enriched = referrals.map(r => {
@@ -248,7 +255,7 @@ router.get('/referrals', (req: Request, res: Response) => {
 
   res.json({
     referralCode: user.wallet_address,
-    referredBy: myReferrer,
+    referredBy,
     count,
     referrals: enriched,
     earnings: {
@@ -295,6 +302,49 @@ router.post('/referrals/mark-paid', (req: Request, res: Response) => {
 
   const count = markReferralsPaid(referrerWallet);
   res.json({ marked: count });
+});
+
+// GET /api/auth/referrals/campaign — campaign leaderboard (public)
+router.get('/referrals/campaign', (_req: Request, res: Response) => {
+  const campaignEnv = process.env.CAMPAIGN_START_UTC;
+  const campaignStartMs = campaignEnv ? Date.parse(campaignEnv) : NaN;
+
+  if (!campaignEnv || isNaN(campaignStartMs)) {
+    res.json({ active: false, phase: 'none', leaderboard: [] });
+    return;
+  }
+
+  const BOOST_DURATION_MS = 24 * 60 * 60 * 1000;
+  const CAMPAIGN_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+  const campaignEndMs = campaignStartMs + CAMPAIGN_DURATION_MS;
+  const now = Date.now();
+
+  let phase: 'upcoming' | 'boost' | 'normal' | 'ended';
+  if (now < campaignStartMs) {
+    phase = 'upcoming';
+  } else if (now < campaignStartMs + BOOST_DURATION_MS) {
+    phase = 'boost';
+  } else if (now < campaignEndMs) {
+    phase = 'normal';
+  } else {
+    phase = 'ended';
+  }
+
+  const startUnix = Math.floor(campaignStartMs / 1000);
+  const endUnix = Math.floor(campaignEndMs / 1000);
+  const leaderboard = getCampaignLeaderboard(startUnix, endUnix);
+
+  res.json({
+    active: phase === 'boost' || phase === 'normal',
+    phase,
+    campaignStartUtc: new Date(campaignStartMs).toISOString(),
+    campaignEndUtc: new Date(campaignEndMs).toISOString(),
+    boostEndsUtc: new Date(campaignStartMs + BOOST_DURATION_MS).toISOString(),
+    timeRemainingMs: Math.max(0, campaignEndMs - now),
+    boostTimeRemainingMs: Math.max(0, campaignStartMs + BOOST_DURATION_MS - now),
+    referralRatePercent: phase === 'boost' ? 50 : 10,
+    leaderboard,
+  });
 });
 
 // Session middleware helper
