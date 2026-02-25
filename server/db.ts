@@ -77,6 +77,13 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_wallet);
   CREATE INDEX IF NOT EXISTS idx_referral_earnings_referrer ON referral_earnings(referrer_wallet);
   CREATE INDEX IF NOT EXISTS idx_referral_earnings_unpaid ON referral_earnings(paid_out) WHERE paid_out = 0;
+
+  CREATE TABLE IF NOT EXISTS verified_deposits (
+    tx_hash TEXT PRIMARY KEY,
+    room_code TEXT NOT NULL,
+    wallet_address TEXT NOT NULL,
+    verified_at INTEGER NOT NULL DEFAULT (unixepoch())
+  );
 `);
 
 // Migrations
@@ -239,6 +246,19 @@ export function getCampaignLeaderboard(startTime: number, endTime: number, limit
     ORDER BY combined.total_volume DESC, combined.referral_count DESC
     LIMIT ?
   `).all(startTime, endTime, limit) as CampaignLeaderboardEntry[];
+}
+
+// --- Verified Deposits ---
+
+export function isDepositVerified(txHash: string): boolean {
+  const row = db.prepare('SELECT 1 FROM verified_deposits WHERE tx_hash = ?').get(txHash.toLowerCase());
+  return !!row;
+}
+
+export function markDepositVerified(txHash: string, roomCode: string, walletAddress: string): void {
+  db.prepare(
+    'INSERT OR IGNORE INTO verified_deposits (tx_hash, room_code, wallet_address) VALUES (?, ?, ?)'
+  ).run(txHash.toLowerCase(), roomCode, walletAddress.toLowerCase());
 }
 
 export { db };

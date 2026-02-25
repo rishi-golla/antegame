@@ -7,6 +7,7 @@
 import { createPublicClient, http, decodeEventLog, type Address, type Hash } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { roomCodeToGameId } from './contracts';
+import { isDepositVerified, markDepositVerified } from './db';
 
 const CHAIN_ENV = process.env.CHAIN_ENV ?? 'base-sepolia';
 const RPC_URL = process.env.BASE_RPC_URL ?? (
@@ -32,9 +33,6 @@ const PLAYER_JOINED_ABI = [{
   ],
 }] as const;
 
-// Track already-verified tx hashes to prevent reuse
-const verifiedTxHashes = new Set<string>();
-
 export interface VerifyResult {
   ok: boolean;
   error?: string;
@@ -59,9 +57,9 @@ export async function verifyDeposit(
     return { ok: false, error: 'Invalid transaction hash' };
   }
 
-  // Prevent tx hash reuse
+  // Prevent tx hash reuse (persisted to SQLite)
   const txKey = txHash.toLowerCase();
-  if (verifiedTxHashes.has(txKey)) {
+  if (isDepositVerified(txKey)) {
     return { ok: false, error: 'Transaction already used for a deposit' };
   }
 
@@ -115,8 +113,8 @@ export async function verifyDeposit(
       return { ok: false, error: 'Transaction does not contain a valid deposit for this game and player' };
     }
 
-    // 5. Mark as verified
-    verifiedTxHashes.add(txKey);
+    // 5. Mark as verified (persisted to SQLite)
+    markDepositVerified(txKey, roomCode, expectedWallet);
 
     return { ok: true };
   } catch (e: any) {
@@ -126,16 +124,9 @@ export async function verifyDeposit(
 }
 
 /**
- * Cleanup old verified hashes (call periodically).
- * In practice these should persist, but for memory we cap at 10k.
+ * Cleanup old verified hashes (no-op: SQLite handles persistence).
+ * Kept for backwards compatibility with callers.
  */
 export function cleanupVerifiedHashes() {
-  if (verifiedTxHashes.size > 10_000) {
-    // Keep the most recent ~5k (Set preserves insertion order)
-    const arr = Array.from(verifiedTxHashes);
-    verifiedTxHashes.clear();
-    for (const h of arr.slice(-5000)) {
-      verifiedTxHashes.add(h);
-    }
-  }
+  // No-op: verified deposits are now persisted in SQLite
 }

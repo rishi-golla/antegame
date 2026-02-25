@@ -1743,54 +1743,14 @@ nextApp.prepare().then(() => {
       }
     });
 
-    // Quick Play — Solana (legacy)
-    socket.on('room:quick-play', (data, cb) => {
-      const existing = rm.findQuickPlayRoom(data.entryFeeLamports);
-      if (existing) {
-        const joinResult = rm.joinRoom(existing.code, socket.id, data.name, data.color, {
-          walletAddress: data.walletAddress,
-          characterId: data.characterId,
-        });
-        if (joinResult.ok) {
-          socket.join(existing.code);
-          const room = rm.getRoom(existing.code);
-          if (room) socket.emit('chat:history', room.chatHistory);
-          broadcastRoomState(existing.code);
-          systemMessage(existing.code, `${data.name} joined the table.`);
-
-          // Auto-start when full (4 players) or schedule 60s timer
-          if (existing.players.length >= existing.maxPlayers) {
-            // Will start when all deposited+ready
-          }
-          cb({ ok: true, code: existing.code });
-        } else {
-          cb(joinResult);
-        }
-      } else {
-        const result = rm.createQuickPlayRoom(socket.id, data.name, data.color, data.entryFeeLamports, data.walletAddress, data.characterId);
-        if (result.ok && result.code) {
-          socket.join(result.code);
-          broadcastRoomState(result.code);
-          systemMessage(result.code, `${data.name} created a quick-play table.`);
-        }
-        cb(result);
-      }
+    // Quick Play — Solana (DISABLED: no on-chain verification)
+    socket.on('room:quick-play', (_data, cb) => {
+      cb({ ok: false, error: 'Solana quick-play is disabled. Use Base chain.' });
     });
 
-    // Deposit
-    socket.on('room:deposit', (data, cb) => {
-      const code = rm.findRoomBySocket(socket.id);
-      if (!code) return cb({ ok: false, error: 'Not in a room' });
-      // In production, verify the tx signature on-chain here
-      const success = rm.markDeposited(code, socket.id);
-      if (!success) return cb({ ok: false, error: 'Deposit tracking failed' });
-      const player = rm.getPlayerInRoom(code, socket.id);
-      if (player) {
-        io.to(code).emit('player:deposited', { playerIndex: player.playerIndex });
-        systemMessage(code, `${player.name} deposited entry fee.`);
-      }
-      broadcastRoomState(code);
-      cb({ ok: true });
+    // Deposit — Solana (DISABLED: no on-chain verification)
+    socket.on('room:deposit', (_data, cb) => {
+      cb({ ok: false, error: 'Solana deposits are disabled. Use Base chain.' });
     });
 
     // Base on-chain deposit confirmation — with on-chain verification

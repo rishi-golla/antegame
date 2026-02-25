@@ -4,12 +4,18 @@
 
 import { z } from 'zod';
 
+/** Allowed buy-in tiers (ETH). Any other value is rejected server-side. */
+export const ALLOWED_BUY_INS = ['0.001', '0.01', '0.05', '0.25', '0.5'] as const;
+
 export const roomCreateSchema = z.object({
   name: z.string().min(1).max(20),
   color: z.string().min(1).max(20),
   maxPlayers: z.number().int().min(2).max(6),
   walletAddress: z.string().optional(),
-  buyInEth: z.string().optional(),
+  buyInEth: z.string().optional().refine(
+    (v) => !v || (ALLOWED_BUY_INS as readonly string[]).includes(v),
+    { message: 'Invalid buy-in amount' }
+  ),
   onChainTxHash: z.string().optional(),
   characterId: z.string().optional(),
 });
@@ -70,8 +76,11 @@ export const tradeOfferSchema = z.object({
 export const quickPlayBaseSchema = z.object({
   name: z.string().min(1).max(20),
   color: z.string().min(1).max(20),
-  buyInEth: z.string().min(1).max(20),
-  walletAddress: z.string().max(100),
+  buyInEth: z.string().refine(
+    (v) => (ALLOWED_BUY_INS as readonly string[]).includes(v),
+    { message: 'Invalid buy-in amount' }
+  ),
+  walletAddress: z.string().min(1).max(100),
   characterId: z.string().optional(),
 });
 
