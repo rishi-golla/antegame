@@ -4,7 +4,7 @@
  * to the MonopolyGame contract for the expected gameId and player.
  */
 
-import { createPublicClient, http, decodeEventLog, type Address, type Hash } from 'viem';
+import { createPublicClient, http, decodeEventLog, parseEther, type Address, type Hash } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { roomCodeToGameId } from './contracts';
 import { isDepositVerified, markDepositVerified } from './db';
@@ -52,6 +52,7 @@ export async function verifyDeposit(
   txHash: string,
   roomCode: string,
   expectedWallet: string,
+  expectedBuyInEth?: string,
 ): Promise<VerifyResult> {
   if (!txHash || !txHash.startsWith('0x') || txHash.length !== 66) {
     return { ok: false, error: 'Invalid transaction hash' };
@@ -100,6 +101,14 @@ export async function verifyDeposit(
           (decoded.args as any).gameId?.toLowerCase() === expectedGameId.toLowerCase() &&
           (decoded.args as any).player?.toLowerCase() === expectedWallet.toLowerCase()
         ) {
+          // H1: Verify deposit amount matches room buy-in
+          if (expectedBuyInEth) {
+            const expectedWei = parseEther(expectedBuyInEth);
+            const actualWei = (decoded.args as any).buyIn as bigint;
+            if (actualWei < expectedWei) {
+              return { ok: false, error: `Deposit amount too low. Expected ${expectedBuyInEth} ETH.` };
+            }
+          }
           foundValidLog = true;
           break;
         }

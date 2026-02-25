@@ -87,6 +87,9 @@ export class RoomManager {
     if (room.players.some((p) => p.color === color)) {
       return { ok: false, error: 'Color already taken in this room' };
     }
+    if (opts?.characterId && room.players.some((p) => p.characterId === opts.characterId)) {
+      return { ok: false, error: 'Character already taken in this room' };
+    }
 
     const player: ServerPlayer = {
       id: socketId,

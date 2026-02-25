@@ -169,6 +169,15 @@ router.post('/cancellation-signature', async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Cannot cancel an active game' });
       return;
     }
+
+    // H7: In lobby phase, only the host can request cancellation
+    if (room.phase === 'lobby') {
+      const hostPlayer = room.players.find((p) => p.id === room.hostId);
+      if (hostPlayer?.walletAddress?.toLowerCase() !== user.wallet_address.toLowerCase()) {
+        res.status(403).json({ error: 'Only the host can cancel in lobby' });
+        return;
+      }
+    }
   }
 
   const result = await signCancellation(roomCode);

@@ -45,10 +45,10 @@ export const gambleSchema = z.object({
 export const minigameActionSchema = z.object({
   type: z.string().optional(),
   choice: z.union([z.string(), z.number()]).optional(),
-  tile: z.number().int().optional(),
-  number: z.number().int().optional(),
-  combo: z.array(z.number().int()).optional(),
-}).passthrough();
+  tile: z.number().int().min(0).max(15).optional(),
+  number: z.number().int().min(1).max(10).optional(),
+  combo: z.array(z.number().int().min(0).max(9)).max(3).optional(),
+});
 
 export const minigameResultSchema = z.object({
   tier: z.enum(['win', 'close-win', 'close-loss', 'loss', 'catastrophic']),

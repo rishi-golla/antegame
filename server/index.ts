@@ -807,11 +807,11 @@ nextApp.prepare().then(() => {
       const sock = io.sockets.sockets.get(player.id);
       if (!sock) continue;
       if (involvedIndices.includes(player.playerIndex)) {
-        // Trade participants see the full state
-        sock.emit('game:state', room.gameState);
+        // Trade participants see the full state (minus decks)
+        sock.emit('game:state', sanitizeGameState(room.gameState));
       } else {
-        // Everyone else sees state without the trade offer
-        sock.emit('game:state', { ...room.gameState, activeTradeOffer: null, phase: room.gameState.previousPhase ?? room.gameState.phase });
+        // Everyone else sees state without the trade offer (minus decks)
+        sock.emit('game:state', sanitizeGameState({ ...room.gameState, activeTradeOffer: null, phase: room.gameState.previousPhase ?? room.gameState.phase }));
       }
     }
     // Timer managed by broadcastGameState's phase-change detection
@@ -830,11 +830,21 @@ nextApp.prepare().then(() => {
   // Track last known player+phase per room to know when to restart timer
   const lastTimerState = new Map<string, string>();
 
+  /** Strip secret information from game state before sending to clients */
+  function sanitizeGameState(gs: any): any {
+    const { chanceDeck, communityChestDeck, chanceDiscard, communityChestDiscard, ...safe } = gs;
+    return {
+      ...safe,
+      chanceDeckSize: chanceDeck?.length ?? 0,
+      communityChestDeckSize: communityChestDeck?.length ?? 0,
+    };
+  }
+
   function broadcastGameState(code: string) {
     const room = rm.getRoom(code);
     if (!room?.gameState) return;
     room.lastActivity = Date.now();
-    io.to(code).emit('game:state', room.gameState);
+    io.to(code).emit('game:state', sanitizeGameState(room.gameState));
     if (room.gameState.phase === 'game-over') {
       clearTurnTimer(code);
       clearTurnEndTimer(code);
@@ -970,8 +980,18 @@ nextApp.prepare().then(() => {
       }
       const parsed = roomCreateSchema.safeParse(data);
       if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
+
+      // C3+C4: On-chain rooms require authenticated session; wallet comes from session
+      const isOnChain = !!parsed.data.buyInEth;
+      const sessionWallet = (socket as any).walletAddress as string | undefined;
+      if (isOnChain) {
+        if (!sessionWallet) {
+          return cb({ ok: false, error: 'Authentication required for on-chain games' });
+        }
+      }
+
       const result = rm.createRoom(socket.id, parsed.data.name, parsed.data.color, parsed.data.maxPlayers, {
-        walletAddress: parsed.data.walletAddress,
+        walletAddress: isOnChain ? sessionWallet : parsed.data.walletAddress,
         buyInEth: parsed.data.buyInEth,
         onChainTxHash: parsed.data.onChainTxHash,
         characterId: parsed.data.characterId,
@@ -995,8 +1015,18 @@ nextApp.prepare().then(() => {
       const parsed = roomJoinSchema.safeParse(data);
       if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
       const code = parsed.data.code.toUpperCase();
+
+      // C3+C4: On-chain rooms require authenticated session; wallet comes from session
+      const joinRoom = rm.getRoom(code);
+      const sessionWallet = (socket as any).walletAddress as string | undefined;
+      if (joinRoom?.isOnChain) {
+        if (!sessionWallet) {
+          return cb({ ok: false, error: 'Authentication required for on-chain games' });
+        }
+      }
+
       const result = rm.joinRoom(code, socket.id, parsed.data.name, parsed.data.color, {
-        walletAddress: parsed.data.walletAddress,
+        walletAddress: joinRoom?.isOnChain ? sessionWallet : parsed.data.walletAddress,
         onChainTxHash: parsed.data.onChainTxHash,
         characterId: parsed.data.characterId,
       });
@@ -1660,10 +1690,12 @@ nextApp.prepare().then(() => {
         room.gameState = autoAdvanceTurnEnd(resolveMinigame(room.gameState, tier));
         room.lastActivity = Date.now();
 
-        // Send the server-determined result + secret for verification
+        // Send the server-determined result + secret + salt for verification
+        // Client can verify: sha256(salt + JSON.stringify(secret)) === commitHash
         io.to(code).emit('game:minigame-server-result' as any, {
           tier,
           secret: serverResult?.secret,
+          salt: serverResult?.salt,
           commitHash: serverResult?.commitHash,
         });
 
@@ -1710,6 +1742,14 @@ nextApp.prepare().then(() => {
     (socket as any).on('room:quick-play-base', (data: { name: string; color: string; buyInEth: string; walletAddress: string; characterId?: string }, cb: (res: any) => void) => {
       const qpParsed = quickPlayBaseSchema.safeParse(data);
       if (!qpParsed.success) { cb({ ok: false, error: 'Invalid input' }); return; }
+
+      // C3+C4: Quick play is always on-chain — require auth, use session wallet
+      const sessionWallet = (socket as any).walletAddress as string | undefined;
+      if (!sessionWallet) {
+        cb({ ok: false, error: 'Authentication required for on-chain games' });
+        return;
+      }
+
       const existing = rm.findQuickPlayRoomByEth(qpParsed.data.buyInEth);
       if (existing) {
         // Check color conflict
@@ -1718,7 +1758,7 @@ nextApp.prepare().then(() => {
           return;
         }
         const joinResult = rm.joinRoom(existing.code, socket.id, qpParsed.data.name, qpParsed.data.color, {
-          walletAddress: qpParsed.data.walletAddress,
+          walletAddress: sessionWallet,
           characterId: qpParsed.data.characterId,
         });
         if (joinResult.ok) {
@@ -1733,7 +1773,7 @@ nextApp.prepare().then(() => {
           cb(joinResult);
         }
       } else {
-        const result = rm.createQuickPlayRoomBase(socket.id, qpParsed.data.name, qpParsed.data.color, qpParsed.data.buyInEth, qpParsed.data.walletAddress, qpParsed.data.characterId);
+        const result = rm.createQuickPlayRoomBase(socket.id, qpParsed.data.name, qpParsed.data.color, qpParsed.data.buyInEth, sessionWallet, qpParsed.data.characterId);
         if (result.ok && result.code) {
           socket.join(result.code);
           broadcastRoomState(result.code);
@@ -1771,7 +1811,7 @@ nextApp.prepare().then(() => {
       const walletAddress = player.walletAddress ?? (socket as any).user?.wallet_address;
       if (!walletAddress) return cb({ ok: false, error: 'Wallet address not found' });
 
-      const verification = await verifyDeposit(txHash, code, walletAddress);
+      const verification = await verifyDeposit(txHash, code, walletAddress, room.buyInEth || undefined);
       if (!verification.ok) {
         console.warn(`[deposit] Verification failed for ${player.name}: ${verification.error}`);
         return cb({ ok: false, error: verification.error ?? 'Deposit verification failed' });

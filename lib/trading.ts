@@ -54,6 +54,20 @@ export function acceptTrade(state: GameState): GameState {
 
   const fromIdx = offer.fromPlayer;
   const toIdx = offer.toPlayer;
+  const from = state.players[fromIdx];
+  const to = state.players[toIdx];
+
+  // H5: Re-validate at acceptance time (state may have changed since proposal)
+  if (from.bankrupt) throw new Error('Proposer is bankrupt');
+  if (to.bankrupt) throw new Error('Recipient is bankrupt');
+  for (const idx of offer.offerProperties) {
+    if (!from.properties.includes(idx)) throw new Error('Proposer no longer owns offered property');
+  }
+  for (const idx of offer.requestProperties) {
+    if (!to.properties.includes(idx)) throw new Error('Recipient no longer owns requested property');
+  }
+  if (offer.offerMoney > from.money) throw new Error('Proposer can no longer afford offered money');
+  if (offer.requestMoney > to.money) throw new Error('Recipient can no longer afford requested money');
 
   // Calculate 10% mortgage transfer interest for each side
   let fromInterest = 0; // interest fromPlayer pays on mortgaged properties received from toPlayer
