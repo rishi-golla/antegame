@@ -6,9 +6,11 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react';
 import { getSocket, disconnectSocket } from '@/lib/socket';
+import { getGameSession, saveGameSession, clearGameSession } from '@/lib/gameSession';
 import type { RoomClientState, ChatMessage } from '@/server/types';
 import type { GameState } from '@/types/game';
 import type { Socket } from 'socket.io-client';
@@ -25,8 +27,13 @@ interface SocketContextValue {
   gameState: GameState | null;
   chatMessages: ChatMessage[];
   turnTimer: { remaining: number; total: number } | null;
+  gameStuck: boolean;
+  disconnectedPlayers: Set<number>;
   minigameServerResult: MinigameServerResult | null;
   clearMinigameServerResult: () => void;
+  reconnecting: boolean;
+  reconnectFailed: boolean;
+  clearReconnectFailed: () => void;
   createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
   joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string; characterId?: string }) => Promise<{ ok: boolean; error?: string }>;
   leaveRoom: () => void;
@@ -55,19 +62,74 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const clearPendingRefund = useCallback(() => setPendingRefund(null), []);
   const [minigameServerResult, setMinigameServerResult] = useState<MinigameServerResult | null>(null);
   const clearMinigameServerResult = useCallback(() => setMinigameServerResult(null), []);
+  const [gameStuck, setGameStuck] = useState(false);
+  const [disconnectedPlayers, setDisconnectedPlayers] = useState<Set<number>>(new Set());
+  const [reconnecting, setReconnecting] = useState(false);
+  const [reconnectFailed, setReconnectFailed] = useState(false);
+  const clearReconnectFailed = useCallback(() => setReconnectFailed(false), []);
+  const lastGameStateAt = useRef<number>(Date.now());
+  const reconnectInFlight = useRef(false);
 
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on('connect', () => setConnected(true));
+    function attemptReconnect() {
+      if (reconnectInFlight.current) return;
+      const session = getGameSession();
+      if (!session) return;
+      if (!socket.connected) return;
+      reconnectInFlight.current = true;
+      setReconnecting(true);
+      socket.emit('room:reconnect', { code: session.roomCode, name: session.playerName }, (res) => {
+        reconnectInFlight.current = false;
+        setReconnecting(false);
+        if (res.ok) {
+          setGameStuck(false);
+          setReconnectFailed(false);
+          lastGameStateAt.current = Date.now();
+        } else {
+          clearGameSession();
+          setReconnectFailed(true);
+        }
+      });
+    }
+
+    socket.on('connect', () => {
+      setConnected(true);
+      // On initial connect or reconnect, try to rejoin active session
+      attemptReconnect();
+    });
     socket.on('disconnect', () => setConnected(false));
+
+    // socket.io manager-level reconnect (fires after transport re-establishes)
+    socket.io.on('reconnect', () => {
+      attemptReconnect();
+    });
 
     socket.on('room:state', (state) => {
       setRoomState(state);
+      // Save session when game is active
+      if (state.phase === 'playing' && state.code) {
+        const me = state.players.find((p: any) => p.isYou);
+        if (me) saveGameSession(state.code, me.name);
+      }
+      // Clear session when game is finished or player is no longer in room
+      if (state.phase === 'finished') {
+        clearGameSession();
+      } else if (state.phase === 'playing') {
+        const me = state.players.find((p: any) => p.isYou);
+        if (!me) clearGameSession();
+      }
     });
 
     socket.on('game:state', (state) => {
       setGameState(state);
+      lastGameStateAt.current = Date.now();
+      setGameStuck(false);
+      // Game over — clear session so players aren't redirected back
+      if (state.phase === 'game-over') {
+        clearGameSession();
+      }
     });
 
     socket.on('chat:message', (msg) => {
@@ -90,9 +152,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setMinigameServerResult(data);
     });
 
+    socket.on('player:disconnected' as any, (data: { playerIndex: number }) => {
+      setDisconnectedPlayers((prev) => new Set(prev).add(data.playerIndex));
+    });
+
+    socket.on('player:reconnected' as any, (data: { playerIndex: number }) => {
+      setDisconnectedPlayers((prev) => {
+        const next = new Set(prev);
+        next.delete(data.playerIndex);
+        return next;
+      });
+    });
+
     return () => {
       socket.off('connect');
       socket.off('disconnect');
+      socket.io.off('reconnect');
       socket.off('room:state');
       socket.off('game:state');
       socket.off('chat:message');
@@ -100,8 +175,34 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off('turn:timer');
       socket.off('game:cancellation:signature' as any);
       socket.off('game:minigame-server-result' as any);
+      socket.off('player:disconnected' as any);
+      socket.off('player:reconnected' as any);
       disconnectSocket();
     };
+  }, []);
+
+  // Watchdog: detect stuck games (no game:state update for 90s while in active game)
+  const gameStateRef = useRef(gameState);
+  gameStateRef.current = gameState;
+  const roomPhaseRef = useRef(roomState?.phase);
+  roomPhaseRef.current = roomState?.phase;
+
+  useEffect(() => {
+    const STUCK_THRESHOLD_MS = 90_000;
+    const CHECK_INTERVAL_MS = 10_000;
+
+    const interval = setInterval(() => {
+      if (
+        gameStateRef.current &&
+        roomPhaseRef.current === 'playing' &&
+        gameStateRef.current.phase !== 'game-over' &&
+        Date.now() - lastGameStateAt.current > STUCK_THRESHOLD_MS
+      ) {
+        setGameStuck(true);
+      }
+    }, CHECK_INTERVAL_MS);
+
+    return () => clearInterval(interval);
   }, []);
 
   const createRoom = useCallback(
@@ -134,6 +235,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     setRoomState(null);
     setGameState(null);
     setChatMessages([]);
+    setDisconnectedPlayers(new Set());
+    clearGameSession();
   }, []);
 
   const toggleReady = useCallback(() => {
@@ -262,6 +365,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         gameState,
         chatMessages,
         turnTimer,
+        gameStuck,
+        disconnectedPlayers,
+        reconnecting,
+        reconnectFailed,
+        clearReconnectFailed,
         createRoom,
         joinRoom,
         leaveRoom,
@@ -293,6 +401,11 @@ const FALLBACK: SocketContextValue = {
   gameState: null,
   chatMessages: [],
   turnTimer: null,
+  gameStuck: false,
+  disconnectedPlayers: new Set(),
+  reconnecting: false,
+  reconnectFailed: false,
+  clearReconnectFailed: noop,
   createRoom: noopAsync as any,
   joinRoom: noopAsync as any,
   leaveRoom: noop,

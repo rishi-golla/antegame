@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { useWalletClient, useBalance, useAccount } from 'wagmi';
+import { useWalletClient, useBalance, useAccount, useDisconnect } from 'wagmi';
 import { joinGameOnChain, getGameOnChain, formatEther } from '@/lib/contracts/monopolyGame';
 import { getChainId } from '@/lib/contracts/addresses';
 import { waitForTransactionReceipt } from 'wagmi/actions';
@@ -25,6 +25,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   const { data: walletClient } = useWalletClient();
   const { isConnected: evmConnected, address: connectedAddress } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
   const { data: balance } = useBalance({
     address: connectedAddress,
     chainId: getChainId(),
@@ -39,10 +40,19 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [buyInDisplay, setBuyInDisplay] = useState<string | null>(null);
+  const [pendingReconnect, setPendingReconnect] = useState(false);
 
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[1];
   const isBase = activeChain === 'base';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
+
+  // After disconnect completes, open connect modal
+  useEffect(() => {
+    if (pendingReconnect && !evmConnected && openConnectModal) {
+      setPendingReconnect(false);
+      openConnectModal();
+    }
+  }, [pendingReconnect, evmConnected, openConnectModal]);
 
   // Base chain users MUST have a wallet connected
   const walletReady = !isBase || (evmConnected && walletClient);
@@ -64,7 +74,12 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         // Wallet MUST be connected for Base chain — no exceptions
         if (!walletClient || !evmConnected) {
           setError('Wallet not connected. Please reconnect your wallet.');
-          openConnectModal?.();
+          if (openConnectModal) {
+            openConnectModal();
+          } else {
+            setPendingReconnect(true);
+            wagmiDisconnect();
+          }
           setLoading(false);
           return;
         }
@@ -231,7 +246,14 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         {isBase && !walletReady && (
           <p className="lobbyError" style={{ color: '#d4a843' }}>
             Wallet not connected.{' '}
-            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => openConnectModal?.()}>
+            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => {
+              if (openConnectModal) {
+                openConnectModal();
+              } else if (evmConnected) {
+                setPendingReconnect(true);
+                wagmiDisconnect();
+              }
+            }}>
               Reconnect wallet
             </span>
           </p>

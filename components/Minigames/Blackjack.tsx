@@ -199,7 +199,8 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
 
     if (calculateHandValue(playerHandRef.current) === 21) {
       setBlackjackAnimation(true);
-      setTimeout(() => doDealerPlay(), 1000);
+      // Natural blackjack: show the animation longer before auto-resolving
+      setTimeout(() => doDealerPlay(), 2500);
     }
 
     return () => {};
@@ -449,7 +450,7 @@ export default function Blackjack({ onResult, baseAmount, context, spectator = f
         fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: '14px',
         color: 'rgba(212,175,55,0.8)', letterSpacing: '1px',
       }}>
-        {gameEnded ? 'GAME OVER' : !playerTurn ? 'DEALER PLAYS...' : playerValue > 21 ? 'BUST!' : playerValue === 21 ? '★ PERFECT 21 ★' : 'HIT OR STAND?'}
+        {gameEnded ? 'GAME OVER' : !playerTurn ? 'DEALER PLAYS...' : playerValue > 21 ? 'BUST!' : isBlackjack ? 'NATURAL BLACKJACK — AUTO WIN!' : playerValue === 21 ? '★ PERFECT 21 ★' : 'HIT OR STAND?'}
       </div>
     </div>
   );

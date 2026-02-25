@@ -21,11 +21,12 @@ const ALLOWED_METHODS = new Set([
   'eth_maxPriorityFeePerGas',
   'eth_feeHistory',
   'net_version',
+  'alchemy_getAssetTransfers',
 ]);
 
 // Simple in-memory rate limiter per IP
 const ipHits = new Map<string, { count: number; resetAt: number }>();
-const MAX_REQUESTS_PER_MINUTE = 60;
+const MAX_REQUESTS_PER_MINUTE = 200;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -71,8 +72,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Limit batch size
-    if (requests.length > 10) {
-      return NextResponse.json({ error: 'Batch too large (max 10)' }, { status: 400 });
+    if (requests.length > 50) {
+      return NextResponse.json({ error: 'Batch too large (max 50)' }, { status: 400 });
     }
 
     const resp = await fetch(RPC_URL, {

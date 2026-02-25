@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWalletClient, useAccount } from 'wagmi';
-import { createPublicClient, http, formatEther } from 'viem';
+import { createPublicClient, http, formatEther, keccak256, encodePacked } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { getChainEnv, getRpcUrl, getAddresses } from '@/lib/contracts/addresses';
 import { MONOPOLY_GAME_ABI } from '@/lib/contracts/abi/MonopolyGame';
@@ -28,52 +28,100 @@ interface RefundableGame {
   hoursUntilCancel?: number;
 }
 
+interface UnclaimedSettlement {
+  gameId: `0x${string}`;
+  roomCode: string;
+  nonce: `0x${string}`;
+  signature: `0x${string}`;
+  buyIn: bigint;
+}
+
+/**
+ * Compute gameId from roomCode (must match server's roomCodeToGameId).
+ */
+function roomCodeToGameId(roomCode: string): `0x${string}` {
+  return keccak256(encodePacked(['string'], [roomCode]));
+}
+
 /**
  * Find all games where this player deposited but can get money back.
+ * Uses Alchemy transfer scan + server DB + pending-refunds to find gameIds.
  * Covers: CANCELLED (claimRefund), ACTIVE (emergencyCancel→claimRefund), WAITING (cancelGame→claimRefund)
  */
-async function findRefundableGames(playerAddress: `0x${string}`): Promise<RefundableGame[]> {
+async function findRefundableGames(playerAddress: `0x${string}`): Promise<{ games: RefundableGame[]; activeGameIds: `0x${string}`[] }> {
   const client = getClient();
   const rpcUrl = getRpcUrl();
   const addresses = getAddresses();
   const contractAddr = addresses.monopolyGame;
 
-  // Use Alchemy's getAssetTransfers to find all ETH this player sent to the contract
-  const resp = await fetch(rpcUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method: 'alchemy_getAssetTransfers',
-      params: [{
-        fromAddress: playerAddress,
-        toAddress: contractAddr,
-        category: ['external'],
-        maxCount: '0x3e8',
-      }],
-      id: 1,
-    }),
-  });
-
-  const data = await resp.json();
-  const transfers = data?.result?.transfers || [];
-  if (transfers.length === 0) return [];
-
-  // Extract gameIds from tx input data
   const gameIdSet = new Set<`0x${string}`>();
-  for (const t of transfers) {
-    try {
-      const tx = await client.getTransaction({ hash: t.hash as `0x${string}` });
-      if (tx.input.length >= 74) {
-        const gameId = ('0x' + tx.input.slice(10, 74)) as `0x${string}`;
-        gameIdSet.add(gameId);
+
+  // Source 1: Alchemy on-chain transfer scan (finds actual deposits)
+  try {
+    const resp = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'alchemy_getAssetTransfers',
+        params: [{
+          fromAddress: playerAddress,
+          toAddress: contractAddr,
+          category: ['external'],
+          maxCount: '0x3e8',
+        }],
+        id: 1,
+      }),
+    });
+    const data = await resp.json();
+    const transfers = data?.result?.transfers || [];
+
+    // Batch getTransaction calls (5 at a time to stay under rate limits)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < transfers.length; i += BATCH_SIZE) {
+      const batch = transfers.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((t: any) => client.getTransaction({ hash: t.hash as `0x${string}` }))
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value.input.length >= 74) {
+          const gameId = ('0x' + r.value.input.slice(10, 74)) as `0x${string}`;
+          gameIdSet.add(gameId);
+        }
       }
-    } catch { /* skip */ }
+    }
+  } catch (err) {
+    console.error('Transfer scan failed:', err);
   }
 
-  if (gameIdSet.size === 0) return [];
+  // Source 2: Server game history DB
+  try {
+    const profileResp = await fetch('/api/stats/me');
+    if (profileResp.ok) {
+      const profileData = await profileResp.json();
+      for (const h of (profileData.history ?? [])) {
+        if (h.room_code) gameIdSet.add(roomCodeToGameId(h.room_code));
+      }
+    }
+  } catch { /* no stats available */ }
+
+  // Source 3: Pending refunds (server-side file)
+  try {
+    const refundsResp = await fetch(`/api/refunds/${playerAddress}`);
+    if (refundsResp.ok) {
+      const refundsData = await refundsResp.json();
+      for (const r of (refundsData.refunds ?? [])) {
+        if (r.type !== 'settlement' && r.gameId) {
+          gameIdSet.add(r.gameId as `0x${string}`);
+        }
+      }
+    }
+  } catch { /* no refunds available */ }
+
+  if (gameIdSet.size === 0) return { games: [], activeGameIds: [] };
 
   const refundable: RefundableGame[] = [];
+  const activeGameIds: `0x${string}`[] = [];
   const stateNames: Record<number, GameState> = { 0: 'WAITING', 1: 'ACTIVE', 3: 'CANCELLED' };
 
   await Promise.all(
@@ -111,6 +159,7 @@ async function findRefundableGames(playerAddress: `0x${string}`): Promise<Refund
         }
 
         // ACTIVE (1) or WAITING (0): these need cancellation first
+        if (stateNum === 1) activeGameIds.push(gameId);
         if (stateNum === 0 || stateNum === 1) {
           // Verify player actually deposited
           const deposited = await client.readContract({
@@ -139,17 +188,100 @@ async function findRefundableGames(playerAddress: `0x${string}`): Promise<Refund
             hoursUntilCancel: hoursLeft,
           });
         }
+      } catch { /* game doesn't exist on-chain, skip */ }
+    })
+  );
+
+  return { games: refundable, activeGameIds };
+}
+
+/**
+ * Fetch unclaimed settlement entries from the server and verify they're still claimable on-chain.
+ * Also attempts retroactive settlement for ACTIVE on-chain games where the user may be the winner.
+ */
+async function findUnclaimedSettlements(
+  playerAddress: `0x${string}`,
+  activeGameIds: `0x${string}`[],
+): Promise<UnclaimedSettlement[]> {
+  const client = getClient();
+  const addresses = getAddresses();
+  const contractAddr = addresses.monopolyGame;
+
+  // 1. Check pending-refunds for already-persisted settlements
+  const results: UnclaimedSettlement[] = [];
+  const knownGameIds = new Set<string>();
+
+  const resp = await fetch(`/api/refunds/${playerAddress}`);
+  if (resp.ok) {
+    const data = await resp.json();
+    const settlements = (data.refunds ?? []).filter((r: any) => r.type === 'settlement');
+
+    await Promise.all(
+      settlements.map(async (s: any) => {
+        try {
+          const game = await client.readContract({
+            address: contractAddr,
+            abi: MONOPOLY_GAME_ABI,
+            functionName: 'getGame',
+            args: [s.gameId as `0x${string}`],
+          }) as unknown as [bigint, bigint, bigint, bigint, number, readonly `0x${string}`[], `0x${string}`];
+
+          const stateNum = Number(game[4]);
+          // Only ACTIVE (1) games can have claimWinnings called -- SETTLED (2) means already claimed
+          if (stateNum !== 1) return;
+
+          knownGameIds.add(s.gameId);
+          results.push({
+            gameId: s.gameId as `0x${string}`,
+            roomCode: s.roomCode,
+            nonce: s.nonce as `0x${string}`,
+            signature: s.signature as `0x${string}`,
+            buyIn: game[0],
+          });
+        } catch { /* skip */ }
+      })
+    );
+  }
+
+  // 2. For ACTIVE on-chain games not already covered, try retroactive settlement
+  const uncoveredActiveGames = activeGameIds.filter((id) => !knownGameIds.has(id));
+  await Promise.all(
+    uncoveredActiveGames.map(async (gameId) => {
+      try {
+        const sigResp = await fetch('/api/contracts/retroactive-settlement', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gameId }),
+        });
+        if (!sigResp.ok) return; // not the winner or other error
+        const { nonce, signature } = await sigResp.json();
+
+        const game = await client.readContract({
+          address: contractAddr,
+          abi: MONOPOLY_GAME_ABI,
+          functionName: 'getGame',
+          args: [gameId],
+        }) as unknown as [bigint, bigint, bigint, bigint, number, readonly `0x${string}`[], `0x${string}`];
+
+        results.push({
+          gameId,
+          roomCode: '', // not needed -- we have the gameId directly
+          nonce: nonce as `0x${string}`,
+          signature: signature as `0x${string}`,
+          buyIn: game[0],
+        });
       } catch { /* skip */ }
     })
   );
 
-  return refundable;
+  return results;
 }
 
 export default function ProfileRefunds() {
   const { data: walletClient } = useWalletClient();
   const { address } = useAccount();
   const [games, setGames] = useState<RefundableGame[]>([]);
+  const [settlements, setSettlements] = useState<UnclaimedSettlement[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -163,18 +295,24 @@ export default function ProfileRefunds() {
     setLoading(true);
     setError('');
     try {
-      const results = await findRefundableGames(address as `0x${string}`);
-      setGames(results);
+      const { games: refundResults, activeGameIds } = await findRefundableGames(address as `0x${string}`);
+      const settlementResults = await findUnclaimedSettlements(address as `0x${string}`, activeGameIds);
+      // Remove ACTIVE games from refunds if they turned out to be settlements
+      const settlementGameIds = new Set(settlementResults.map((s) => s.gameId));
+      const filteredRefunds = refundResults.filter((g) => !settlementGameIds.has(g.gameId));
+      setGames(filteredRefunds);
+      setSettlements(settlementResults);
     } catch (err) {
       console.error('Failed to scan:', err);
       setGames([]);
+      setSettlements([]);
     } finally {
       setLoading(false);
     }
   }, [address]);
 
   useEffect(() => {
-    if (expanded && games.length === 0 && !loading) fetchGames();
+    if (expanded && games.length === 0 && settlements.length === 0 && !loading) fetchGames();
   }, [expanded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
@@ -282,7 +420,42 @@ export default function ProfileRefunds() {
     setStatusMsg('');
   };
 
-  const totalClaimable = games.reduce((sum, g) => sum + g.buyIn, BigInt(0));
+  const handleClaimWinnings = async (settlement: UnclaimedSettlement) => {
+    if (!walletClient || !address) return;
+    setProcessingId(settlement.gameId);
+    setError('');
+    setStatusMsg('Claiming winnings...');
+    try {
+      const [account] = await walletClient.getAddresses();
+      const contractAddr = getAddresses().monopolyGame;
+      const chain = getChain();
+
+      const hash = await walletClient.writeContract({
+        account,
+        address: contractAddr,
+        abi: MONOPOLY_GAME_ABI,
+        chain,
+        functionName: 'claimWinnings',
+        args: [settlement.gameId, settlement.nonce, settlement.signature],
+      });
+      await waitForTransactionReceipt(wagmiConfig, { hash });
+      setSuccessCount((prev) => prev + 1);
+      setSettlements((prev) => prev.filter((s) => s.gameId !== settlement.gameId));
+    } catch (err: any) {
+      const msg = err?.shortMessage || err?.message || '';
+      if (msg.includes('User rejected') || msg.includes('denied')) {
+        setError('Transaction rejected');
+      } else {
+        setError(msg || 'Claim failed');
+      }
+    } finally {
+      setProcessingId(null);
+      setStatusMsg('');
+    }
+  };
+
+  const totalClaimable = games.reduce((sum, g) => sum + g.buyIn, BigInt(0))
+    + settlements.reduce((sum, s) => sum + s.buyIn, BigInt(0));
 
   const stateLabel = (s: GameState) => {
     switch (s) {
@@ -306,7 +479,7 @@ export default function ProfileRefunds() {
         className="profileRefundsToggle"
         onClick={() => setExpanded(!expanded)}
       >
-        <span>$ Refunds{games.length > 0 ? ` (${games.length})` : ''}</span>
+        <span>$ Refunds{(games.length + settlements.length) > 0 ? ` (${games.length + settlements.length})` : ''}</span>
         <span className="profileRefundsArrow">{expanded ? '▲' : '▼'}</span>
       </button>
 
@@ -314,7 +487,7 @@ export default function ProfileRefunds() {
         <div className="profileRefundsContent">
           {loading && <p className="profileRefundsStatus">Scanning on-chain deposits...</p>}
 
-          {!loading && games.length === 0 && (
+          {!loading && games.length === 0 && settlements.length === 0 && (
             <p className="profileRefundsStatus">No unclaimed refunds</p>
           )}
 
@@ -322,7 +495,7 @@ export default function ProfileRefunds() {
           {statusMsg && <p style={{ color: '#d4a843', fontSize: '0.4rem', textAlign: 'center' }}>{statusMsg}</p>}
           {successCount > 0 && <p style={{ color: '#4caf50', fontSize: '0.45rem', textAlign: 'center' }}>✅ {successCount} refund(s) claimed!</p>}
 
-          {games.length > 0 && (
+          {(games.length > 0 || settlements.length > 0) && (
             <div className="profileRefundsSummary">
               <span>Total: <strong>{formatEther(totalClaimable)} ETH</strong></span>
               <button
@@ -334,6 +507,26 @@ export default function ProfileRefunds() {
               </button>
             </div>
           )}
+
+          {settlements.map((s) => (
+            <div key={`settlement-${s.gameId}`} className="profileRefundRow">
+              <div className="profileRefundInfo">
+                <span className="profileRefundRoom" title={s.gameId}>
+                  {s.gameId.slice(0, 10)}...
+                </span>
+                <span className="profileRefundAmount">{formatEther(s.buyIn)} ETH</span>
+                <span className="profileRefundState" style={{ color: '#4caf50' }}>Winner</span>
+              </div>
+              <button
+                className="profileRefundClaimBtn"
+                onClick={() => handleClaimWinnings(s)}
+                disabled={processingId === s.gameId || claimAllLoading}
+                style={{ background: '#4caf50' }}
+              >
+                {processingId === s.gameId ? '...' : 'Claim Winnings'}
+              </button>
+            </div>
+          ))}
 
           {[...games].sort((a, b) => {
             const order: Record<GameState, number> = { CANCELLED: 0, WAITING: 1, ACTIVE: 2 };

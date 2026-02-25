@@ -236,7 +236,7 @@ export default function Board() {
 
     prevPositionsRef.current = currentPositions;
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; setIsAnimating(false); };
   }, [positionKey, moveTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track money changes for floats and sounds

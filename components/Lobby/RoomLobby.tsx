@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useAudio } from '@/context/AudioContext';
 import { useMultiChain } from '@/context/MultiChainContext';
+import { CHARACTERS } from '@/lib/assetMap';
 
 interface RoomLobbyProps {
   onLeave?: () => void;
@@ -97,16 +98,27 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
           <div className="lobbyPlayers">
             <h3>Players ({roomState.players.length}/{roomState.maxPlayers})</h3>
             <div className="lobbyPlayerList">
-              {roomState.players.map((player, i) => (
+              {roomState.players.map((player, i) => {
+                const char = player.characterId
+                  ? CHARACTERS.find(c => c.id === player.characterId)
+                  : CHARACTERS.find(c => c.color === player.color);
+                return (
                 <div key={i} className={`lobbyPlayer ${player.isYou ? 'lobbyPlayerYou' : ''}`}>
-                  <div className="setupPlayerColor" style={{ background: player.color, width: 32, height: 32, fontSize: '0.8rem' }}>
-                    {player.name[0]}
+                  <div className="setupPlayerColor" style={{ background: player.color, width: 32, height: 32, fontSize: '0.8rem', overflow: 'hidden' }}>
+                    {char ? (
+                      <img src={char.sprite} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as any }} />
+                    ) : player.name[0]}
                   </div>
-                  <span className="lobbyPlayerName">
-                    {player.name}
-                    {player.isHost && <span className="lobbyHostBadge">HOST</span>}
-                    {player.isYou && <span className="lobbyYouBadge">YOU</span>}
-                  </span>
+                  <div className="lobbyPlayerInfo">
+                    <span className="lobbyPlayerName">
+                      {player.name}
+                      {player.isHost && <span className="lobbyHostBadge">HOST</span>}
+                      {player.isYou && <span className="lobbyYouBadge">YOU</span>}
+                    </span>
+                    {char && (
+                      <span className="lobbyPlayerBuff">{char.buff.name} — {char.buff.description}</span>
+                    )}
+                  </div>
                   {roomState.entryFeeLamports > 0 && (
                     <span className={`lobbyDepositDot ${player.deposited ? 'deposited' : ''}`}>
                       {player.deposited ? '✓ Paid' : 'Unpaid'}
@@ -116,7 +128,8 @@ export default function RoomLobby({ onLeave }: RoomLobbyProps) {
                     {player.ready ? 'Ready' : 'Not Ready'}
                   </span>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="lobbyActions">

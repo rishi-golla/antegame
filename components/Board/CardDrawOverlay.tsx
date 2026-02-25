@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Card } from '@/types/game';
 
 interface CardDrawOverlayProps {
@@ -42,12 +42,16 @@ export default function CardDrawOverlay({ card, onDismiss }: CardDrawOverlayProp
     ? 'linear-gradient(180deg, #4a0e0e 0%, #2d0808 100%)'
     : 'linear-gradient(180deg, #2d1a4e 0%, #1a0e30 100%)';
 
+  // Use ref to avoid resetting timers when parent re-renders with new onDismiss identity
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('flip'), 200);
     const t2 = setTimeout(() => setPhase('reveal'), 550);
-    const t3 = setTimeout(onDismiss, 1800);
+    const t3 = setTimeout(() => onDismissRef.current(), 1800);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onDismiss]);
+  }, []);
 
   const effectLabel = getEffectLabel(card);
 

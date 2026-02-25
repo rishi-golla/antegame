@@ -33,6 +33,7 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
 
+
   useEffect(() => {
     if (solConnected && publicKey && pendingChain === 'solana') {
       setPendingChain(null);

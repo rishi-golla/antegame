@@ -124,13 +124,16 @@ export default function Tile({ tile, activeTile, players, currentPlayerIndex, on
       )}
 
       {houses > 0 && (
-        <div className="tileHouses">
+        <div className={`tileHouses ${houses === 5 ? 'tileHouses--hotel' : ''}`}>
           {houses === 5 ? (
             <span className="tileHotel">H</span>
           ) : (
-            Array.from({ length: houses }).map((_, i) => (
-              <span key={i} className="tileHouse" />
-            ))
+            <>
+              {Array.from({ length: houses }).map((_, i) => (
+                <span key={i} className="tileHouse" />
+              ))}
+              <span className="tileHouseCount">{houses}</span>
+            </>
           )}
         </div>
       )}

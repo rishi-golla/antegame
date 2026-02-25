@@ -10,6 +10,7 @@ import type { TradeOffer, GameState } from '@/types/game';
 interface TradeModalProps {
   targetPlayer: number;
   onClose: () => void;
+  myPlayerIndex?: number | null;
 }
 
 /* ── helpers ── */
@@ -80,10 +81,12 @@ function TradePropCard({
 
 /* ── main trade modal ── */
 
-export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
+export default function TradeModal({ targetPlayer, onClose, myPlayerIndex }: TradeModalProps) {
   const { state, dispatch } = useGame();
   const { play } = useAudio();
-  const me = state.players[state.currentPlayerIndex];
+  // Use the actual player index of the proposer, not currentPlayerIndex
+  const meIndex = myPlayerIndex != null && myPlayerIndex >= 0 ? myPlayerIndex : state.currentPlayerIndex;
+  const me = state.players[meIndex];
   const them = state.players[targetPlayer];
   const meChar = CHARACTERS.find(c => c.color === me.color) ?? CHARACTERS[0];
   const themChar = CHARACTERS.find(c => c.color === them.color) ?? CHARACTERS[1];
@@ -108,7 +111,7 @@ export default function TradeModal({ targetPlayer, onClose }: TradeModalProps) {
 
   const handlePropose = () => {
     const offer: TradeOffer = {
-      fromPlayer: state.currentPlayerIndex,
+      fromPlayer: meIndex,
       toPlayer: targetPlayer,
       offerMoney,
       requestMoney,

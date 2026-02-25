@@ -63,6 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     const signature = await wallet.signMessage(message);
 
+    // Extract referral param from URL or sessionStorage fallback
+    const urlRef = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('ref')
+      : null;
+    const ref = urlRef ?? sessionStorage.getItem('ref');
+    if (ref) sessionStorage.removeItem('ref');
+
     // Verify with server
     const verifyRes = await fetch('/api/auth/verify-wallet', {
       method: 'POST',
@@ -71,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         walletAddress: wallet.publicKey.toBase58(),
         signature: bs58.encode(signature),
         nonce,
+        chain: 'solana',
+        ...(ref ? { ref } : {}),
       }),
     });
 

@@ -6,6 +6,7 @@ import { useAudio } from '@/context/AudioContext';
 import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import { useSocket } from '@/context/SocketContext';
 import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
+import { getBuffModifier, applyDiscount } from '@/lib/buffs';
 import MinigameOverlay, { preloadAllMinigameBackgrounds } from '@/components/Minigames/MinigameOverlay';
 import CardDrawOverlay from '@/components/Board/CardDrawOverlay';
 import CountdownTimer from '@/components/Board/CountdownTimer';
@@ -21,6 +22,28 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   const { isMyTurn } = useMultiplayerTurn();
   const { roomState } = useSocket();
   const isMultiplayer = !!roomState;
+
+  // Stabilize drawnCard reference so the overlay doesn't remount on every state broadcast.
+  // Each broadcast creates a new drawnCard object (same content, different reference),
+  // which would unmount/remount CardDrawOverlay and reset its dismiss timer.
+  const drawnCardRef = useRef(state.drawnCard);
+  const [drawnCardKey, setDrawnCardKey] = useState(0);
+  const drawnCardStable = state.drawnCard ? drawnCardRef.current ?? state.drawnCard : null;
+  if (state.drawnCard && !drawnCardRef.current) {
+    // New card drawn — capture it and bump key so overlay mounts fresh
+    drawnCardRef.current = state.drawnCard;
+  } else if (!state.drawnCard && drawnCardRef.current) {
+    // Card cleared — release
+    drawnCardRef.current = null;
+  }
+  // Bump key only when a NEW card appears (not on re-renders)
+  const prevHadCard = useRef(false);
+  useEffect(() => {
+    if (state.drawnCard && !prevHadCard.current) {
+      setDrawnCardKey((k) => k + 1);
+    }
+    prevHadCard.current = !!state.drawnCard;
+  }, [state.drawnCard]);
 
   // Block actions while turn announcement is playing
   const [turnAnnouncing, setTurnAnnouncing] = useState(false);
@@ -60,9 +83,11 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
   }, [state.phase, state.drawnCard, isMyTurn, dispatch]);
 
   // Auto-resolve card effect after applying
+  // In multiplayer, the server drives the card flow (draw → apply → resolve)
+  // so the client doesn't need to send resolve-card.
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (state.phase === 'applying-card' && !isAnimating) {
+    if (state.phase === 'applying-card' && !isAnimating && !isMultiplayer) {
       resolveTimerRef.current = setTimeout(() => {
         dispatch({ type: 'RESOLVE_CARD' });
       }, 400);
@@ -70,7 +95,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     return () => {
       if (resolveTimerRef.current) clearTimeout(resolveTimerRef.current);
     };
-  }, [state.phase, isAnimating, dispatch]);
+  }, [state.phase, isAnimating, dispatch, isMultiplayer]);
 
   // Auto-advance turn-end (server handles this for multiplayer;
   // for free-play/local, auto-advance after 2.5s — or instantly if idle-chaining)
@@ -89,7 +114,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     };
   }, [state.phase, dispatch, play, isMultiplayer]);
   const player = state.players[state.currentPlayerIndex];
-  const disabled = isRolling || isAnimating || turnAnnouncing || state.phase === 'game-over' || idleAutoPlayingRef.current;
+  const disabled = isRolling || isAnimating || turnAnnouncing || state.phase === 'game-over' || idleAutoPlayingRef.current || (isMultiplayer && state.phase === 'turn-end');
 
   // Countdown timer config per phase
   // Timer resets each time the player or phase changes
@@ -284,7 +309,10 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       case 'applying-card':
         return 'Applying...';
       case 'turn-end':
-        return state.doublesCount > 0 ? 'Doubles! Roll Again' : 'Next Player...';
+        if (state.doublesCount > 0) {
+          return isMultiplayer ? 'Doubles! Rolling Again...' : 'Doubles! Roll Again';
+        }
+        return isMultiplayer ? 'Next Player...' : 'Next Player...';
       case 'game-over':
         return 'Game Over';
       default:
@@ -415,9 +443,10 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       </div>
 
       {/* Full-screen card overlay (renders via portal-style positioning) */}
-      {state.drawnCard && !isRolling && (
+      {drawnCardStable && !isRolling && (
         <CardDrawOverlay
-          card={state.drawnCard}
+          key={drawnCardKey}
+          card={drawnCardStable}
           onDismiss={() => dispatch({ type: 'APPLY_CARD' })}
         />
       )}
@@ -425,10 +454,17 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
       {/* Buy/Gamble/Decline buttons */}
       {state.phase === 'buying' && !isRolling ? (
         isMyTurn ? (
+          (() => {
+            const tile = state.tiles[player.position] as any;
+            let effectivePrice: number = tile.price ?? 0;
+            if (tile.type === 'railroad' && getBuffModifier(player, 'railroad-bonus') > 0) effectivePrice = 0;
+            const buyDisc = getBuffModifier(player, 'buy-discount');
+            if (buyDisc > 0 && effectivePrice > 0) effectivePrice = applyDiscount(effectivePrice, buyDisc);
+            return (
           <div className="buyDeclineRow">
-            {player.money >= (state.tiles[player.position] as any).price && (
+            {player.money >= effectivePrice && (
               <button className="buyButton" onClick={() => { play('sfx/buy-property'); dispatch({ type: 'BUY' }); }} disabled={isAnimating}>
-                Buy ${(state.tiles[player.position] as any).price}
+                {effectivePrice === 0 ? 'Claim FREE' : `Buy $${effectivePrice}`}
               </button>
             )}
             {state.minigamesEnabled && (
@@ -449,6 +485,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
               Pass
             </button>
           </div>
+            );
+          })()
         ) : (
           <div className="waitingLabel">{player.name} is deciding...</div>
         )
@@ -524,8 +562,8 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
         </div>
       )}
 
-      {/* Jail escape options */}
-      {state.phase === 'in-jail' && !isRolling && !isAnimating && (
+      {/* Jail escape options — only show for the current player */}
+      {state.phase === 'in-jail' && !isRolling && !isAnimating && (!isMultiplayer || isMyTurn) && (
         <div className="jailActions">
           <button className="jailBtn" disabled={player.money < 50} onClick={() => { play('sfx/collect-money'); dispatch({ type: 'JAIL_ESCAPE', method: 'bail' }); }}>
             Pay $50 Bail

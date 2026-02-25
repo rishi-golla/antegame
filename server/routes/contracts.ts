@@ -6,6 +6,8 @@
 import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
 import { getSessionFromCookie, validateSession } from '../auth';
+import { appendPendingRefunds, findSettlement } from '../refundStore';
+import { db } from '../db';
 import type { RoomManager } from '../roomManager';
 
 let _rm: RoomManager | null = null;
@@ -98,13 +100,33 @@ router.post('/settlement-signature', async (req: Request, res: Response) => {
     }
   }
 
+  const gameId = roomCodeToGameId(roomCode);
+
+  // Check for an existing persisted settlement (idempotent)
+  const existing = findSettlement(roomCode, winnerAddress);
+  if (existing) {
+    res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
+    return;
+  }
+
   const result = await signSettlement(roomCode, winnerAddress);
   if (!result) {
     res.status(503).json({ error: 'Signing not available -- signer key not configured' });
     return;
   }
 
-  const gameId = roomCodeToGameId(roomCode);
+  // Persist for future idempotent retrieval
+  await appendPendingRefunds([{
+    walletAddress: winnerAddress,
+    roomCode,
+    gameId,
+    nonce: result.nonce,
+    signature: result.signature,
+    timestamp: Date.now(),
+    reason: 'unclaimed_settlement',
+    type: 'settlement',
+  }]);
+
   res.json({ nonce: result.nonce, signature: result.signature, gameId });
 });
 
@@ -191,6 +213,79 @@ router.post('/cancellation-signature-by-id', async (req: Request, res: Response)
     res.json({ nonce: result.nonce, signature: result.signature, gameId });
   } catch (err: any) {
     console.error('[contracts] cancellation-signature-by-id error:', err);
+    res.status(500).json({ error: err.message || 'Signing failed' });
+  }
+});
+
+/**
+ * Retroactive settlement: for old games where the winner never claimed.
+ * Verifies the caller won via game_history DB, then generates + persists a settlement.
+ */
+router.post('/retroactive-settlement', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`retro-settle:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
+  const { gameId } = req.body ?? {};
+  if (!gameId || typeof gameId !== 'string' || !gameId.startsWith('0x') || gameId.length !== 66) {
+    res.status(400).json({ error: 'gameId must be a 0x-prefixed bytes32 hex string (66 chars)' });
+    return;
+  }
+
+  const walletAddress = user.wallet_address.toLowerCase();
+
+  // Look up all game_history entries to find which room_code produced this gameId
+  const rows = db.prepare(
+    `SELECT room_code, winner_wallet FROM game_history WHERE room_code != '' ORDER BY finished_at DESC`
+  ).all() as Array<{ room_code: string; winner_wallet: string }>;
+
+  const match = rows.find((r) => roomCodeToGameId(r.room_code) === gameId);
+  if (!match) {
+    res.status(404).json({ error: 'No recorded game found for this gameId' });
+    return;
+  }
+
+  if (match.winner_wallet.toLowerCase() !== walletAddress) {
+    res.status(403).json({ error: 'You are not the recorded winner of this game' });
+    return;
+  }
+
+  const roomCode = match.room_code;
+
+  // Check for existing persisted settlement (idempotent)
+  const existing = findSettlement(roomCode, walletAddress);
+  if (existing) {
+    res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
+    return;
+  }
+
+  // Generate and persist
+  try {
+    const result = await signSettlement(roomCode, walletAddress as `0x${string}`);
+    if (!result) {
+      res.status(503).json({ error: 'Signing not available -- signer key not configured' });
+      return;
+    }
+
+    await appendPendingRefunds([{
+      walletAddress,
+      roomCode,
+      gameId,
+      nonce: result.nonce,
+      signature: result.signature,
+      timestamp: Date.now(),
+      reason: 'retroactive_settlement',
+      type: 'settlement',
+    }]);
+
+    res.json({ nonce: result.nonce, signature: result.signature, gameId });
+  } catch (err: any) {
+    console.error('[contracts] retroactive-settlement error:', err);
     res.status(500).json({ error: err.message || 'Signing failed' });
   }
 });

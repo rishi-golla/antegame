@@ -186,6 +186,11 @@ export class RoomManager {
     return this.socketToRoom.get(socketId);
   }
 
+  /** Remove the socket-to-room mapping without removing the player from the room. */
+  clearSocketMapping(socketId: string): void {
+    this.socketToRoom.delete(socketId);
+  }
+
   getPlayerInRoom(code: string, socketId: string): ServerPlayer | undefined {
     const room = this.rooms.get(code);
     return room?.players.find((p) => p.id === socketId);
@@ -214,6 +219,8 @@ export class RoomManager {
 
     player.connected = false;
     player.disconnectedAt = Date.now();
+    // Clean up stale socket mapping (reconnect will set a new one)
+    this.socketToRoom.delete(socketId);
 
     return { code, playerIndex: player.playerIndex };
   }
@@ -343,6 +350,11 @@ export class RoomManager {
     if (room.isOnChain) return room.players.every((p) => p.ready && p.deposited);
     if (room.entryFeeLamports === 0) return room.players.every((p) => p.ready);
     return room.players.every((p) => p.ready && p.deposited);
+  }
+
+  // Get all room codes (for sweep operations)
+  getAllRoomCodes(): string[] {
+    return Array.from(this.rooms.keys());
   }
 
   // Clean up stale rooms

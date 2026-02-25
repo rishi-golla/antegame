@@ -82,13 +82,20 @@ export default function QuickPlayLobby({ onLeave, onGameStart }: QuickPlayLobbyP
 
         <div className="qpPlayerList">
           {roomState.players.map((p: any, i: number) => {
-            const char = CHARACTERS.find(c => c.color === p.color);
+            const char = p.characterId
+              ? CHARACTERS.find(c => c.id === p.characterId)
+              : CHARACTERS.find(c => c.color === p.color);
             return (
               <div key={i} className={`qpPlayerSlot qpPlayerFilled ${p.isYou ? 'qpPlayerYou' : ''}`}>
                 <div className="qpPlayerSprite" style={{ background: p.color }}>
                   {char && <img src={char.sprite} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' as any }} />}
                 </div>
-                <span className="qpPlayerName">{p.name}</span>
+                <div className="qpPlayerInfo">
+                  <span className="qpPlayerName">{p.name}</span>
+                  {char && (
+                    <span className="qpPlayerBuff">{char.buff.name} — {char.buff.description}</span>
+                  )}
+                </div>
                 <span className="qpPlayerStatus">
                   {p.deposited ? '💰' : '...'}
                 </span>

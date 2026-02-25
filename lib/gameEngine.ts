@@ -415,7 +415,12 @@ export function drawCard(state: GameState): GameState {
   }
 
   const card = deck.shift()!;
-  discard.push(card);
+
+  // Get Out of Jail Free cards are held by the player, NOT discarded.
+  // They return to the discard pile only when used or on bankruptcy.
+  if (card.effect.kind !== 'get-out-of-jail') {
+    discard.push(card);
+  }
 
   let s: GameState = isChance
     ? { ...state, chanceDeck: deck, chanceDiscard: discard }
@@ -585,6 +590,19 @@ export function attemptJailEscape(
       inJail: false,
       jailTurns: 0,
     });
+
+    // Return the GOOJF card to the correct discard pile.
+    // Check which deck is missing its card (not in deck or discard).
+    const chanceHasIt = s.chanceDeck.some(c => c.effect.kind === 'get-out-of-jail')
+      || s.chanceDiscard.some(c => c.effect.kind === 'get-out-of-jail');
+    if (!chanceHasIt) {
+      const chCard = { id: 'ch-9', deckType: 'chance' as const, text: 'Get Out of Jail Free.', effect: { kind: 'get-out-of-jail' as const } };
+      s = { ...s, chanceDiscard: [...s.chanceDiscard, chCard] };
+    } else {
+      const ccCard = { id: 'cc-5', deckType: 'community-chest' as const, text: 'Get Out of Jail Free.', effect: { kind: 'get-out-of-jail' as const } };
+      s = { ...s, communityChestDiscard: [...s.communityChestDiscard, ccCard] };
+    }
+
     s = addLog(s, `${player.name} used a Get Out of Jail Free card.`, state.currentPlayerIndex);
     return { ...s, phase: 'rolling' };
   }
@@ -625,33 +643,60 @@ export function attemptJailEscape(
 export function endTurn(state: GameState): GameState {
   const player = currentPlayer(state);
 
+  // Clear transient fields that must not leak across turns/phases
+  const cleanState: GameState = {
+    ...state,
+    pendingRent: null,
+    activeMinigame: null,
+    drawnCard: null,
+    debt: null,
+  };
+
   // If rolled doubles and not in jail, same player goes again
-  if (state.doublesCount > 0 && !player.inJail) {
-    return { ...state, phase: 'rolling' };
+  if (cleanState.doublesCount > 0 && !player.inJail) {
+    return { ...cleanState, phase: 'rolling' };
   }
 
-  // Find next non-bankrupt player
-  let next = (state.currentPlayerIndex + 1) % state.players.length;
+  // Find next non-bankrupt player (guard: cap iterations to prevent infinite loop)
+  let next = (cleanState.currentPlayerIndex + 1) % cleanState.players.length;
   let loops = 0;
-  while (state.players[next].bankrupt && loops < state.players.length) {
-    next = (next + 1) % state.players.length;
+  while (cleanState.players[next].bankrupt && loops < cleanState.players.length) {
+    next = (next + 1) % cleanState.players.length;
     loops++;
   }
 
+  // Safety: if loop exhausted without finding a non-bankrupt player, end game
+  // Pick highest net worth player as winner (reuses round-limit logic)
+  if (loops >= cleanState.players.length && cleanState.players[next].bankrupt) {
+    const activePlayers = cleanState.players.filter((p) => !p.bankrupt);
+    if (activePlayers.length === 0) {
+      // All bankrupt — pick highest net worth among all players
+      let bestIdx: number | null = null;
+      let bestWorth = -Infinity;
+      for (const p of cleanState.players) {
+        const nw = getNetWorth(cleanState, p.id);
+        if (nw > bestWorth) { bestWorth = nw; bestIdx = p.id; }
+      }
+      let s = addLog(cleanState, 'All players bankrupt — game over!');
+      s = addLog(s, bestIdx !== null ? `${s.players[bestIdx].name} wins by net worth ($${bestWorth})!` : 'Game over!');
+      return { ...s, phase: 'game-over', winner: bestIdx };
+    }
+  }
+
   // Check for winner
-  const activePlayers = state.players.filter((p) => !p.bankrupt);
+  const activePlayers = cleanState.players.filter((p) => !p.bankrupt);
   if (activePlayers.length <= 1) {
     const winner = activePlayers[0]?.id ?? null;
-    let s = addLog(state, winner !== null ? `${state.players[winner].name} wins the game!` : 'Game over!');
+    let s = addLog(cleanState, winner !== null ? `${cleanState.players[winner].name} wins the game!` : 'Game over!');
     return { ...s, phase: 'game-over', winner };
   }
 
-  const nextPlayer = state.players[next];
+  const nextPlayer = cleanState.players[next];
 
   // Check if next player has $0 — force liquidation or bankruptcy
   if (nextPlayer.money <= 0) {
     const nextState = {
-      ...state,
+      ...cleanState,
       currentPlayerIndex: next,
       doublesCount: 0,
       phase: 'rolling' as GamePhase,
@@ -674,46 +719,47 @@ export function endTurn(state: GameState): GameState {
   const nextPhase: GamePhase = nextPlayer.inJail ? 'in-jail' : 'rolling';
 
   // Track rounds: increment when turn wraps past player 0
-  let roundNumber = state.roundNumber;
-  let finalRounds = state.finalRounds;
+  let roundNumber = cleanState.roundNumber;
+  let finalRounds = cleanState.finalRounds;
+  let s = cleanState;
 
-  if (next <= state.currentPlayerIndex) {
+  if (next <= cleanState.currentPlayerIndex) {
     roundNumber++;
 
     // Log multiplier changes at thresholds
     if (roundNumber === 16) {
-      state = addLog(state, `📈 Round 16: Rents increased to 1.25x! GO salary reduced to $150.`);
+      s = addLog(s, `📈 Round 16: Rents increased to 1.25x! GO salary reduced to $150.`);
     } else if (roundNumber === 26) {
-      state = addLog(state, `📈 Round 26: Rents increased to 1.5x! GO salary reduced to $100.`);
+      s = addLog(s, `📈 Round 26: Rents increased to 1.5x! GO salary reduced to $100.`);
     } else if (roundNumber === 36) {
-      state = addLog(state, `📈 Round 36: Rents increased to 2x! GO salary reduced to $50.`);
+      s = addLog(s, `📈 Round 36: Rents increased to 2x! GO salary reduced to $50.`);
     } else if (roundNumber === 46) {
-      state = addLog(state, `📈 Round 46: Rents increased to 3x!`);
+      s = addLog(s, `📈 Round 46: Rents increased to 3x!`);
     }
 
     // Activate final rounds endgame mode
     if (roundNumber >= FINAL_ROUNDS_START && !finalRounds) {
       finalRounds = true;
-      state = addLog(state, `🔥 FINAL ROUNDS! No building, no GO salary, 4x rent!`);
+      s = addLog(s, `🔥 FINAL ROUNDS! No building, no GO salary, 4x rent!`);
     }
 
     // Force game-over at FINAL_ROUNDS_END — highest net worth wins
     if (roundNumber >= FINAL_ROUNDS_END) {
-      state = addLog(state, `⏰ Round ${FINAL_ROUNDS_END} reached — game over!`);
-      const activePlayers = state.players.filter((p) => !p.bankrupt);
+      s = addLog(s, `⏰ Round ${FINAL_ROUNDS_END} reached — game over!`);
+      const activePlayers = s.players.filter((p) => !p.bankrupt);
       let bestIdx = activePlayers[0]?.id ?? null;
       let bestWorth = -Infinity;
       for (const p of activePlayers) {
-        const nw = getNetWorth({ ...state, roundNumber, finalRounds }, p.id);
+        const nw = getNetWorth({ ...s, roundNumber, finalRounds }, p.id);
         if (nw > bestWorth) { bestWorth = nw; bestIdx = p.id; }
       }
-      state = addLog(state, bestIdx !== null ? `${state.players[bestIdx].name} wins by net worth ($${bestWorth})!` : 'Game over!');
-      return { ...state, phase: 'game-over', winner: bestIdx, roundNumber, finalRounds };
+      s = addLog(s, bestIdx !== null ? `${s.players[bestIdx].name} wins by net worth ($${bestWorth})!` : 'Game over!');
+      return { ...s, phase: 'game-over', winner: bestIdx, roundNumber, finalRounds };
     }
   }
 
   return {
-    ...state,
+    ...s,
     currentPlayerIndex: next,
     doublesCount: 0,
     phase: nextPhase,
@@ -879,18 +925,21 @@ export function declareBankruptcy(
     s = addLog(s, `All of ${player.name}'s assets transferred to ${s.players[creditorIndex].name}.`, playerIndex);
   } else {
     // --- BANKRUPT TO THE BANK ---
-    // Return Get Out of Jail Free cards to their respective decks
-    // (We track count only, so just put generic cards back into discard piles)
+    // Return Get Out of Jail Free cards to their respective discard piles
     let cardsReturned = player.getOutOfJailCards;
-    if (cardsReturned > 0) {
-      // Return to community chest discard first, then chance
-      const ccJailCard = s.communityChestDiscard.find(c => c.effect.kind === 'get-out-of-jail')
-        || s.communityChestDeck.find(c => c.effect.kind === 'get-out-of-jail');
-      const chJailCard = s.chanceDiscard.find(c => c.effect.kind === 'get-out-of-jail')
-        || s.chanceDeck.find(c => c.effect.kind === 'get-out-of-jail');
-
-      // We just need to note cards were returned; the deck system handles it
-      // since getOutOfJailCards is zeroed below
+    while (cardsReturned > 0) {
+      const chanceHasIt = s.chanceDeck.some(c => c.effect.kind === 'get-out-of-jail')
+        || s.chanceDiscard.some(c => c.effect.kind === 'get-out-of-jail');
+      if (!chanceHasIt) {
+        const chCard = { id: 'ch-9', deckType: 'chance' as const, text: 'Get Out of Jail Free.', effect: { kind: 'get-out-of-jail' as const } };
+        s = { ...s, chanceDiscard: [...s.chanceDiscard, chCard] };
+      } else {
+        const ccCard = { id: 'cc-5', deckType: 'community-chest' as const, text: 'Get Out of Jail Free.', effect: { kind: 'get-out-of-jail' as const } };
+        s = { ...s, communityChestDiscard: [...s.communityChestDiscard, ccCard] };
+      }
+      cardsReturned--;
+    }
+    if (player.getOutOfJailCards > 0) {
       s = addLog(s, `${player.name}'s Get Out of Jail Free card(s) returned to their decks.`, playerIndex);
     }
 

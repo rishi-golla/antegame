@@ -14,7 +14,8 @@ import { proposeTrade, acceptTrade, rejectTrade, cancelTrade, counterTrade } fro
 import authRouter, { sessionMiddleware } from './routes/auth';
 import statsRouter from './routes/stats';
 import contractsRouter, { setRoomManager } from './routes/contracts';
-import { signCancellation, roomCodeToGameId } from './contracts';
+import { signCancellation, signSettlement, roomCodeToGameId } from './contracts';
+import { appendPendingRefunds, findSettlement } from './refundStore';
 import { recordGameResult } from './stats';
 import { db } from './db';
 import { initMinigame, recordMinigameAction, resolveServerMinigame, cleanupMinigame } from './minigameEngine';
@@ -38,11 +39,18 @@ setRoomManager(rm);
 
 // Track which rooms already had results recorded (prevent double-recording)
 const recordedRooms = new Set<string>();
+// Assigned inside nextApp.prepare() closure
+let _persistSettlementForWinner: (code: string) => Promise<void> = async () => {};
 
 function tryRecordGameResult(room: Room) {
   if (recordedRooms.has(room.code)) return;
   if (!room.gameState || room.gameState.phase !== 'game-over') return;
   recordedRooms.add(room.code);
+
+  // Fire-and-forget settlement persistence for on-chain games
+  _persistSettlementForWinner(room.code).catch((err) =>
+    console.error(`[tryRecordGameResult] persistSettlement error for ${room.code}:`, err)
+  );
 
   const gs = room.gameState;
   const winnerIdx = gs.winner;
@@ -239,11 +247,24 @@ nextApp.prepare().then(() => {
         }
         broadcastGameState(code);
         systemMessage(code, `${player.name} was removed for disconnecting.`);
+        // Check if sole remaining player can win immediately
+        if (room.gameState.phase !== 'game-over') {
+          fastTrackIfSoleRemaining(code);
+        }
         if (room.gameState.phase !== 'game-over') {
           startTurnTimer(code);
         }
       } catch (e: any) {
         console.error(`[disconnect-timeout] Error bankrupting ${player.name}:`, e.message);
+        // Ragequit: force the remaining player to win (NOT refund-both)
+        try {
+          forceWinForRemaining(code, player.playerIndex);
+        } catch (e2: any) {
+          console.error(`[disconnect-timeout] forceWin also failed, falling back to cancellation:`, e2.message);
+          forceGameCancellation(code, `disconnect-bankruptcy-error: ${e.message}`).catch(err =>
+            console.error(`[forceGameCancellation] unhandled error for ${code}:`, err)
+          );
+        }
       }
     }, DISCONNECT_TIMEOUT_MS);
 
@@ -255,6 +276,223 @@ nextApp.prepare().then(() => {
     if (existing) {
       clearTimeout(existing);
       disconnectTimers.delete(key);
+    }
+  }
+
+  // Clear all disconnect timers for a room
+  function clearAllDisconnectTimers(code: string) {
+    for (const [key] of disconnectTimers) {
+      if (key.startsWith(`${code}:`)) clearDisconnectTimer(key);
+    }
+  }
+
+  // Shared refund store (serialized writes to prevent race conditions)
+
+  /**
+   * Persist a settlement signature for the winner of an on-chain game.
+   * Called whenever a game reaches game-over so the winner can claim later
+   * even if they close the tab before clicking "Claim Winnings".
+   */
+  async function persistSettlementForWinner(code: string) {
+    const room = rm.getRoom(code);
+    if (!room?.gameState || !room.isOnChain) return;
+    if (room.gameState.winner === null || room.gameState.winner === undefined) return;
+
+    const winnerIdx = room.gameState.winner;
+    const winnerPlayer = room.players.find((p) => p.playerIndex === winnerIdx);
+    if (!winnerPlayer?.walletAddress) return;
+
+    // Deduplicate: skip if already persisted
+    const existing = findSettlement(code, winnerPlayer.walletAddress);
+    if (existing) return;
+
+    try {
+      const settlement = await signSettlement(code, winnerPlayer.walletAddress as `0x${string}`);
+      if (!settlement) return;
+
+      const gameId = roomCodeToGameId(code);
+      await appendPendingRefunds([{
+        walletAddress: winnerPlayer.walletAddress,
+        roomCode: code,
+        gameId,
+        nonce: settlement.nonce,
+        signature: settlement.signature,
+        timestamp: Date.now(),
+        reason: 'unclaimed_settlement',
+        type: 'settlement',
+      }]);
+      console.log(`[persistSettlement] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+    } catch (err) {
+      console.error(`[persistSettlement] Failed for room ${code}:`, err);
+    }
+  }
+  _persistSettlementForWinner = persistSettlementForWinner;
+
+  /**
+   * Nuclear option: force-cancel a game and store refunds.
+   * Only called from internal error handlers when the game is genuinely broken.
+   * NOT exposed to players.
+   */
+  async function forceGameCancellation(code: string, reason: string) {
+    const room = rm.getRoom(code);
+    if (!room) return;
+    if (room.phase === 'finished') return; // already done
+
+    console.error(`[forceGameCancellation] room=${code} reason=${reason}`);
+
+    // Clear all timers
+    clearTurnTimer(code);
+    clearAllDisconnectTimers(code);
+    cancelQuickPlayCountdown(code);
+
+    room.phase = 'finished';
+
+    // Sign cancellation for on-chain games so players can claim refunds
+    if (room.isOnChain) {
+      try {
+        const cancellation = await signCancellation(code);
+        if (cancellation) {
+          const gameId = roomCodeToGameId(code);
+          const pendingRefunds = room.players
+            .filter((p: any) => p.deposited && p.walletAddress)
+            .map((p: any) => ({
+              walletAddress: p.walletAddress,
+              roomCode: code,
+              gameId,
+              nonce: cancellation.nonce,
+              signature: cancellation.signature,
+              timestamp: Date.now(),
+              reason,
+            }));
+
+          // Persist refunds (serialized to prevent race conditions)
+          await appendPendingRefunds(pendingRefunds);
+          console.log(`[forceGameCancellation] Stored ${pendingRefunds.length} pending refunds for room ${code}`);
+
+          // Notify connected players
+          io.to(code).emit('game:cancellation:signature', {
+            nonce: cancellation.nonce,
+            signature: cancellation.signature,
+            gameId,
+            roomCode: code,
+          });
+        }
+      } catch (err) {
+        console.error(`[forceGameCancellation] Failed to sign cancellation for room ${code}:`, err);
+      }
+    }
+
+    broadcastRoomState(code);
+    if (room.gameState) {
+      broadcastGameState(code);
+    }
+  }
+
+  /**
+   * Force a win for the remaining player when the quitter's bankruptcy throws.
+   * Directly sets game-over with the non-quitter as winner and persists
+   * the settlement so the winner can claim on-chain. Only falls through to
+   * forceGameCancellation (refund-both) if this also fails.
+   */
+  function forceWinForRemaining(code: string, quitterIndex: number) {
+    const room = rm.getRoom(code);
+    if (!room?.gameState) throw new Error('No game state');
+
+    // Find a non-bankrupt player who isn't the quitter
+    const candidates = room.gameState.players.filter(
+      (p) => !p.bankrupt && p.id !== quitterIndex
+    );
+    if (candidates.length === 0) throw new Error('No remaining player to award win');
+
+    const winner = candidates[0];
+    const gs = room.gameState;
+
+    // Manually mark quitter bankrupt + set game-over
+    const updatedPlayers = gs.players.map((p, i) =>
+      i === quitterIndex ? { ...p, bankrupt: true, money: 0, properties: [], houses: {}, mortgaged: [], getOutOfJailCards: 0 } : p
+    );
+    room.gameState = {
+      ...gs,
+      players: updatedPlayers,
+      phase: 'game-over' as any,
+      winner: winner.id,
+      log: [...gs.log, { message: `${gs.players[quitterIndex].name} forfeited. ${winner.name} wins!`, timestamp: Date.now() }],
+    };
+
+    room.phase = 'finished';
+    tryRecordGameResult(room);
+    clearTurnTimer(code);
+    clearAllDisconnectTimers(code);
+    broadcastGameState(code);
+    broadcastRoomState(code);
+    systemMessage(code, `${gs.players[quitterIndex].name} forfeited. ${winner.name} wins!`);
+  }
+
+  /**
+   * Schedule card resolve + turn-end after a short delay.
+   * Extracted so both the draw-card auto-resolve and the apply-card action can use it.
+   */
+  function scheduleCardResolve(code: string) {
+    setTimeout(() => {
+      const r = rm.getRoom(code);
+      if (!r?.gameState || r.gameState.phase !== 'applying-card') return;
+      r.gameState = resolveCard(r.gameState);
+      broadcastGameState(code);
+      if (r.gameState.phase === 'game-over') {
+        r.phase = 'finished';
+        tryRecordGameResult(r);
+        broadcastRoomState(code);
+      }
+      // turn-end auto-advance handled centrally by broadcastGameState
+    }, 500);
+  }
+
+  /**
+   * After a bankruptcy, check if only 1 non-backrupt player remains
+   * and all others are either bankrupt or disconnected. If so, immediately
+   * bankrupt disconnected players so the game ends without waiting for timers.
+   */
+  function fastTrackIfSoleRemaining(code: string) {
+    const room = rm.getRoom(code);
+    if (!room?.gameState || room.gameState.phase === 'game-over') return;
+
+    const activePlayers = room.gameState.players.filter((p) => !p.bankrupt);
+    if (activePlayers.length !== 1) return;
+
+    // Check that all other non-bankrupt players are disconnected
+    const remainingPlayer = activePlayers[0];
+    const serverPlayer = room.players.find((p) => p.playerIndex === remainingPlayer.id);
+    if (!serverPlayer?.connected) return; // the sole remaining player is also disconnected
+
+    // Immediately bankrupt all disconnected non-bankrupt players
+    const disconnectedActive = room.players.filter((p) => {
+      const gp = room.gameState!.players[p.playerIndex];
+      return !p.connected && gp && !gp.bankrupt;
+    });
+
+    for (const dp of disconnectedActive) {
+      clearDisconnectTimer(`${code}:${dp.id}`);
+      try {
+        room.gameState = declareBankruptcy(room.gameState!, dp.playerIndex);
+      } catch (err) {
+        console.error(`[fastTrack] Failed to bankrupt player ${dp.playerIndex}:`, err);
+        forceGameCancellation(code, 'fasttrack-bankruptcy-error').catch(e =>
+          console.error(`[forceGameCancellation] unhandled error for ${code}:`, e)
+        );
+        return;
+      }
+      if (room.gameState!.phase === 'game-over') break;
+    }
+
+    // Game should now be over with the remaining player as winner
+    if (room.gameState!.phase === 'game-over') {
+      room.phase = 'finished';
+      tryRecordGameResult(room);
+      clearTurnTimer(code);
+      clearAllDisconnectTimers(code);
+      broadcastGameState(code);
+      broadcastRoomState(code);
+      systemMessage(code, `${remainingPlayer.name} wins — all other players disconnected.`);
     }
   }
 
@@ -279,7 +517,8 @@ nextApp.prepare().then(() => {
     idleWarnings.get(code)?.delete(playerIndex);
   }
 
-  // Cleanup stale rooms every 5 minutes
+  // Cleanup stale rooms every 5 minutes + sweep for stuck games
+  const STALE_GAME_MS = 2 * 60 * 60 * 1000; // 2 hours
   setInterval(() => {
     const removed = rm.cleanup();
     for (const code of removed) {
@@ -288,13 +527,62 @@ nextApp.prepare().then(() => {
       lastTimerState.delete(code);
       recordedRooms.delete(code);
       idleWarnings.delete(code);
-      // Clean up disconnect timers for removed rooms
-      for (const [key] of disconnectTimers) {
-        if (key.startsWith(`${code}:`)) clearDisconnectTimer(key);
-      }
+      clearAllDisconnectTimers(code);
     }
     cleanupVerifiedHashes();
+
+    // Sweep for stuck active games
+    const now = Date.now();
+    for (const code of rm.getAllRoomCodes()) {
+      const room = rm.getRoom(code);
+      if (!room || room.phase !== 'playing' || !room.gameState) continue;
+
+      // All players disconnected but auto-cancel wasn't triggered (race condition)
+      const allDisconnected = room.players.every((p) => !p.connected);
+      if (allDisconnected) {
+        console.log(`[stale-sweep] All players disconnected in room ${code} — force cancelling`);
+        forceGameCancellation(code, 'stale-sweep-all-disconnected').catch(err =>
+          console.error(`[forceGameCancellation] unhandled error for ${code}:`, err)
+        );
+        continue;
+      }
+
+      // No activity for 2+ hours — game is stuck
+      if (now - room.lastActivity > STALE_GAME_MS) {
+        console.log(`[stale-sweep] Room ${code} inactive for 2+ hours — force cancelling`);
+        forceGameCancellation(code, 'stale-sweep-inactive-2h').catch(err =>
+          console.error(`[forceGameCancellation] unhandled error for ${code}:`, err)
+        );
+      }
+    }
   }, 5 * 60 * 1000);
+
+  // === TURN-END AUTO-ADVANCE (2.5s) ===
+  // Centralized 2.5s auto-advance for turn-end phase.
+  // Scheduled from broadcastGameState so every code path is covered.
+  const turnEndTimers = new Map<string, NodeJS.Timeout>();
+
+  function clearTurnEndTimer(code: string) {
+    const t = turnEndTimers.get(code);
+    if (t) { clearTimeout(t); turnEndTimers.delete(code); }
+  }
+
+  function scheduleTurnEndAdvance(code: string) {
+    clearTurnEndTimer(code);
+    turnEndTimers.set(code, setTimeout(() => {
+      turnEndTimers.delete(code);
+      const r = rm.getRoom(code);
+      if (!r?.gameState || r.gameState.phase !== 'turn-end') return;
+      r.gameState = endTurn(r.gameState);
+      lastTimerState.delete(code);
+      broadcastGameState(code);
+      if (r.gameState.phase === 'game-over') {
+        r.phase = 'finished';
+        tryRecordGameResult(r);
+        broadcastRoomState(code);
+      }
+    }, 2500));
+  }
 
   // === TURN TIMER SYSTEM ===
   const TURN_TIME_MS = 45_000;
@@ -302,6 +590,7 @@ nextApp.prepare().then(() => {
   const turnTimers = new Map<string, { timeout: NodeJS.Timeout; interval: NodeJS.Timeout; remaining: number }>();
 
   function clearTurnTimer(code: string) {
+    clearTurnEndTimer(code);
     const timer = turnTimers.get(code);
     if (timer) {
       clearTimeout(timer.timeout);
@@ -393,7 +682,7 @@ nextApp.prepare().then(() => {
               r.gameState = applyDrawnCard(drawCard(r.gameState));
               break;
             case 'applying-card':
-              r.gameState = applyDrawnCard(r.gameState);
+              r.gameState = resolveCard(r.gameState);
               break;
             case 'in-jail':
               r.gameState = attemptJailEscape(r.gameState, 'roll');
@@ -423,12 +712,32 @@ nextApp.prepare().then(() => {
       } catch (e: any) {
         console.error(`[turn-timer] Error auto-advancing phase "${phase}":`, e.message);
         // Fallback: bankrupt on error (guard against double-bankruptcy)
-        if (!r.gameState.players[currentIdx].bankrupt) {
-          r.gameState = declareBankruptcy(r.gameState, currentIdx);
-          if (r.gameState.phase !== 'game-over') {
-            r.gameState = endTurn(r.gameState);
+        try {
+          if (!r.gameState.players[currentIdx].bankrupt) {
+            r.gameState = declareBankruptcy(r.gameState, currentIdx);
+            if (r.gameState.phase !== 'game-over') {
+              r.gameState = endTurn(r.gameState);
+            }
+          }
+        } catch (e2: any) {
+          console.error(`[turn-timer] Fallback bankruptcy also failed:`, e2.message);
+          // Ragequit: force the remaining player to win (NOT refund-both)
+          try {
+            forceWinForRemaining(code, currentIdx);
+            return; // forceWin handled everything
+          } catch (e3: any) {
+            console.error(`[turn-timer] forceWin also failed, falling back to cancellation:`, e3.message);
+            forceGameCancellation(code, `idle-bankruptcy-error: ${e2.message}`).catch(err =>
+              console.error(`[forceGameCancellation] unhandled error for ${code}:`, err)
+            );
+            return; // skip normal post-processing below
           }
         }
+      }
+
+      // Check if sole remaining player can win immediately
+      if (r.gameState.phase !== 'game-over') {
+        fastTrackIfSoleRemaining(code);
       }
 
       if (r.gameState.phase === 'game-over') {
@@ -471,6 +780,7 @@ nextApp.prepare().then(() => {
         players: room.players.map((p) => ({
           name: p.name,
           color: p.color,
+          characterId: p.characterId,
           ready: p.ready,
           connected: p.connected,
           isHost: p.id === room.hostId,
@@ -523,11 +833,17 @@ nextApp.prepare().then(() => {
   function broadcastGameState(code: string) {
     const room = rm.getRoom(code);
     if (!room?.gameState) return;
+    room.lastActivity = Date.now();
     io.to(code).emit('game:state', room.gameState);
     if (room.gameState.phase === 'game-over') {
       clearTurnTimer(code);
+      clearTurnEndTimer(code);
       lastTimerState.delete(code);
+    } else if (room.gameState.phase === 'turn-end') {
+      // Always schedule the 2.5s auto-advance for turn-end (centralized)
+      scheduleTurnEndAdvance(code);
     } else {
+      clearTurnEndTimer(code);
       // Restart timer when player or phase changes (not on every broadcast)
       const key = `${room.gameState.currentPlayerIndex}:${room.gameState.phase}`;
       if (lastTimerState.get(code) !== key) {
@@ -716,6 +1032,63 @@ nextApp.prepare().then(() => {
       if (!code) return;
       const room = rm.getRoom(code);
       const player = rm.getPlayerInRoom(code, socket.id);
+
+      // Mid-game leave: trigger bankruptcy instead of removing from player array
+      if (room && room.phase === 'playing' && room.gameState && room.gameState.phase !== 'game-over' && player) {
+        // Mark disconnected (preserves player in room, clears socket mapping)
+        rm.markDisconnected(socket.id);
+        socket.leave(code);
+
+        // Immediately bankrupt the leaving player (same as disconnect timer expiry)
+        try {
+          clearDisconnectTimer(`${code}:${socket.id}`);
+          room.gameState = declareBankruptcy(room.gameState, player.playerIndex);
+          if (room.gameState.phase === 'game-over') {
+            room.phase = 'finished';
+            tryRecordGameResult(room);
+            clearTurnTimer(code);
+            clearAllDisconnectTimers(code);
+            broadcastGameState(code);
+            broadcastRoomState(code);
+            systemMessage(code, `${player.name} left the game. Game over!`);
+          } else {
+            // If it was their turn, advance
+            if (room.gameState.currentPlayerIndex === player.playerIndex) {
+              room.gameState = endTurn(room.gameState);
+            }
+            broadcastGameState(code);
+            broadcastRoomState(code);
+            systemMessage(code, `${player.name} left the game and went bankrupt.`);
+            // Check if sole remaining player can win immediately
+            if (room.gameState.phase !== 'game-over') {
+              fastTrackIfSoleRemaining(code);
+            }
+            if (room.gameState.phase === 'game-over') {
+              room.phase = 'finished';
+              tryRecordGameResult(room);
+              clearTurnTimer(code);
+              clearAllDisconnectTimers(code);
+              broadcastGameState(code);
+              broadcastRoomState(code);
+            } else {
+              startTurnTimer(code);
+            }
+          }
+        } catch (e: any) {
+          console.error(`[room:leave] Error bankrupting ${player.name}:`, e.message);
+          // Ragequit: force the remaining player to win (NOT refund-both)
+          try {
+            forceWinForRemaining(code, player.playerIndex);
+          } catch (e2: any) {
+            console.error(`[room:leave] forceWin also failed, falling back to cancellation:`, e2.message);
+            forceGameCancellation(code, `leave-bankruptcy-error: ${e.message}`).catch(err =>
+              console.error(`[forceGameCancellation] unhandled error for ${code}:`, err)
+            );
+          }
+        }
+        return;
+      }
+
       const result = rm.leaveRoom(socket.id);
       if (result) {
         socket.leave(code);
@@ -736,6 +1109,38 @@ nextApp.prepare().then(() => {
             const cancellation = await signCancellation(code);
             if (cancellation) {
               const gameId = roomCodeToGameId(code);
+              // Persist refund for the leaving player
+              const refundsToStore: any[] = [];
+              if (player?.walletAddress) {
+                refundsToStore.push({
+                  walletAddress: player.walletAddress,
+                  roomCode: code,
+                  gameId,
+                  nonce: cancellation.nonce,
+                  signature: cancellation.signature,
+                  timestamp: Date.now(),
+                  reason: 'player_left_lobby',
+                });
+              }
+              // Also persist for remaining deposited players if room was deleted
+              if (result.deleted && room) {
+                for (const p of room.players) {
+                  if (p.deposited && p.walletAddress && p.id !== socket.id) {
+                    refundsToStore.push({
+                      walletAddress: p.walletAddress,
+                      roomCode: code,
+                      gameId,
+                      nonce: cancellation.nonce,
+                      signature: cancellation.signature,
+                      timestamp: Date.now(),
+                      reason: 'room_deleted',
+                    });
+                  }
+                }
+              }
+              if (refundsToStore.length > 0) {
+                await appendPendingRefunds(refundsToStore);
+              }
               // Emit to the leaving player so they can claim refund
               socket.emit('game:cancellation:signature', {
                 nonce: cancellation.nonce,
@@ -743,14 +1148,33 @@ nextApp.prepare().then(() => {
                 gameId,
                 roomCode: code,
               });
-              // Also emit to remaining deposited players if any
-              if (!result.deleted && anyDeposited) {
+              // Emit to remaining deposited players and close the room —
+              // once a cancellation is signed, the room cannot continue
+              if (!result.deleted && room) {
+                // Persist refunds for remaining deposited players
+                const remainingRefunds = room.players
+                  .filter((p: any) => p.deposited && p.walletAddress && p.id !== socket.id)
+                  .map((p: any) => ({
+                    walletAddress: p.walletAddress,
+                    roomCode: code,
+                    gameId,
+                    nonce: cancellation.nonce,
+                    signature: cancellation.signature,
+                    timestamp: Date.now(),
+                    reason: 'lobby_cancelled',
+                  }));
+                if (remainingRefunds.length > 0) {
+                  await appendPendingRefunds(remainingRefunds);
+                }
                 io.to(code).emit('game:cancellation:signature', {
                   nonce: cancellation.nonce,
                   signature: cancellation.signature,
                   gameId,
                   roomCode: code,
                 });
+                // Close the room so remaining players can't ready up
+                room.phase = 'finished';
+                broadcastRoomState(code);
               }
             }
           } catch (err) {
@@ -812,22 +1236,31 @@ nextApp.prepare().then(() => {
           if (room.phase === 'finished') {
             broadcastRoomState(code);
           }
-          // Auto-advance turn after 2.5s when turn-end (handles both doubles and no-doubles)
-          if (room.gameState && room.gameState.phase === 'turn-end') {
+
+          // Auto-resolve card: after draw-card, server drives apply → resolve
+          // so the client overlay is purely cosmetic and doesn't block the game
+          if (room.gameState && room.gameState.phase === 'drawing-card' && room.gameState.drawnCard && action === 'draw-card') {
             setTimeout(() => {
               const r = rm.getRoom(code);
-              if (!r?.gameState || r.gameState.phase !== 'turn-end') return;
-              r.gameState = endTurn(r.gameState);
-              // Force timer restart even if same player returns to rolling (doubles)
-              lastTimerState.delete(code);
-              broadcastGameState(code);
-              if (r.gameState.phase === 'game-over') {
-                r.phase = 'finished';
-                tryRecordGameResult(r);
-                broadcastRoomState(code);
+              if (!r?.gameState) return;
+              // Apply card if still in drawing-card phase
+              if (r.gameState.phase === 'drawing-card' && r.gameState.drawnCard) {
+                r.gameState = applyDrawnCard(r.gameState);
+                broadcastGameState(code);
               }
-            }, 2500);
+              // Schedule resolve (whether we just applied or player already applied)
+              scheduleCardResolve(code);
+            }, 1800);
           }
+
+          // If the player manually applied the card (sent apply-card action),
+          // the auto-resolve timer above may have already aborted.
+          // Schedule resolve directly so the game doesn't get stuck.
+          if (room.gameState && room.gameState.phase === 'applying-card' && action === 'apply-card') {
+            scheduleCardResolve(code);
+          }
+
+          // turn-end auto-advance handled centrally by broadcastGameState
         } else {
           socket.emit('room:error', result.error ?? 'Action failed');
         }
@@ -899,11 +1332,13 @@ nextApp.prepare().then(() => {
         }
       }
 
-      const success = rm.reconnect(code, disconnected.id, socket.id);
+      // Capture old socket ID before reconnect mutates it
+      const oldSocketId = disconnected.id;
+      const success = rm.reconnect(code, oldSocketId, socket.id);
       if (!success) return cb({ ok: false, error: 'Reconnection failed' });
 
-      // Cancel disconnect auto-bankrupt timer
-      clearDisconnectTimer(`${code}:${disconnected.id}`);
+      // Cancel disconnect auto-bankrupt timer (keyed by OLD socket ID)
+      clearDisconnectTimer(`${code}:${oldSocketId}`);
 
       socket.join(code);
       // Send chat history
@@ -1436,16 +1871,13 @@ nextApp.prepare().then(() => {
                     timestamp: Date.now(),
                   }));
 
-                // Write to file for persistence
-                const fs = await import('fs');
-                const refundPath = './pending-refunds.json';
-                let existing: any[] = [];
-                try { existing = JSON.parse(fs.readFileSync(refundPath, 'utf8')); } catch {}
-                existing.push(...pendingRefunds);
-                fs.writeFileSync(refundPath, JSON.stringify(existing, null, 2));
+                // Persist refunds (serialized to prevent race conditions)
+                await appendPendingRefunds(pendingRefunds);
                 console.log(`[room ${code}] Stored ${pendingRefunds.length} pending refunds`);
 
                 room.phase = 'finished';
+                clearAllDisconnectTimers(code);
+                clearTurnTimer(code);
                 broadcastRoomState(code);
               }
             } catch (err) {
@@ -1481,10 +1913,8 @@ nextApp.prepare().then(() => {
       return;
     }
     try {
-      const fs = require('fs');
-      const refundPath = './pending-refunds.json';
-      let refunds: any[] = [];
-      try { refunds = JSON.parse(fs.readFileSync(refundPath, 'utf8')); } catch {}
+      const { readPendingRefunds } = require('./refundStore');
+      const refunds = readPendingRefunds();
       const matching = refunds.filter((r: any) => r.walletAddress?.toLowerCase() === addr);
       res.json({ refunds: matching });
     } catch {

@@ -71,8 +71,10 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
       // Sign with EVM wallet
       const signature = await signMessageAsync({ message });
 
-      // Check for ref param in URL if not passed directly
-      const refParam = ref ?? new URLSearchParams(window.location.search).get('ref') ?? undefined;
+      // Check for ref param in URL, sessionStorage fallback, or passed directly
+      const urlRef = new URLSearchParams(window.location.search).get('ref');
+      const refParam = ref ?? urlRef ?? sessionStorage.getItem('ref') ?? undefined;
+      if (refParam) sessionStorage.removeItem('ref');
 
       // Verify on server
       const verifyRes = await fetch('/api/auth/verify-wallet', {

@@ -21,6 +21,7 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
 
+
   // Auto-sign after Solana wallet connects
   useEffect(() => {
     if (solConnected && publicKey && pendingChain === 'solana') {

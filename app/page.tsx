@@ -32,7 +32,10 @@ import RefundModal from '@/components/Lobby/RefundModal';
 import QuickPlay from '@/components/Lobby/QuickPlay';
 import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
 import TurnSummary from '@/components/UI/TurnSummary';
+import StuckGameBanner from '@/components/UI/StuckGameBanner';
+import ReconnectOverlay from '@/components/UI/ReconnectOverlay';
 import TurnAnnounce from '@/components/TurnAnnounce';
+import { getGameSession, clearGameSession } from '@/lib/gameSession';
 
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
@@ -204,10 +207,6 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 
         {/* Secondary row */}
         <div className="menuSecondaryRow">
-          <a href="/bridge" className="menuGhostBtn" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <span style={{ fontSize: 18, marginRight: 4 }}>🌉</span>
-            Bridge
-          </a>
           <button className="menuGhostBtn" onClick={() => onNavigate('free-play-setup')}>
             <img src="/assets/menu-icons/free-play.webp" alt="" className="menuGhostImg" />
             Free Play
@@ -271,13 +270,15 @@ function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; 
 
   return (
     <MultiplayerGameProvider>
+      <StuckGameBanner />
+      <ReconnectOverlay onBackToMenu={onPlayAgain} />
       <main className="gameScreen">
         <PlayerList onTrade={setTradeTarget} myPlayerIndex={myPlayerIndex} />
         <Board />
         <SidePanel chatMessages={chatMessages} onSendChat={sendChat} />
       </main>
       {tradeTarget !== null && (
-        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} />
+        <TradeModal targetPlayer={tradeTarget} onClose={() => setTradeTarget(null)} myPlayerIndex={myPlayerIndex} />
       )}
       <TradeOfferView myPlayerIndex={myPlayerIndex} />
       <TurnAnnounce />
@@ -289,14 +290,22 @@ function OnlineGameScreen({ onPlayAgain, roomCode }: { onPlayAgain: () => void; 
 
 function QuickPlayFlow({ onBack }: { onBack: () => void }) {
   const [qpScreen, setQpScreen] = useState<'select' | 'lobby' | 'game'>('select');
-  const { roomState } = useSocket();
+  const { roomState, reconnectFailed, clearReconnectFailed } = useSocket();
   const myPlayerIndex = roomState?.players.findIndex(p => p.isYou) ?? null;
 
   useEffect(() => {
-    if (roomState?.phase === 'playing' && qpScreen === 'lobby') {
+    if (roomState?.phase === 'playing' && qpScreen !== 'game') {
       setQpScreen('game');
     }
   }, [roomState?.phase, qpScreen]);
+
+  // If reconnect failed (room gone / game ended), go back to menu
+  useEffect(() => {
+    if (reconnectFailed) {
+      clearReconnectFailed();
+      onBack();
+    }
+  }, [reconnectFailed, clearReconnectFailed, onBack]);
 
   switch (qpScreen) {
     case 'select':
@@ -306,6 +315,8 @@ function QuickPlayFlow({ onBack }: { onBack: () => void }) {
     case 'game':
       return (
         <MultiplayerGameProvider>
+          <StuckGameBanner />
+          <ReconnectOverlay onBackToMenu={onBack} />
           <main className="gameScreen">
             <PlayerList myPlayerIndex={myPlayerIndex} />
             <Board />
@@ -328,13 +339,27 @@ function RefundOverlay() {
 
 function OnlineFlow({ onBack, initialScreen = 'create', roomCode: initialRoomCode }: { onBack: () => void; initialScreen?: 'create' | 'join'; roomCode?: string }) {
   const [screen, setScreen] = useState<'create' | 'join' | 'lobby' | 'game'>(initialScreen);
-  const { roomState, leaveRoom, pendingRefund } = useSocket();
+  const { roomState, leaveRoom, reconnectFailed, clearReconnectFailed } = useSocket();
 
   useEffect(() => {
-    if (roomState?.phase === 'playing' && screen === 'lobby') {
+    // Auto-transition to game when server confirms we're in an active game
+    // (covers lobby->game, and reconnect landing on create/join->game)
+    if (roomState?.phase === 'playing' && screen !== 'game') {
       setScreen('game');
     }
+    // Room was cancelled (e.g. deposited player left) — go back to create screen
+    if (roomState?.phase === 'finished' && screen === 'lobby') {
+      setScreen('create');
+    }
   }, [roomState?.phase, screen]);
+
+  // If reconnect failed (room gone / game ended), go back to menu
+  useEffect(() => {
+    if (reconnectFailed) {
+      clearReconnectFailed();
+      onBack();
+    }
+  }, [reconnectFailed, clearReconnectFailed, onBack]);
 
   const handleLeaveLobby = () => {
     leaveRoom();
@@ -433,6 +458,28 @@ function AuthGate() {
     window.history.replaceState({ screen: initial.screen, roomCode: initial.roomCode }, '', path);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-route to game screen if there's an active session in localStorage
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+    const session = getGameSession();
+    if (session && screen === 'menu') {
+      navigate('game', session.roomCode);
+    }
+  }, [loading, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Warn before closing tab during active game
+  const isInActiveGame = screen === 'game' || screen === 'quick-play';
+  useEffect(() => {
+    if (!isInActiveGame) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isInActiveGame]);
+
   if (loading) {
     return (
       <div className="connectScreen">
@@ -527,7 +574,15 @@ function AuthGate() {
   return (
     <>
       <AudioControls
-        onHome={screen !== 'menu' ? () => navigate('menu') : undefined}
+        onHome={screen !== 'menu' ? () => {
+          if (isInActiveGame) {
+            const confirmed = window.confirm(
+              'Leave game? You\'ll have 2 minutes to reconnect before being removed.'
+            );
+            if (!confirmed) return;
+          }
+          navigate('menu');
+        } : undefined}
         inGame={screen === 'free-play-game' || screen === 'create' || screen === 'join' || screen === 'quick-play'}
       />
       <LobbyMusic screen={screen} />

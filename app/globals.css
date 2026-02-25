@@ -2113,45 +2113,54 @@ input {
   font-family: 'Nunito', sans-serif;
 }
 
+/* House indicator strip — sits at the top of property tiles */
 .tileHouses {
   position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
   z-index: 2;
+  padding: 2px 3px;
+  background: linear-gradient(180deg, rgba(76, 175, 80, 0.85), rgba(56, 142, 60, 0.75));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 7px 7px 0 0;
+}
+.tileHouses--hotel {
+  background: linear-gradient(180deg, rgba(229, 57, 53, 0.9), rgba(183, 28, 28, 0.85));
 }
 
-/* House: green square with CSS triangle roof */
+/* Individual house pip */
 .tileHouse {
-  width: 6px;
-  height: 6px;
-  background: #4caf50;
-  border-radius: 1px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  position: relative;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
-}
-.tileHouse::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 4px solid #388e3c;
+  width: 7px;
+  height: 7px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
 }
 
-/* Hotel: red rectangle with gold trim */
+/* Numeric count badge next to pips */
+.tileHouseCount {
+  font-size: 8px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  margin-left: 1px;
+}
+
+/* Hotel badge */
 .tileHotel {
-  width: 10px;
-  height: 7px;
-  background: #e53935;
-  border: 1px solid #d4af37;
-  border-radius: 1px;
-  box-shadow: 0 0 3px rgba(212, 175, 55, 0.4), 0 1px 2px rgba(0,0,0,0.5);
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 1;
 }
 
 .tile-mortgaged {
@@ -2603,10 +2612,26 @@ input {
   border-color: rgba(255, 220, 100, 0.4);
 }
 
-.lobbyPlayerName {
+.lobbyPlayerInfo {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lobbyPlayerName {
   font-weight: 800;
   font-size: 0.88rem;
+}
+
+.lobbyPlayerBuff {
+  font-size: 0.68rem;
+  color: #8a7a6a;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lobbyHostBadge,
@@ -6903,7 +6928,7 @@ button:active:not(:disabled) {
 /* ---- Menu Screen (Lobby) ---- */
 .menuScreen {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
   background: #0d0608;
@@ -6955,10 +6980,10 @@ button:active:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
+  gap: 28px;
   max-width: 900px;
   width: 92%;
-  padding: 60px 0 40px;
+  padding: 48px 0 32px;
   position: relative;
   z-index: 1;
   animation: cardFadeIn 0.5s ease both;
@@ -7196,6 +7221,43 @@ button:active:not(:disabled) {
   font-size: 0.9rem;
 }
 
+/* Small viewports: compact everything to fit */
+@media (max-height: 700px) {
+  .menuLobby {
+    gap: 16px;
+    padding: 24px 0 20px;
+  }
+  .menuMascot {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 8px;
+  }
+  .menuTitle {
+    font-size: 2rem;
+  }
+  .menuSubtitle {
+    font-size: 0.8rem;
+  }
+  .menuActionCard {
+    padding: 16px 12px 14px;
+    gap: 8px;
+  }
+  .menuActionImg {
+    width: 40px;
+    height: 40px;
+  }
+  .menuActionName {
+    font-size: 0.88rem;
+  }
+  .menuActionDesc {
+    font-size: 0.7rem;
+  }
+  .menuGhostBtn {
+    padding: 8px 16px;
+    font-size: 0.75rem;
+  }
+}
+
 /* Mobile: stack action cards */
 @media (max-width: 700px) {
   .menuActionCards {
@@ -7209,6 +7271,25 @@ button:active:not(:disabled) {
   }
   .menuTitle {
     font-size: 2.4rem;
+  }
+}
+/* Narrow + short: most compact */
+@media (max-width: 700px) and (max-height: 700px) {
+  .menuTitle {
+    font-size: 1.8rem;
+  }
+  .menuActionCards {
+    gap: 8px;
+  }
+  .menuActionCard {
+    padding: 12px 10px;
+    flex-direction: row;
+    text-align: left;
+    gap: 12px;
+  }
+  .menuActionImg {
+    width: 36px;
+    height: 36px;
   }
 }
 
@@ -9435,15 +9516,32 @@ img[src*="/assets/"] {
   background: rgba(255,255,255,0.05);
 }
 
-.qpPlayerName {
+.qpPlayerInfo {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.qpPlayerName {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--ink);
 }
 
+.qpPlayerBuff {
+  font-size: 0.68rem;
+  color: #8a7a6a;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .qpPlayerStatus {
   font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 .qpCountdown {

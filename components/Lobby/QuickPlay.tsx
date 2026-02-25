@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { useWalletClient, useBalance, useAccount, useSwitchChain } from 'wagmi';
+import { useWalletClient, useBalance, useAccount, useSwitchChain, useDisconnect } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { wagmiConfig } from '@/context/EVMWalletContext';
 import { getChainId } from '@/lib/contracts/addresses';
 import { createGameOnChain, joinGameOnChain } from '@/lib/contracts/monopolyGame';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useChainId } from 'wagmi';
-import Link from 'next/link';
 
 const BUY_IN_OPTIONS = ['0.001', '0.01', '0.05', '0.25', '0.5'];
 const TX_RECEIPT_TIMEOUT = 60_000;
@@ -25,6 +24,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const { data: walletClient } = useWalletClient();
   const { isConnected: evmConnected, address: connectedAddress } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
   const currentChainId = useChainId();
   const targetChainId = getChainId();
@@ -51,17 +51,32 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
+  const [pendingReconnect, setPendingReconnect] = useState(false);
 
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
   const isBase = activeChain === 'base';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
+
+  // After disconnect completes, open connect modal
+  useEffect(() => {
+    if (pendingReconnect && !evmConnected && openConnectModal) {
+      setPendingReconnect(false);
+      openConnectModal();
+    }
+  }, [pendingReconnect, evmConnected, openConnectModal]);
+
   const walletReady = !isBase || (evmConnected && walletClient);
 
   const handleFindMatch = async () => {
     const playerName = name.trim() || user?.displayName || 'Player';
     if (!walletReady || !walletClient) {
       setError('Wallet not connected.');
-      openConnectModal?.();
+      if (openConnectModal) {
+        openConnectModal();
+      } else {
+        setPendingReconnect(true);
+        wagmiDisconnect();
+      }
       return;
     }
     setLoading(true);
@@ -186,6 +201,8 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
             >
               <img src={c.sprite} alt={c.name} className="characterCardSprite" draggable={false} />
               <span className="characterCardName">{c.name}</span>
+              <span className="characterCardBuff">{c.buff.name}</span>
+              <span className="characterCardBuffDesc">{c.buff.description}</span>
             </div>
           ))}
         </div>
@@ -208,13 +225,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
             <p style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 4 }}>
               Balance: {balanceEth.toFixed(4)} ETH
               {balanceEth < parseFloat(buyIn) && (
-                <>
-                  <span style={{ color: '#ff4444' }}> (insufficient)</span>
-                  {' '}
-                  <Link href="/bridge" style={{ color: '#d4a843', textDecoration: 'underline', fontSize: '0.7rem' }}>
-                    Need ETH? Bridge from SOL →
-                  </Link>
-                </>
+                <span style={{ color: '#ff4444' }}> (insufficient)</span>
               )}
             </p>
           </div>
@@ -222,7 +233,14 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
         {!walletReady && (
           <p className="lobbyError" style={{ color: '#d4a843' }}>
             Wallet not connected.{' '}
-            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => openConnectModal?.()}>
+            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => {
+              if (openConnectModal) {
+                openConnectModal();
+              } else if (evmConnected) {
+                setPendingReconnect(true);
+                wagmiDisconnect();
+              }
+            }}>
               Reconnect wallet
             </span>
           </p>

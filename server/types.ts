@@ -102,6 +102,7 @@ export interface RoomClientState {
   players: Array<{
     name: string;
     color: string;
+    characterId?: string;
     ready: boolean;
     connected: boolean;
     isHost: boolean;

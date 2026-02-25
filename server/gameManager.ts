@@ -58,7 +58,7 @@ export function applyGameAction(
     'decline':      ['buying'],
     'end-turn':     ['turn-end'],
     'draw-card':    ['drawing-card'],
-    'apply-card':   ['applying-card'],
+    'apply-card':   ['drawing-card', 'applying-card'],
     'resolve-card': ['applying-card', 'drawing-card'],
     'resolve-debt': ['in-debt'],
   };
