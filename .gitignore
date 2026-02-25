@@ -28,6 +28,11 @@ data/
 .DS_Store
 *.pem
 
+# runtime data (sensitive)
+pending-refunds.json
+server.log
+*.db
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
