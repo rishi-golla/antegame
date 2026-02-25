@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
-import { useWalletClient, useBalance, useAccount, useDisconnect } from 'wagmi';
+import { useWalletClient, useBalance, useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
 import { joinGameOnChain, getGameOnChain, formatEther } from '@/lib/contracts/monopolyGame';
 import { getChainId } from '@/lib/contracts/addresses';
 import { waitForTransactionReceipt } from 'wagmi/actions';
@@ -42,6 +42,9 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   const { isConnected: evmConnected, address: connectedAddress } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { disconnect: wagmiDisconnect } = useDisconnect();
+  const currentChainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+  const targetChainId = getChainId();
   const { data: balance } = useBalance({
     address: connectedAddress,
     chainId: getChainId(),
@@ -100,11 +103,23 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
           return;
         }
 
-        // Step 0: Validate color/room on server BEFORE depositing
+        // Step 0a: Switch to correct chain if needed
+        if (currentChainId !== targetChainId) {
+          setStatus('Switching network...');
+          try {
+            await switchChainAsync({ chainId: targetChainId });
+          } catch {
+            setError(`Please switch your wallet to Base (chain ${targetChainId})`);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Step 0b: Validate color/room on server BEFORE depositing
         setStatus('Validating...');
         const { getSocket } = await import('@/lib/socket');
         const validation = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
-          getSocket().emit('room:validate-join' as any, { code: roomCode, color: char.color }, resolve);
+          getSocket().emit('room:validate-join' as any, { code: roomCode, color: char.color, characterId: selectedChar }, resolve);
         });
         if (!validation.ok) {
           setError(validation.error ?? 'Cannot join room');

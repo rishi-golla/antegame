@@ -1169,10 +1169,7 @@ nextApp.prepare().then(() => {
                   }
                 }
               }
-              if (refundsToStore.length > 0) {
-                await appendPendingRefunds(refundsToStore);
-              }
-              // Emit to the leaving player so they can claim refund
+              // Emit to the leaving player so they can claim refund (emit BEFORE persist so client always gets notified)
               socket.emit('game:cancellation:signature', {
                 nonce: cancellation.nonce,
                 signature: cancellation.signature,
@@ -1182,6 +1179,12 @@ nextApp.prepare().then(() => {
               // Emit to remaining deposited players and close the room —
               // once a cancellation is signed, the room cannot continue
               if (!result.deleted && room) {
+                io.to(code).emit('game:cancellation:signature', {
+                  nonce: cancellation.nonce,
+                  signature: cancellation.signature,
+                  gameId,
+                  roomCode: code,
+                });
                 // Persist refunds for remaining deposited players
                 const remainingRefunds = room.players
                   .filter((p: any) => p.deposited && p.walletAddress && p.id !== socket.id)
@@ -1195,17 +1198,17 @@ nextApp.prepare().then(() => {
                     reason: 'lobby_cancelled',
                   }));
                 if (remainingRefunds.length > 0) {
-                  await appendPendingRefunds(remainingRefunds);
+                  appendPendingRefunds(remainingRefunds).catch(err =>
+                    console.error('[room:leave] Failed to persist remaining refunds:', err));
                 }
-                io.to(code).emit('game:cancellation:signature', {
-                  nonce: cancellation.nonce,
-                  signature: cancellation.signature,
-                  gameId,
-                  roomCode: code,
-                });
                 // Close the room so remaining players can't ready up
                 room.phase = 'finished';
                 broadcastRoomState(code);
+              }
+              // Persist refunds (non-blocking -- emit already sent)
+              if (refundsToStore.length > 0) {
+                appendPendingRefunds(refundsToStore).catch(err =>
+                  console.error('[room:leave] Failed to persist refunds:', err));
               }
             }
           } catch (err) {
