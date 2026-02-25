@@ -1,4 +1,5 @@
 import { db, getReferrer, recordReferralEarning } from './db';
+import { roomCodeToGameId } from './contracts';
 
 const CAMPAIGN_BOOST_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -28,8 +29,8 @@ export interface GameResultData {
 
 export function recordGameResult(data: GameResultData): number {
   const insertHistory = db.prepare(`
-    INSERT INTO game_history (finished_at, duration_ms, player_count, players, winner_wallet, winner_name, entry_fee_lamports, winner_payout_lamports, house_profit_lamports, room_code)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO game_history (finished_at, duration_ms, player_count, players, winner_wallet, winner_name, entry_fee_lamports, winner_payout_lamports, house_profit_lamports, room_code, game_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const updateStats = db.prepare(`
@@ -45,6 +46,7 @@ export function recordGameResult(data: GameResultData): number {
   const playersJson = JSON.stringify(data.players);
 
   const run = db.transaction(() => {
+    const computedGameId = data.roomCode ? roomCodeToGameId(data.roomCode) : '';
     const result = insertHistory.run(
       now,
       data.durationMs,
@@ -55,7 +57,8 @@ export function recordGameResult(data: GameResultData): number {
       data.entryFeeLamports,
       data.winnerPayoutLamports,
       data.houseProfitLamports,
-      data.roomCode ?? ''
+      data.roomCode ?? '',
+      computedGameId
     );
 
     for (const player of data.players) {

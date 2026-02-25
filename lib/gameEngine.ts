@@ -33,13 +33,23 @@ import {
 
 // --- Helpers ---
 
+/** Rejection-sampled CSPRNG: returns uniform integer in [0, max) with zero modulo bias. */
+function secureRandomInt(max: number): number {
+  if (max <= 0) return 0;
+  const limit = Math.floor(0x100000000 / max) * max;
+  const buf = new Uint32Array(1);
+  const rng = globalThis.crypto ?? require('crypto');
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    rng.getRandomValues(buf);
+    if (buf[0] < limit) return buf[0] % max;
+  }
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    // Use CSPRNG for real-money fairness
-    const randomBytes = new Uint32Array(1);
-    (globalThis.crypto ?? require('crypto')).getRandomValues(randomBytes);
-    const j = randomBytes[0] % (i + 1);
+    const j = secureRandomInt(i + 1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -149,9 +159,7 @@ export function createGame(playerNames: string[]): GameState {
 }
 
 function cryptoRoll(): number {
-  const arr = new Uint32Array(1);
-  (globalThis.crypto ?? require('crypto')).getRandomValues(arr);
-  return (arr[0] % 6) + 1;
+  return secureRandomInt(6) + 1;
 }
 
 export function rollDice(state: GameState): GameState {
@@ -1001,9 +1009,7 @@ export function startMinigame(state: GameState, context: MinigameContext): GameS
   // Exclude last 3 recent minigames
   const available = allMinigames.filter(id => !state.recentMinigames.slice(-3).includes(id));
   // Use CSPRNG for minigame selection (real-money fairness)
-  const rngBuf = new Uint32Array(1);
-  (globalThis.crypto ?? require('crypto')).getRandomValues(rngBuf);
-  const selectedId = available[rngBuf[0] % available.length];
+  const selectedId = available[secureRandomInt(available.length)];
   
   // Calculate base amount
   let baseAmount = 0;

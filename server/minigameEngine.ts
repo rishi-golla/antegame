@@ -19,6 +19,8 @@ export interface MinigameServerState {
   secret: any;
   /** Commitment hash sent to client for fairness verification */
   commitHash: string;
+  /** Random salt used in commitment hash for brute-force resistance */
+  salt: string;
   /** Whether the game has been resolved */
   resolved: boolean;
   /** The final tier once resolved */
@@ -31,9 +33,16 @@ export interface MinigameServerState {
 // Active minigame states keyed by roomCode
 const activeMinigames = new Map<string, MinigameServerState>();
 
+/** Rejection-sampled CSPRNG: returns uniform integer in [0, max) with zero modulo bias. */
 function secureRandom(max: number): number {
-  const buf = crypto.randomBytes(4);
-  return buf.readUInt32BE(0) % max;
+  if (max <= 0) return 0;
+  const limit = Math.floor(0x100000000 / max) * max;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const buf = crypto.randomBytes(4);
+    const val = buf.readUInt32BE(0);
+    if (val < limit) return val % max;
+  }
 }
 
 /** Generate a commitment hash with a random salt to prevent brute-force of small input spaces */
@@ -325,12 +334,11 @@ export function initMinigame(
     playerIndex,
     secret,
     commitHash,
+    salt,
     resolved: false,
     actions: [],
     createdAt: Date.now(),
   };
-  // Store salt alongside secret for reveal
-  (state as any).salt = salt;
 
   activeMinigames.set(roomCode, state);
 
@@ -379,7 +387,7 @@ export function resolveServerMinigame(roomCode: string): { tier: MinigameTier; s
   const state = activeMinigames.get(roomCode);
   if (!state) return null;
   if (state.resolved && state.result) {
-    return { tier: state.result, secret: state.secret, salt: (state as any).salt, commitHash: state.commitHash };
+    return { tier: state.result, secret: state.secret, salt: state.salt, commitHash: state.commitHash };
   }
 
   const resolver = RESOLVERS[state.id];
@@ -390,7 +398,7 @@ export function resolveServerMinigame(roomCode: string): { tier: MinigameTier; s
   state.result = tier;
 
   // Include salt so clients can verify: sha256(salt + JSON.stringify(secret)) === commitHash
-  return { tier, secret: state.secret, salt: (state as any).salt, commitHash: state.commitHash };
+  return { tier, secret: state.secret, salt: state.salt, commitHash: state.commitHash };
 }
 
 /** Clean up after minigame is fully processed */

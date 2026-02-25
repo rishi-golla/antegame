@@ -269,12 +269,10 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
 
   const walletAddress = user.wallet_address.toLowerCase();
 
-  // Look up all game_history entries to find which room_code produced this gameId
-  const rows = db.prepare(
-    `SELECT room_code, winner_wallet FROM game_history WHERE room_code != '' ORDER BY finished_at DESC`
-  ).all() as Array<{ room_code: string; winner_wallet: string }>;
-
-  const match = rows.find((r) => roomCodeToGameId(r.room_code) === gameId);
+  // Query by indexed game_id column (O(1) lookup instead of full table scan)
+  const match = db.prepare(
+    `SELECT room_code, winner_wallet FROM game_history WHERE game_id = ? LIMIT 1`
+  ).get(gameId) as { room_code: string; winner_wallet: string } | undefined;
   if (!match) {
     res.status(404).json({ error: 'No recorded game found for this gameId' });
     return;

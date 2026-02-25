@@ -73,6 +73,9 @@ export const tradeOfferSchema = z.object({
   }),
 });
 
+/** Validates 0x-prefixed EVM address (42 hex characters). */
+const evmAddressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'Invalid EVM address');
+
 export const quickPlayBaseSchema = z.object({
   name: z.string().min(1).max(20),
   color: z.string().min(1).max(20),
@@ -80,13 +83,14 @@ export const quickPlayBaseSchema = z.object({
     (v) => (ALLOWED_BUY_INS as readonly string[]).includes(v),
     { message: 'Invalid buy-in amount' }
   ),
-  walletAddress: z.string().min(1).max(100),
+  walletAddress: evmAddressSchema,
   characterId: z.string().optional(),
 });
 
 export const validateJoinSchema = z.object({
   code: z.string().min(1).max(10),
   color: z.string().min(1).max(20),
+  characterId: z.string().optional(),
 });
 
 export const quickPlaySchema = z.object({

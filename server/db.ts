@@ -90,6 +90,30 @@ db.exec(`
 try {
   db.prepare(`ALTER TABLE game_history ADD COLUMN room_code TEXT DEFAULT ''`).run();
 } catch { /* column already exists */ }
+try {
+  db.prepare(`ALTER TABLE game_history ADD COLUMN game_id TEXT DEFAULT ''`).run();
+} catch { /* column already exists */ }
+try {
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_game_history_game_id ON game_history(game_id)`).run();
+} catch { /* index already exists */ }
+
+// Backfill game_id for existing rows that have a room_code but no game_id
+function backfillGameIds() {
+  const { roomCodeToGameId } = require('./contracts');
+  const rows = db.prepare(
+    `SELECT id, room_code FROM game_history WHERE room_code != '' AND (game_id = '' OR game_id IS NULL)`
+  ).all() as Array<{ id: number; room_code: string }>;
+  if (rows.length === 0) return;
+  const update = db.prepare(`UPDATE game_history SET game_id = ? WHERE id = ?`);
+  const backfill = db.transaction(() => {
+    for (const row of rows) {
+      update.run(roomCodeToGameId(row.room_code), row.id);
+    }
+  });
+  backfill();
+  console.log(`[db] Backfilled game_id for ${rows.length} game_history rows`);
+}
+try { backfillGameIds(); } catch (err) { console.error('[db] game_id backfill failed:', err); }
 
 // Session cleanup
 function cleanExpiredSessions() {

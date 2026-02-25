@@ -1,24 +1,31 @@
 /**
  * Shared pending-refunds.json read/write helpers.
  * Uses a promise chain to serialize writes and prevent race conditions.
+ * Writes use atomic rename to prevent data corruption on crash.
  */
 import * as fs from 'fs';
 import * as path from 'path';
 
 const REFUND_PATH = path.join(process.cwd(), 'pending-refunds.json');
+const REFUND_TMP_PATH = REFUND_PATH + '.tmp';
 
 let refundWriteLock = Promise.resolve();
 
 export function appendPendingRefunds(refunds: any[]): Promise<void> {
-  refundWriteLock = refundWriteLock.then(async () => {
+  const thisWrite = refundWriteLock.then(async () => {
     let existing: any[] = [];
     try { existing = JSON.parse(fs.readFileSync(REFUND_PATH, 'utf8')); } catch {}
     existing.push(...refunds);
-    fs.writeFileSync(REFUND_PATH, JSON.stringify(existing, null, 2));
-  }).catch(err => {
+    // Atomic write: write to temp file, then rename (prevents corruption on crash)
+    fs.writeFileSync(REFUND_TMP_PATH, JSON.stringify(existing, null, 2));
+    fs.renameSync(REFUND_TMP_PATH, REFUND_PATH);
+  });
+  // Keep chain healthy for subsequent writes even if this one fails
+  refundWriteLock = thisWrite.catch((err) => {
     console.error('[appendPendingRefunds] Write failed:', err);
   });
-  return refundWriteLock;
+  // Propagate error to the caller of THIS write
+  return thisWrite;
 }
 
 export function readPendingRefunds(): any[] {
@@ -37,10 +44,15 @@ export function findSettlement(roomCode: string, walletAddress: string): any | u
   );
 }
 
+/** Reasons that represent a cancellation (as opposed to a settlement). */
+const CANCELLATION_REASONS = new Set([
+  'cancellation', 'player_left_lobby', 'room_deleted', 'lobby_cancelled',
+]);
+
 /** Find an existing cancellation signature for a room (any player). */
 export function findCancellation(roomCode: string): any | undefined {
   const refunds = readPendingRefunds();
   return refunds.find(
-    (r: any) => r.type !== 'settlement' && r.roomCode === roomCode && r.nonce && r.signature
+    (r: any) => CANCELLATION_REASONS.has(r.reason) && r.roomCode === roomCode && r.nonce && r.signature
   );
 }
