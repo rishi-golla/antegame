@@ -18,8 +18,8 @@ import { signCancellation, signSettlement, roomCodeToGameId } from './contracts'
 import { appendPendingRefunds, findSettlement } from './refundStore';
 import { recordGameResult } from './stats';
 import { db } from './db';
-import { initMinigame, recordMinigameAction, resolveServerMinigame, cleanupMinigame } from './minigameEngine';
-import { roomCreateSchema, roomJoinSchema, chatSendSchema, roomReconnectSchema, gambleSchema, jailEscapeSchema, tileIndexSchema, minigameActionSchema, tradeOfferSchema, validateJoinSchema, quickPlayBaseSchema, quickPlaySchema } from './socketSchemas';
+import { initMinigame, recordMinigameAction, resolveServerMinigame, cleanupMinigame, hasActiveMinigame } from './minigameEngine';
+import { roomCreateSchema, roomJoinSchema, chatSendSchema, roomReconnectSchema, gambleSchema, jailEscapeSchema, tileIndexSchema, minigameActionSchema, minigameResultSchema, tradeOfferSchema, validateJoinSchema, quickPlayBaseSchema, quickPlaySchema } from './socketSchemas';
 import { verifyDeposit, cleanupVerifiedHashes } from './depositVerifier';
 import type { Room } from './types';
 import type {
@@ -1688,12 +1688,19 @@ nextApp.prepare().then(() => {
 
     // H2: Client requests minigame resolution — server determines tier
     socket.on('game:minigame-result', (data) => {
+      const parsed = minigameResultSchema.safeParse(data);
+      if (!parsed.success) { socket.emit('room:error', 'Invalid input'); return; }
       const code = rm.findRoomBySocket(socket.id);
       if (!code) return;
       const room = rm.getRoom(code);
       if (!room?.gameState) return;
       if (!isCurrentPlayer(room, socket.id)) {
         socket.emit('room:error', 'Not your turn');
+        return;
+      }
+      // Guard: reject replayed/duplicate resolution requests
+      if (!hasActiveMinigame(code)) {
+        socket.emit('room:error', 'No active minigame');
         return;
       }
       try {

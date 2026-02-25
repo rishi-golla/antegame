@@ -132,9 +132,6 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const { minigameServerResult, clearMinigameServerResult, roomState } = useSocket();
   const isMultiplayer = !!roomState;
 
-  const [bgReady, setBgReady] = useState(false);
-  const bgCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const minigame = state.activeMinigame;
   const currentPlayerName = state.players[state.currentPlayerIndex]?.name || 'Player';
   const currentPlayerMinigameBoost = getBuffModifier(state.players[state.currentPlayerIndex], 'minigame-boost');
@@ -145,32 +142,10 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
     savedMinigameRef.current = minigame;
   }
 
-  // Preload all backgrounds on first mount & check active minigame bg
+  // Preload all backgrounds on first mount
   useEffect(() => {
     preloadAllMinigameBackgrounds();
   }, []);
-
-  useEffect(() => {
-    if (!minigame) { setBgReady(false); return; }
-    // If already cached, ready immediately
-    if (_loadedImages.has(minigame.id)) {
-      setBgReady(true);
-      return;
-    }
-    // Load this specific one and wait
-    const img = new Image();
-    img.onload = () => { _loadedImages.add(minigame.id); setBgReady(true); };
-    img.onerror = () => setBgReady(true); // don't block on error
-    img.src = MINIGAME_BG_PATHS[minigame.id] || '';
-    // Also poll the global cache in case it loaded via the global preloader
-    bgCheckRef.current = setInterval(() => {
-      if (_loadedImages.has(minigame.id)) {
-        setBgReady(true);
-        if (bgCheckRef.current) clearInterval(bgCheckRef.current);
-      }
-    }, 50);
-    return () => { if (bgCheckRef.current) clearInterval(bgCheckRef.current); };
-  }, [minigame?.id]);
 
   // Reset state when a new minigame starts
   useEffect(() => {
@@ -179,6 +154,8 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
       setResultLocked(false);
       setResultTier(null);
       setShowResult(false);
+      setShowIntro(true);
+      setCurtainOpen(false);
       clearMinigameServerResult();
       setTimeout(() => setCurtainOpen(true), 100);
       const timer = setTimeout(() => {
@@ -219,53 +196,7 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   const displayMinigame = minigame ?? savedMinigameRef.current;
   if (!displayMinigame) return null;
 
-  // Show loading screen while background image loads
-  if (!bgReady) {
-    return (
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        backgroundColor: '#1a0f0f',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '1rem',
-      }}>
-        <div style={{
-          fontFamily: 'Cinzel, serif',
-          color: '#d4af37',
-          fontSize: '1.5rem',
-          letterSpacing: '0.1em',
-        }}>
-          Loading...
-        </div>
-        <div style={{
-          width: '120px',
-          height: '3px',
-          backgroundColor: 'rgba(212,175,55,0.2)',
-          borderRadius: '2px',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            width: '40%',
-            height: '100%',
-            backgroundColor: '#d4af37',
-            borderRadius: '2px',
-            animation: 'mgLoadSlide 1s ease-in-out infinite',
-          }} />
-        </div>
-        <style>{`
-          @keyframes mgLoadSlide {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(200%); }
-            100% { transform: translateX(-100%); }
-          }
-        `}</style>
-      </div>
-    );
-  }
+  // Background loads in the background via CSS; never block the UI with a loading screen
 
   const handleResult = (clientTier: MinigameTier) => {
     // Prevent double-result from timeout + game completion race
@@ -294,16 +225,19 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
   };
 
   const handleDismissResult = () => {
-    if (resultTier) {
-      playMusic('music/bgm-game');
-      // In multiplayer, the server already resolved the game state when we
-      // dispatched MINIGAME_RESULT earlier. In free play, dispatch now.
-      if (!isMultiplayer) {
-        dispatch({ type: 'MINIGAME_RESULT', tier: resultTier });
-      }
-      clearMinigameServerResult();
-      setShowResult(false);
-      setResultTier(null);
+    const tier = resultTier;
+    if (!tier) return;
+    // Clear state first to prevent stale closures and re-triggers
+    setResultTier(null);
+    setResultLocked(false);
+    setShowResult(false);
+    savedMinigameRef.current = null;
+    clearMinigameServerResult();
+    playMusic('music/bgm-game');
+    // In multiplayer, the server already resolved the game state when we
+    // dispatched MINIGAME_RESULT earlier. In free play, dispatch now.
+    if (!isMultiplayer) {
+      dispatch({ type: 'MINIGAME_RESULT', tier });
     }
   };
 
@@ -395,15 +329,17 @@ export default function MinigameOverlay({}: MinigameOverlayProps) {
             Watching {currentPlayerName}
           </div>
         )}
-        <div className="minigameTimerWrapper">
-          <CountdownTimer
-            duration={30}
-            onExpire={() => {
-              if (!resultLocked) handleResult('catastrophic');
-            }}
-            resetKey={`minigame-${displayMinigame.id}-${state.currentPlayerIndex}`}
-          />
-        </div>
+        {!spectator && !resultLocked && (
+          <div className="minigameTimerWrapper">
+            <CountdownTimer
+              duration={30}
+              onExpire={() => {
+                if (!resultLocked) handleResult('catastrophic');
+              }}
+              resetKey={`minigame-${displayMinigame.id}-${state.currentPlayerIndex}`}
+            />
+          </div>
+        )}
         <div className={spectator ? 'spectatorView' : ''}>
           {renderMinigame()}
         </div>

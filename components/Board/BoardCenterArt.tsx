@@ -7,7 +7,7 @@ import { useMultiplayerTurn } from '@/hooks/useMultiplayerTurn';
 import { useSocket } from '@/context/SocketContext';
 import { getRentMultiplier, FINAL_ROUNDS_END } from '@/lib/gameData';
 import { getBuffModifier, applyDiscount } from '@/lib/buffs';
-import MinigameOverlay, { preloadAllMinigameBackgrounds } from '@/components/Minigames/MinigameOverlay';
+import MinigameOverlay from '@/components/Minigames/MinigameOverlay';
 import CardDrawOverlay from '@/components/Board/CardDrawOverlay';
 import CountdownTimer from '@/components/Board/CountdownTimer';
 
@@ -59,10 +59,6 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
     }
   }, [state.currentPlayerIndex]);
 
-  // Eagerly preload all minigame backgrounds on game start
-  useEffect(() => {
-    preloadAllMinigameBackgrounds();
-  }, []);
 
   // Auto-apply drawn card after 2 seconds (dismisses the full-screen overlay)
   const applyCardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -517,7 +513,7 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
           <div className="waitingLabel">{player.name} owes rent...</div>
         )
       ) : state.phase === 'minigame' && state.activeMinigame ? (
-        <MinigameOverlay />
+        null // MinigameOverlay is rendered persistently below
       ) : isMyTurn ? (
         <button
           className="rollButton"
@@ -605,6 +601,10 @@ export default function BoardCenterArt({ isRolling, isAnimating }: BoardCenterAr
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
+
+      {/* MinigameOverlay is always mounted so it can persist the result popup
+          even after the server clears activeMinigame from game state */}
+      <MinigameOverlay />
     </div>
   );
 }

@@ -131,15 +131,17 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
     return () => clearTimeout(timer);
   }, [onResult]);
 
+  // Client tier is cosmetic in multiplayer (server is authoritative via resolveCraps()).
+  // Thresholds match server/minigameEngine.ts. Diff range: 0 (exact) to 10 (2 vs 12).
   const calculateResult = (total: number) => {
     if (!targetNumber) return;
     const difference = Math.abs(total - targetNumber);
     let w = false;
-    if ((total === 2 && targetNumber === 12) || (total === 12 && targetNumber === 2)) { setWon(false); onResult('catastrophic'); return; }
     if (difference === 0) { w = true; onResult('win'); }
     else if (difference === 1) { w = true; onResult('close-win'); }
-    else if (difference === 2) { onResult('close-loss'); }
-    else { onResult('loss'); }
+    else if (difference <= 3) { onResult('close-loss'); }
+    else if (difference <= 5) { onResult('loss'); }
+    else { onResult('catastrophic'); }
     setWon(w);
   };
 
@@ -333,8 +335,9 @@ export default function Craps({ onResult, baseAmount, context, spectator = false
         {[
           ['EXACT', 'WIN'],
           ['OFF BY 1', 'CLOSE WIN'],
-          ['OFF BY 2', 'CLOSE LOSS'],
-          ['OFF BY 3+', 'LOSS'],
+          ['OFF BY 2-3', 'CLOSE LOSS'],
+          ['OFF BY 4-5', 'LOSS'],
+          ['OFF BY 6+', 'DISASTER'],
         ].map(([label, val], i) => (
           <div key={i} style={{ fontSize: '14px', color: 'rgba(212,175,55,0.4)', letterSpacing: '1px', lineHeight: 2 }}>
             {label} = {val}
