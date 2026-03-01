@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 
-export default function HeroSection({ onConnect, onFreePlay, connecting }: { onConnect: () => void; onFreePlay?: () => void; connecting: boolean }) {
+export default function HeroSection({ onConnect, onConnectSolana, onFreePlay, connecting }: { onConnect: () => void; onConnectSolana: () => void; onFreePlay?: () => void; connecting: boolean }) {
   return (
     <section className="heroSection">
       <div className="heroBg">
@@ -46,7 +46,7 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Built on Base
+          Base &bull; Solana
         </motion.div>
 
         <motion.h1
@@ -90,7 +90,16 @@ export default function HeroSection({ onConnect, onFreePlay, connecting }: { onC
             whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.97 }}
           >
-            {connecting ? 'Connecting...' : 'Play Now'}
+            {connecting ? 'Connecting...' : 'Play with Base'}
+          </motion.button>
+          <motion.button
+            className="heroBtnPrimary heroBtnSolana"
+            onClick={onConnectSolana}
+            disabled={connecting}
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            {connecting ? 'Connecting...' : 'Play with Solana'}
           </motion.button>
           <motion.a
             href="/docs"

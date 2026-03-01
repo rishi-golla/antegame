@@ -5,6 +5,7 @@
 
 import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
+import { signSolanaSettlement, signSolanaCancellation, getSolanaSignerAddress, roomCodeToSolanaGameIdHex } from '../solana-contracts';
 import { getSessionFromCookie, validateSession } from '../auth';
 import { appendPendingRefunds, findSettlement, findCancellation } from '../refundStore';
 import { db } from '../db';
@@ -271,8 +272,8 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
 
   // Query by indexed game_id column (O(1) lookup instead of full table scan)
   const match = db.prepare(
-    `SELECT room_code, winner_wallet FROM game_history WHERE game_id = ? LIMIT 1`
-  ).get(gameId) as { room_code: string; winner_wallet: string } | undefined;
+    `SELECT room_code, winner_wallet, chain FROM game_history WHERE game_id = ? LIMIT 1`
+  ).get(gameId) as { room_code: string; winner_wallet: string; chain?: string } | undefined;
   if (!match) {
     res.status(404).json({ error: 'No recorded game found for this gameId' });
     return;
@@ -284,9 +285,10 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
   }
 
   const roomCode = match.room_code;
+  const chain = match.chain ?? 'base';
 
   // Check for existing persisted settlement (idempotent)
-  const existing = findSettlement(roomCode, walletAddress);
+  const existing = findSettlement(roomCode, walletAddress, chain === 'solana' ? 'solana' : undefined);
   if (existing) {
     res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
     return;
@@ -294,7 +296,12 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
 
   // Generate and persist
   try {
-    const result = await signSettlement(roomCode, walletAddress as `0x${string}`);
+    let result: { nonce: string; signature: string } | null;
+    if (chain === 'solana') {
+      result = signSolanaSettlement(roomCode, walletAddress);
+    } else {
+      result = await signSettlement(roomCode, walletAddress as `0x${string}`);
+    }
     if (!result) {
       res.status(503).json({ error: 'Signing not available -- signer key not configured' });
       return;
@@ -309,6 +316,7 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
       timestamp: Date.now(),
       reason: 'retroactive_settlement',
       type: 'settlement',
+      ...(chain === 'solana' ? { chain: 'solana' } : {}),
     }]);
 
     res.json({ nonce: result.nonce, signature: result.signature, gameId });
@@ -320,6 +328,180 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
 
 router.get('/signer', (_req, res) => {
   const address = getSignerAddress();
+  if (!address) {
+    res.json({ address: null, configured: false });
+    return;
+  }
+  res.json({ address, configured: true });
+});
+
+// --- Solana Endpoints ---
+
+router.post('/solana/settlement-signature', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`sol-settlement:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
+  const { roomCode, winnerAddress } = req.body ?? {};
+  if (!roomCode || !winnerAddress) {
+    res.status(400).json({ error: 'roomCode and winnerAddress required' });
+    return;
+  }
+
+  // Verify caller is the winner
+  if (user.wallet_address !== winnerAddress) {
+    res.status(403).json({ error: 'You can only request settlement for your own address' });
+    return;
+  }
+
+  if (!_rm) {
+    res.status(503).json({ error: 'Room manager not available' });
+    return;
+  }
+
+  {
+    const room = _rm.getRoom(roomCode);
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+    if (room.chain !== 'solana') {
+      res.status(400).json({ error: 'Room is not a Solana game' });
+      return;
+    }
+    if (room.phase !== 'finished' && room.gameState?.phase !== 'game-over') {
+      res.status(400).json({ error: 'Game is not finished' });
+      return;
+    }
+    if (room.gameState?.phase === 'game-over' && room.phase !== 'finished') {
+      room.phase = 'finished';
+    }
+    if (room.gameState?.winner === null || room.gameState?.winner === undefined) {
+      res.status(400).json({ error: 'No winner determined for this game' });
+      return;
+    }
+    const winnerPlayer = room.players[room.gameState.winner];
+    if (winnerPlayer?.walletAddress !== winnerAddress) {
+      res.status(403).json({ error: 'You are not the winner' });
+      return;
+    }
+  }
+
+  const gameId = roomCodeToSolanaGameIdHex(roomCode);
+
+  // Idempotent: check for existing settlement
+  const existing = findSettlement(roomCode, winnerAddress, 'solana');
+  if (existing) {
+    res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
+    return;
+  }
+
+  const result = signSolanaSettlement(roomCode, winnerAddress);
+  if (!result) {
+    res.status(503).json({ error: 'Solana signing not available -- signer key not configured' });
+    return;
+  }
+
+  await appendPendingRefunds([{
+    walletAddress: winnerAddress,
+    roomCode,
+    gameId,
+    nonce: result.nonce,
+    signature: result.signature,
+    timestamp: Date.now(),
+    reason: 'unclaimed_settlement',
+    type: 'settlement',
+    chain: 'solana',
+  }]);
+
+  res.json({ nonce: result.nonce, signature: result.signature, gameId });
+});
+
+router.post('/solana/cancellation-signature', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`sol-cancel:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
+  const { roomCode } = req.body ?? {};
+  if (!roomCode) {
+    res.status(400).json({ error: 'roomCode required' });
+    return;
+  }
+
+  if (!_rm) {
+    res.status(503).json({ error: 'Room manager not available' });
+    return;
+  }
+
+  {
+    const room = _rm.getRoom(roomCode);
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+    if (room.chain !== 'solana') {
+      res.status(400).json({ error: 'Room is not a Solana game' });
+      return;
+    }
+    const isPlayer = room.players.some(
+      (p) => p.walletAddress === user.wallet_address
+    );
+    if (!isPlayer) {
+      res.status(403).json({ error: 'You are not a player in this game' });
+      return;
+    }
+    if (room.phase === 'playing' && room.gameState?.phase !== 'game-over') {
+      res.status(400).json({ error: 'Cannot cancel an active game' });
+      return;
+    }
+    if (room.phase === 'lobby') {
+      const hostPlayer = room.players.find((p) => p.id === room.hostId);
+      if (hostPlayer?.walletAddress !== user.wallet_address) {
+        res.status(403).json({ error: 'Only the host can cancel in lobby' });
+        return;
+      }
+    }
+  }
+
+  const gameId = roomCodeToSolanaGameIdHex(roomCode);
+
+  const existingCancel = findCancellation(roomCode);
+  if (existingCancel) {
+    res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
+    return;
+  }
+
+  const result = signSolanaCancellation(roomCode);
+  if (!result) {
+    res.status(503).json({ error: 'Solana signing not available -- signer key not configured' });
+    return;
+  }
+
+  await appendPendingRefunds([{
+    roomCode,
+    gameId,
+    nonce: result.nonce,
+    signature: result.signature,
+    timestamp: Date.now(),
+    reason: 'cancellation',
+    chain: 'solana',
+  }]);
+
+  res.json({ nonce: result.nonce, signature: result.signature, gameId });
+});
+
+router.get('/solana/signer', (_req, res) => {
+  const address = getSolanaSignerAddress();
   if (!address) {
     res.json({ address: null, configured: false });
     return;

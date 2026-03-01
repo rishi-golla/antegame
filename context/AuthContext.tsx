@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetch('/api/auth/me')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.user) setUser(data.user);
+        if (data?.user && data.user.chain === 'solana') setUser(data.user);
       })
       .catch(() => {})
       .finally(() => setLoading(false));

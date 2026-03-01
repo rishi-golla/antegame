@@ -1,0 +1,14 @@
+/Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/deps/libserde-8667271b312a9698.rmeta: /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs /Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/build/serde-9933e1ed5d84c542/out/private.rs
+
+/Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/deps/libserde-8667271b312a9698.rlib: /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs /Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/build/serde-9933e1ed5d84c542/out/private.rs
+
+/Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/deps/serde-8667271b312a9698.d: /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs /Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs /Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/build/serde-9933e1ed5d84c542/out/private.rs
+
+/Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs:
+/Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs:
+/Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs:
+/Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs:
+/Users/shamdoo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs:
+/Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/build/serde-9933e1ed5d84c542/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/shamdoo/monopolygame-1/solana-program/target/sbpf-solana-solana/release/build/serde-9933e1ed5d84c542/out

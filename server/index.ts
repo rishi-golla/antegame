@@ -16,11 +16,14 @@ import authRouter, { sessionMiddleware } from './routes/auth';
 import statsRouter from './routes/stats';
 import contractsRouter, { setRoomManager } from './routes/contracts';
 import { signCancellation, signSettlement, roomCodeToGameId } from './contracts';
+import { signSolanaSettlement, signSolanaCancellation, roomCodeToSolanaGameIdHex, roomCodeToSolanaGameId } from './solana-contracts';
+import { verifySolanaDeposit } from './solana-depositVerifier';
 import { appendPendingRefunds, findSettlement } from './refundStore';
 import { recordGameResult } from './stats';
 import { db } from './db';
 import { initMinigame, recordMinigameAction, resolveServerMinigame, cleanupMinigame, hasActiveMinigame } from './minigameEngine';
-import { roomCreateSchema, roomJoinSchema, chatSendSchema, roomReconnectSchema, gambleSchema, jailEscapeSchema, tileIndexSchema, minigameActionSchema, minigameResultSchema, tradeOfferSchema, validateJoinSchema, quickPlayBaseSchema, quickPlaySchema } from './socketSchemas';
+import { roomCreateSchema, roomJoinSchema, chatSendSchema, roomReconnectSchema, gambleSchema, jailEscapeSchema, tileIndexSchema, minigameActionSchema, minigameResultSchema, tradeOfferSchema, validateJoinSchema, quickPlayBaseSchema, quickPlaySolanaSchema } from './socketSchemas';
+import { ALLOWED_SOL_BUY_INS } from './socketSchemas';
 import { verifyDeposit, cleanupVerifiedHashes } from './depositVerifier';
 import type { Room } from './types';
 import type {
@@ -129,6 +132,7 @@ function tryRecordGameResult(room: Room) {
   try {
     recordGameResult({
       roomCode: room.code,
+      chain: room.chain ?? 'base',
       durationMs: Date.now() - room.createdAt,
       playerCount: gs.players.length,
       players,
@@ -348,21 +352,43 @@ nextApp.prepare().then(() => {
     if (existing) return;
 
     try {
-      const settlement = await signSettlement(code, winnerPlayer.walletAddress as `0x${string}`);
-      if (!settlement) return;
+      if (room.chain === 'solana') {
+        // Solana Ed25519 settlement
+        const settlement = signSolanaSettlement(code, winnerPlayer.walletAddress);
+        if (!settlement) return;
 
-      const gameId = roomCodeToGameId(code);
-      await appendPendingRefunds([{
-        walletAddress: winnerPlayer.walletAddress,
-        roomCode: code,
-        gameId,
-        nonce: settlement.nonce,
-        signature: settlement.signature,
-        timestamp: Date.now(),
-        reason: 'unclaimed_settlement',
-        type: 'settlement',
-      }]);
-      console.log(`[persistSettlement] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+        const gameId = roomCodeToSolanaGameIdHex(code);
+        await appendPendingRefunds([{
+          walletAddress: winnerPlayer.walletAddress,
+          roomCode: code,
+          gameId,
+          nonce: settlement.nonce,
+          signature: settlement.signature,
+          timestamp: Date.now(),
+          reason: 'unclaimed_settlement',
+          type: 'settlement',
+          chain: 'solana',
+        }]);
+        console.log(`[persistSettlement:solana] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+      } else {
+        // Base EVM settlement
+        const settlement = await signSettlement(code, winnerPlayer.walletAddress as `0x${string}`);
+        if (!settlement) return;
+
+        const gameId = roomCodeToGameId(code);
+        await appendPendingRefunds([{
+          walletAddress: winnerPlayer.walletAddress,
+          roomCode: code,
+          gameId,
+          nonce: settlement.nonce,
+          signature: settlement.signature,
+          timestamp: Date.now(),
+          reason: 'unclaimed_settlement',
+          type: 'settlement',
+          chain: 'base',
+        }]);
+        console.log(`[persistSettlement:base] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+      }
     } catch (err) {
       console.error(`[persistSettlement] Failed for room ${code}:`, err);
     }
@@ -391,19 +417,29 @@ nextApp.prepare().then(() => {
     // Sign cancellation for on-chain games so players can claim refunds
     if (room.isOnChain) {
       try {
-        const cancellation = await signCancellation(code);
+        let cancellation: { nonce: string; signature: string } | null = null;
+        let gameId: string;
+
+        if (room.chain === 'solana') {
+          cancellation = signSolanaCancellation(code);
+          gameId = roomCodeToSolanaGameIdHex(code);
+        } else {
+          cancellation = await signCancellation(code);
+          gameId = roomCodeToGameId(code);
+        }
+
         if (cancellation) {
-          const gameId = roomCodeToGameId(code);
           const pendingRefunds = room.players
             .filter((p: any) => p.deposited && p.walletAddress)
             .map((p: any) => ({
               walletAddress: p.walletAddress,
               roomCode: code,
               gameId,
-              nonce: cancellation.nonce,
-              signature: cancellation.signature,
+              nonce: cancellation!.nonce,
+              signature: cancellation!.signature,
               timestamp: Date.now(),
               reason,
+              chain: room.chain ?? 'base',
             }));
 
           // Persist refunds (serialized to prevent race conditions)
@@ -823,6 +859,7 @@ nextApp.prepare().then(() => {
         isQuickPlay: room.isQuickPlay,
         buyInEth: room.buyInEth,
         isOnChain: room.isOnChain,
+        chain: room.chain,
         players: room.players.map((p) => ({
           name: p.name,
           color: p.color,
@@ -1025,10 +1062,11 @@ nextApp.prepare().then(() => {
         return cb({ ok: false, error: 'Too many room creations. Try again later.' });
       }
       const parsed = roomCreateSchema.safeParse(data);
+      console.log(`[room:create] raw data:`, JSON.stringify({ chain: data?.chain, buyInEth: data?.buyInEth }), `parsed ok:`, parsed.success, parsed.success ? `chain=${parsed.data.chain}` : parsed.error?.message);
       if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
 
       // C3+C4: On-chain rooms require authenticated session; wallet comes from session
-      const isOnChain = !!parsed.data.buyInEth;
+      const isOnChain = !!parsed.data.buyInEth || parsed.data.chain === 'solana';
       const sessionWallet = (socket as any).walletAddress as string | undefined;
       if (isOnChain) {
         if (!sessionWallet) {
@@ -1041,6 +1079,8 @@ nextApp.prepare().then(() => {
         buyInEth: parsed.data.buyInEth,
         onChainTxHash: parsed.data.onChainTxHash,
         characterId: parsed.data.characterId,
+        chain: parsed.data.chain,
+        entryFeeLamports: parsed.data.entryFeeLamports,
       });
       if (result.ok && result.code) {
         socket.join(result.code);
@@ -1184,10 +1224,13 @@ nextApp.prepare().then(() => {
         console.log(`[room:leave] ${player?.name} left ${code}: deposited=${playerDeposited}, deleted=${result.deleted}, phase=${room?.phase}, isOnChain=${room?.isOnChain}`);
         if (playerDeposited && (result.deleted || (room && room.phase === 'lobby'))) {
           try {
-            const cancellation = await signCancellation(code);
-            console.log(`[room:leave] signCancellation result for ${code}:`, cancellation ? 'OK' : 'NULL (signer not configured)');
+            const isSolanaRoom = room?.chain === 'solana';
+            const cancellation = isSolanaRoom
+              ? signSolanaCancellation(code)
+              : await signCancellation(code);
+            console.log(`[room:leave] sign${isSolanaRoom ? 'Solana' : ''}Cancellation result for ${code}:`, cancellation ? 'OK' : 'NULL (signer not configured)');
             if (cancellation) {
-              const gameId = roomCodeToGameId(code);
+              const gameId = isSolanaRoom ? roomCodeToSolanaGameIdHex(code) : roomCodeToGameId(code);
               // Persist refund for the leaving player
               const refundsToStore: any[] = [];
               if (player?.walletAddress) {
@@ -1851,14 +1894,84 @@ nextApp.prepare().then(() => {
       }
     });
 
-    // Quick Play — Solana (DISABLED: no on-chain verification)
-    socket.on('room:quick-play', (_data, cb) => {
-      cb({ ok: false, error: 'Solana quick-play is disabled. Use Base chain.' });
+    // Quick Play -- Solana (on-chain via Anchor program)
+    socket.on('room:quick-play', async (data, cb) => {
+      const sessionWallet = (socket as any).user?.wallet_address;
+      if (!sessionWallet) return cb({ ok: false, error: 'Authentication required. Please log in.' });
+
+      const qpParsed = quickPlaySolanaSchema.safeParse(data);
+      if (!qpParsed.success) return cb({ ok: false, error: qpParsed.error.issues[0]?.message ?? 'Invalid data' });
+
+      // Ensure wallet matches session
+      if (qpParsed.data.walletAddress !== sessionWallet) {
+        return cb({ ok: false, error: 'Wallet address mismatch' });
+      }
+
+      const existing = rm.findQuickPlayRoomByLamports(qpParsed.data.entryFeeLamports);
+      if (existing) {
+        // Prevent same player joining twice
+        if (existing.players.some((p) => p.walletAddress === sessionWallet)) {
+          return cb({ ok: false, error: 'You are already in this room' });
+        }
+        const joinResult = rm.joinRoom(existing.code, socket.id, qpParsed.data.name, qpParsed.data.color, {
+          walletAddress: sessionWallet,
+          characterId: qpParsed.data.characterId,
+        });
+        if (joinResult.ok) {
+          socket.join(existing.code);
+          const room = rm.getRoom(existing.code);
+          if (room) socket.emit('chat:history', room.chatHistory);
+          broadcastRoomState(existing.code);
+          systemMessage(existing.code, `${qpParsed.data.name} joined the table.`);
+          checkQuickPlayCountdown(existing.code);
+          cb({ ok: true, code: existing.code, isHost: false });
+        } else {
+          cb(joinResult);
+        }
+      } else {
+        const result = rm.createQuickPlayRoomSolana(socket.id, qpParsed.data.name, qpParsed.data.color, qpParsed.data.entryFeeLamports, sessionWallet, qpParsed.data.characterId);
+        if (result.ok && result.code) {
+          socket.join(result.code);
+          broadcastRoomState(result.code);
+          systemMessage(result.code, `${qpParsed.data.name} created a table. Waiting for players...`);
+        }
+        cb({ ...result, isHost: true });
+      }
     });
 
-    // Deposit — Solana (DISABLED: no on-chain verification)
-    socket.on('room:deposit', (_data, cb) => {
-      cb({ ok: false, error: 'Solana deposits are disabled. Use Base chain.' });
+    // Deposit -- Solana (on-chain via Anchor program PDA verification)
+    socket.on('room:deposit', async (data, cb) => {
+      const code = rm.findRoomBySocket(socket.id);
+      if (!code) { console.log('[room:deposit] Not in a room'); return cb({ ok: false, error: 'Not in a room' }); }
+      const room = rm.getRoom(code);
+      console.log(`[room:deposit] code=${code} chain=${room?.chain} isOnChain=${room?.isOnChain} entryFeeLamports=${room?.entryFeeLamports}`);
+      if (!room || room.chain !== 'solana') return cb({ ok: false, error: 'Not a Solana room' });
+      const player = rm.getPlayerInRoom(code, socket.id);
+      if (!player) return cb({ ok: false, error: 'Player not found' });
+
+      const txSignature = data?.txSignature;
+      if (!txSignature || typeof txSignature !== 'string') {
+        return cb({ ok: false, error: 'Transaction signature required' });
+      }
+
+      const walletAddress = player.walletAddress ?? (socket as any).user?.wallet_address;
+      if (!walletAddress) return cb({ ok: false, error: 'Wallet address not found' });
+
+      const gameId = roomCodeToSolanaGameId(code);
+      const verification = await verifySolanaDeposit(txSignature, code, gameId, walletAddress, room.entryFeeLamports);
+      if (!verification.ok) {
+        console.warn(`[deposit:solana] Verification failed for ${player.name}: ${verification.error}`);
+        return cb({ ok: false, error: verification.error ?? 'Deposit verification failed' });
+      }
+
+      const success = rm.markSolanaDeposited(code, socket.id);
+      if (!success) return cb({ ok: false, error: 'Deposit tracking failed' });
+      io.to(code).emit('player:deposited', { playerIndex: player.playerIndex });
+      const solAmount = (room.entryFeeLamports / 1e9).toFixed(2);
+      systemMessage(code, `${player.name} deposited ${solAmount} SOL. Verified on-chain`);
+      broadcastRoomState(code);
+      checkQuickPlayCountdown(code);
+      cb({ ok: true });
     });
 
     // Base on-chain deposit confirmation — with on-chain verification
@@ -1924,9 +2037,18 @@ nextApp.prepare().then(() => {
           if (allDisconnected && room.isOnChain) {
             console.log(`[room ${code}] All players disconnected — auto-cancelling for refunds`);
             try {
-              const cancellation = await signCancellation(code);
+              let cancellation: { nonce: string; signature: string } | null = null;
+              let gameId: string;
+
+              if (room.chain === 'solana') {
+                cancellation = signSolanaCancellation(code);
+                gameId = roomCodeToSolanaGameIdHex(code);
+              } else {
+                cancellation = await signCancellation(code);
+                gameId = roomCodeToGameId(code);
+              }
+
               if (cancellation) {
-                const gameId = roomCodeToGameId(code);
                 // Store pending refunds so players can claim later
                 const pendingRefunds = room.players
                   .filter((p: any) => p.deposited && p.walletAddress)
@@ -1934,9 +2056,10 @@ nextApp.prepare().then(() => {
                     walletAddress: p.walletAddress,
                     roomCode: code,
                     gameId,
-                    nonce: cancellation.nonce,
-                    signature: cancellation.signature,
+                    nonce: cancellation!.nonce,
+                    signature: cancellation!.signature,
                     timestamp: Date.now(),
+                    chain: room.chain ?? 'base',
                   }));
 
                 // Persist refunds (serialized to prevent race conditions)

@@ -8,6 +8,8 @@ import { useWalletClient } from 'wagmi';
 import { claimWinnings } from '@/lib/contracts/monopolyGame';
 import { getTxUrl } from '@/lib/contracts/addresses';
 import type { Hash } from 'viem';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { claimWinningsOnSolana } from '@/lib/solana-program/instructions';
 
 interface GameOverProps {
   onPlayAgain: () => void;
@@ -18,6 +20,7 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
   const { state } = useGame();
   const { user, activeChain } = useMultiChain();
   const { data: walletClient } = useWalletClient();
+  const { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
 
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState(false);
@@ -28,6 +31,8 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
 
   const winner = state.players[state.winner];
   const isBase = activeChain === 'base';
+  const isSolana = activeChain === 'solana';
+  const isOnChain = isBase || isSolana;
   const isWinner = user?.walletAddress && winner.name === user.displayName;
 
   const rankings = [...state.players]
@@ -38,37 +43,86 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
     });
 
   const handleClaim = async () => {
-    if (!walletClient || !roomCode) return;
+    if (!roomCode) return;
     setClaiming(true);
     setClaimError('');
 
     try {
-      // Request settlement signature from server
-      const res = await fetch('/api/contracts/settlement-signature', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      if (isSolana) {
+        if (!solPublicKey) {
+          setClaimError('Solana wallet not connected');
+          return;
+        }
+
+        // Request Ed25519 settlement signature from server
+        const res = await fetch('/api/contracts/solana/settlement-signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomCode,
+            winnerAddress: user?.walletAddress,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.nonce || !data.signature) {
+          setClaimError(data.error ?? 'Failed to get settlement signature');
+          return;
+        }
+
+        // Get signer public key
+        const signerRes = await fetch('/api/contracts/solana/signer');
+        const signerData = await signerRes.json();
+        if (!signerData.address) {
+          setClaimError('Solana signer not configured');
+          return;
+        }
+
+        // Call claimWinnings on Solana
+        if (!solSignTransaction) {
+          setClaimError('Wallet does not support signing');
+          return;
+        }
+        const wallet = { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => { const out = []; for (const tx of txs) out.push(await solSignTransaction(tx)); return out; }) };
+        const txSig = await claimWinningsOnSolana(
+          wallet as any,
           roomCode,
-          winnerAddress: user?.walletAddress,
-        }),
-      });
+          data.nonce,
+          data.signature,
+          signerData.address
+        );
 
-      const data = await res.json();
-      if (!res.ok || !data.nonce || !data.signature) {
-        setClaimError(data.error ?? 'Failed to get settlement signature');
-        return;
+        setClaimTxHash(txSig);
+        setClaimed(true);
+      } else {
+        // Base EVM flow
+        if (!walletClient) return;
+
+        const res = await fetch('/api/contracts/settlement-signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomCode,
+            winnerAddress: user?.walletAddress,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.nonce || !data.signature) {
+          setClaimError(data.error ?? 'Failed to get settlement signature');
+          return;
+        }
+
+        const txHash = await claimWinnings(
+          walletClient,
+          roomCode,
+          data.nonce as Hash,
+          data.signature as `0x${string}`,
+        );
+
+        setClaimTxHash(txHash);
+        setClaimed(true);
       }
-
-      // Call claimWinnings on-chain
-      const txHash = await claimWinnings(
-        walletClient,
-        roomCode,
-        data.nonce as Hash,
-        data.signature as `0x${string}`,
-      );
-
-      setClaimTxHash(txHash);
-      setClaimed(true);
     } catch (err: any) {
       if (err.message?.includes('User rejected') || err.message?.includes('denied')) {
         setClaimError('Transaction cancelled');
@@ -132,8 +186,8 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
           })}
         </div>
 
-        {/* Settlement for Base chain games */}
-        {isBase && isWinner && !claimed && (
+        {/* Settlement for on-chain games (Base or Solana) */}
+        {isOnChain && isWinner && !claimed && (
           <div style={{ marginTop: 16, textAlign: 'center' }}>
             <button
               className="setupStartBtn"
@@ -147,35 +201,47 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
           </div>
         )}
 
-        {isBase && claimed && claimTxHash && (
+        {isOnChain && claimed && claimTxHash && (
           <div style={{ marginTop: 16, textAlign: 'center' }}>
             <p style={{ color: '#22c55e', fontSize: '0.85rem', fontWeight: 'bold' }}>
               Winnings claimed!
             </p>
-            <a
-              href={getTxUrl(claimTxHash)}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#d4a843', fontSize: '0.75rem' }}
-            >
-              View on Basescan
-            </a>
+            {isBase && (
+              <a
+                href={getTxUrl(claimTxHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#d4a843', fontSize: '0.75rem' }}
+              >
+                View on Basescan
+              </a>
+            )}
+            {isSolana && (
+              <a
+                href={`https://explorer.solana.com/tx/${claimTxHash}?cluster=devnet`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#d4a843', fontSize: '0.75rem' }}
+              >
+                View on Solana Explorer
+              </a>
+            )}
           </div>
         )}
 
-        {isBase && !isWinner && (
+        {isOnChain && !isWinner && (
           <p className="gameOverFootnote">
             Better luck next time. Your buy-in has been claimed by the winner.
           </p>
         )}
 
-        {/* Only show Play Again after winner has claimed or for non-Base/non-winner */}
-        {(!isBase || !isWinner || claimed) && (
+        {/* Only show Play Again after winner has claimed or for free/non-winner */}
+        {(!isOnChain || !isWinner || claimed) && (
           <button className="setupStartBtn" onClick={onPlayAgain} style={{ marginTop: 12 }}>
             Play Again
           </button>
         )}
-        {isBase && isWinner && !claimed && (
+        {isOnChain && isWinner && !claimed && (
           <p className="gameOverFootnote">Claim your winnings before leaving</p>
         )}
       </div>

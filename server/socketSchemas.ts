@@ -7,6 +7,15 @@ import { z } from 'zod';
 /** Allowed buy-in tiers (ETH). Any other value is rejected server-side. */
 export const ALLOWED_BUY_INS = ['0.001', '0.01', '0.05', '0.25', '0.5'] as const;
 
+/** Allowed SOL buy-in tiers (in lamports). Approx USD-matched to ETH tiers. */
+export const ALLOWED_SOL_BUY_INS = [
+  10_000_000,   // 0.01 SOL  (~$2, matches 0.001 ETH)
+  100_000_000,  // 0.1  SOL  (~$20, matches 0.01 ETH)
+  500_000_000,  // 0.5  SOL  (~$100, matches 0.05 ETH)
+  2_500_000_000, // 2.5 SOL  (~$500, matches 0.25 ETH)
+  5_000_000_000, // 5.0 SOL  (~$1000, matches 0.5 ETH)
+] as const;
+
 export const roomCreateSchema = z.object({
   name: z.string().min(1).max(20),
   color: z.string().min(1).max(20),
@@ -18,6 +27,8 @@ export const roomCreateSchema = z.object({
   ),
   onChainTxHash: z.string().optional(),
   characterId: z.string().optional(),
+  chain: z.enum(['base', 'solana']).optional(),
+  entryFeeLamports: z.number().int().optional(),
 });
 
 export const roomJoinSchema = z.object({
@@ -93,10 +104,16 @@ export const validateJoinSchema = z.object({
   characterId: z.string().optional(),
 });
 
-export const quickPlaySchema = z.object({
+export const quickPlaySolanaSchema = z.object({
   name: z.string().min(1).max(20),
   color: z.string().min(1).max(20),
-  entryFeeLamports: z.number().int().min(0),
-  walletAddress: z.string().max(100),
+  entryFeeLamports: z.number().int().refine(
+    (v) => (ALLOWED_SOL_BUY_INS as readonly number[]).includes(v),
+    { message: 'Invalid SOL buy-in amount' }
+  ),
+  walletAddress: z.string().min(32).max(44),
   characterId: z.string().optional(),
 });
+
+/** @deprecated Use quickPlaySolanaSchema */
+export const quickPlaySchema = quickPlaySolanaSchema;

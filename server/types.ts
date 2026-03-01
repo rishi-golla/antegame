@@ -15,6 +15,8 @@ export interface ServerPlayer {
 
 export type RoomPhase = 'lobby' | 'playing' | 'finished';
 
+export type RoomChain = 'solana' | 'base' | null;
+
 export interface Room {
   code: string;
   hostId: string;
@@ -32,6 +34,8 @@ export interface Room {
   buyInEth: string;
   /** Whether this room has an on-chain Base game */
   isOnChain: boolean;
+  /** Which chain this room uses (null = free play) */
+  chain: RoomChain;
 }
 
 export interface ChatMessage {
@@ -73,7 +77,7 @@ export interface ClientToServerEvents {
   'game:pay-rent': () => void;
   'game:minigame-action': (data: any) => void;
   'chat:send': (data: { text: string }) => void;
-  'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number; characterId?: string }, cb: (res: { ok: boolean; code?: string; error?: string }) => void) => void;
+  'room:quick-play': (data: { walletAddress: string; name: string; color: string; entryFeeLamports: number; characterId?: string }, cb: (res: { ok: boolean; code?: string; error?: string; isHost?: boolean }) => void) => void;
   'room:deposit': (data: { txSignature: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
   'room:base-deposit': (data: { txHash: string }, cb: (res: { ok: boolean; error?: string }) => void) => void;
 }
@@ -116,4 +120,5 @@ export interface RoomClientState {
   isQuickPlay: boolean;
   buyInEth: string;
   isOnChain: boolean;
+  chain: RoomChain;
 }

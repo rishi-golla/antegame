@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 
 interface CTASectionProps {
   onConnect: () => void;
+  onConnectSolana: () => void;
   onFreePlay?: () => void;
   connecting: boolean;
 }
 
-export default function CTASection({ onConnect, onFreePlay, connecting }: CTASectionProps) {
+export default function CTASection({ onConnect, onConnectSolana, onFreePlay, connecting }: CTASectionProps) {
   return (
     <section className="ctaSection">
       <div className="ctaBg">
@@ -37,6 +38,15 @@ export default function CTASection({ onConnect, onFreePlay, connecting }: CTASec
           >
             {connecting ? 'Connecting...' : 'Connect with Base'}
           </motion.button>
+          <motion.button
+            className="ctaBtnPrimary ctaBtnSolana"
+            onClick={onConnectSolana}
+            disabled={connecting}
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            {connecting ? 'Connecting...' : 'Connect with Solana'}
+          </motion.button>
           {onFreePlay && (
             <motion.button
               className="ctaBtnGhost"
@@ -48,8 +58,6 @@ export default function CTASection({ onConnect, onFreePlay, connecting }: CTASec
             </motion.button>
           )}
         </div>
-
-        <p className="ctaSolana">Solana support coming soon</p>
       </motion.div>
     </section>
   );

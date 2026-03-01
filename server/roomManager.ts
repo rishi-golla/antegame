@@ -22,7 +22,7 @@ export class RoomManager {
     name: string,
     color: string,
     maxPlayers: number,
-    opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }
+    opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string; chain?: 'base' | 'solana'; entryFeeLamports?: number }
   ): { ok: boolean; code?: string; error?: string } {
     // Generate unique code
     let code = generateCode();
@@ -32,7 +32,7 @@ export class RoomManager {
       attempts++;
     }
 
-    const isOnChain = !!opts?.buyInEth;
+    const isOnChain = !!opts?.buyInEth || opts?.chain === 'solana';
 
     const player: ServerPlayer = {
       id: socketId,
@@ -57,11 +57,12 @@ export class RoomManager {
       chatHistory: [],
       createdAt: Date.now(),
       lastActivity: Date.now(),
-      entryFeeLamports: 0,
+      entryFeeLamports: opts?.entryFeeLamports ?? 0,
       potLamports: 0,
       isQuickPlay: false,
       buyInEth: opts?.buyInEth ?? '',
       isOnChain,
+      chain: opts?.chain ?? (isOnChain ? 'base' : null),
     };
 
     this.rooms.set(code, room);
@@ -249,12 +250,13 @@ export class RoomManager {
     return true;
   }
 
-  // Find an open quick-play room with matching entry fee
-  findQuickPlayRoom(entryFeeLamports: number): Room | undefined {
+  // Find an open Solana quick-play room with matching lamports tier
+  findQuickPlayRoomByLamports(entryFeeLamports: number): Room | undefined {
     for (const [, room] of this.rooms) {
       if (
         room.isQuickPlay &&
         room.phase === 'lobby' &&
+        room.chain === 'solana' &&
         room.entryFeeLamports === entryFeeLamports &&
         room.players.length < room.maxPlayers
       ) {
@@ -262,6 +264,11 @@ export class RoomManager {
       }
     }
     return undefined;
+  }
+
+  /** @deprecated Use findQuickPlayRoomByLamports */
+  findQuickPlayRoom(entryFeeLamports: number): Room | undefined {
+    return this.findQuickPlayRoomByLamports(entryFeeLamports);
   }
 
   // Find quick-play room by ETH buy-in tier
@@ -279,7 +286,30 @@ export class RoomManager {
     return undefined;
   }
 
-  // Create a quick-play room
+  // Create a quick-play room for Solana chain
+  createQuickPlayRoomSolana(
+    socketId: string,
+    name: string,
+    color: string,
+    entryFeeLamports: number,
+    walletAddress: string,
+    characterId?: string
+  ): { ok: boolean; code?: string; error?: string } {
+    const result = this.createRoom(socketId, name, color, 6, { characterId });
+    if (result.ok && result.code) {
+      const room = this.rooms.get(result.code)!;
+      room.isQuickPlay = true;
+      room.entryFeeLamports = entryFeeLamports;
+      room.isOnChain = true;
+      room.chain = 'solana';
+      room.maxPlayers = 6;
+      const player = room.players[0];
+      player.walletAddress = walletAddress;
+    }
+    return result;
+  }
+
+  /** @deprecated Use createQuickPlayRoomSolana */
   createQuickPlayRoom(
     socketId: string,
     name: string,
@@ -288,15 +318,7 @@ export class RoomManager {
     walletAddress: string,
     characterId?: string
   ): { ok: boolean; code?: string; error?: string } {
-    const result = this.createRoom(socketId, name, color, 4, { characterId });
-    if (result.ok && result.code) {
-      const room = this.rooms.get(result.code)!;
-      room.isQuickPlay = true;
-      room.entryFeeLamports = entryFeeLamports;
-      const player = room.players[0];
-      player.walletAddress = walletAddress;
-    }
-    return result;
+    return this.createQuickPlayRoomSolana(socketId, name, color, entryFeeLamports, walletAddress, characterId);
   }
 
   // Create a quick-play room for Base chain (ETH tiers)
@@ -314,6 +336,7 @@ export class RoomManager {
       room.isQuickPlay = true;
       room.buyInEth = buyInEth;
       room.isOnChain = true;
+      room.chain = 'base';
       room.maxPlayers = 6;
       const player = room.players[0];
       player.walletAddress = walletAddress;
@@ -322,14 +345,23 @@ export class RoomManager {
   }
 
   // Mark player as deposited (Solana path)
-  markDeposited(code: string, socketId: string): boolean {
+  markSolanaDeposited(code: string, socketId: string): boolean {
     const room = this.rooms.get(code);
-    if (!room) return false;
+    if (!room || room.chain !== 'solana') return false;
     const player = room.players.find((p) => p.id === socketId);
     if (!player) return false;
     player.deposited = true;
     room.potLamports += room.entryFeeLamports;
+    // Auto-ready on deposit for quick play rooms
+    if (room.isQuickPlay) {
+      player.ready = true;
+    }
     return true;
+  }
+
+  /** @deprecated Use markSolanaDeposited */
+  markDeposited(code: string, socketId: string): boolean {
+    return this.markSolanaDeposited(code, socketId);
   }
 
   // Mark player as deposited for Base on-chain games

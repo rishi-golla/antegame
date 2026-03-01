@@ -10,6 +10,10 @@ import { getChainId } from '@/lib/contracts/addresses';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '@/context/EVMWalletContext';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { joinGameOnSolana, lamportsToSol } from '@/lib/solana-program/instructions';
+import { getGameOnSolana } from '@/lib/solana-program/queries';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const TX_RECEIPT_TIMEOUT = 60_000; // 60 seconds
 
@@ -61,9 +65,22 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   const [buyInDisplay, setBuyInDisplay] = useState<string | null>(null);
   const [pendingReconnect, setPendingReconnect] = useState(false);
 
+  const { publicKey: solPublicKey, connected: solConnected, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
+  const { connection: solConnection } = useConnection();
+  const [solBalance, setSolBalance] = useState<number>(0);
+
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[1];
   const isBase = activeChain === 'base';
+  const isSolana = activeChain === 'solana';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
+  const balanceSol = solBalance / LAMPORTS_PER_SOL;
+
+  // Fetch SOL balance
+  useEffect(() => {
+    if (isSolana && solPublicKey && solConnection) {
+      solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
+    }
+  }, [isSolana, solPublicKey, solConnection]);
 
   // After disconnect completes, open connect modal
   useEffect(() => {
@@ -196,8 +213,52 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         });
 
         onJoined();
+      } else if (isSolana && solPublicKey) {
+        // Solana on-chain flow
+        // Step 0: Validate on server
+        setStatus('Validating...');
+        const { getSocket } = await import('@/lib/socket');
+        const validation = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
+          getSocket().emit('room:validate-join' as any, { code: roomCode, color: char.color, characterId: selectedChar }, resolve);
+        });
+        if (!validation.ok) {
+          setError(validation.error ?? 'Cannot join room');
+          setLoading(false);
+          return;
+        }
+
+        // Step 1: Join on-chain (deposit buy-in)
+        setStatus('Waiting for wallet approval...');
+        let txSig: string;
+        try {
+          if (!solSignTransaction) throw new Error('Wallet does not support signing');
+          const wallet = { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => { const out = []; for (const tx of txs) out.push(await solSignTransaction(tx)); return out; }) };
+          txSig = await joinGameOnSolana(wallet as any, roomCode);
+        } catch (err: any) {
+          throw err;
+        }
+
+        // Step 2: Join server room
+        setStatus('Deposit confirmed! Joining room...');
+        const result = await joinRoom(roomCode, playerName, char.color, {
+          walletAddress: user?.walletAddress,
+          characterId: selectedChar,
+        });
+        if (!result.ok) {
+          setError(result.error ?? 'Failed to join room');
+          setLoading(false);
+          return;
+        }
+
+        // Step 3: Notify server of deposit
+        const { getSocket: getSocket2 } = await import('@/lib/socket');
+        await new Promise<void>((resolve) => {
+          getSocket2().emit('room:deposit' as any, { txSignature: txSig }, () => resolve());
+        });
+
+        onJoined();
       } else {
-        // Non-Base flow (Solana or free play)
+        // Free play
         const result = await joinRoom(roomCode, playerName, char.color, { characterId: selectedChar });
         if (result.ok) {
           onJoined();
@@ -272,6 +333,11 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
           <p style={{ fontSize: '0.7rem', opacity: 0.7, textAlign: 'center' }}>
             Balance: {balanceEth.toFixed(4)} ETH
             {buyInDisplay && <span> | Buy-in: {buyInDisplay} ETH</span>}
+          </p>
+        )}
+        {isSolana && (
+          <p style={{ fontSize: '0.7rem', opacity: 0.7, textAlign: 'center' }}>
+            Balance: {balanceSol.toFixed(4)} SOL
           </p>
         )}
 

@@ -25,7 +25,7 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
   const { connectAndSign: solanaSign } = useAuth();
   const { connectAndSign: evmSign } = useEVMAuth();
   const { setActiveChain } = useMultiChain();
-  const { connected: solConnected, publicKey } = useWallet();
+  const { connected: solConnected, publicKey, wallet, connect } = useWallet();
   const { setVisible: setSolanaModalVisible } = useWalletModal();
   const { openConnectModal } = useConnectModal();
   const { isConnected: evmConnected, address: evmAddress } = useAccount();
@@ -33,6 +33,16 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
 
+
+  // When user picks a wallet from the modal, trigger connect() (autoConnect is off)
+  useEffect(() => {
+    if (wallet && !solConnected && pendingChain === 'solana') {
+      connect().catch((e: any) => {
+        setError(e.message || 'Wallet connection failed');
+        setPendingChain(null);
+      });
+    }
+  }, [wallet, solConnected, pendingChain, connect]);
 
   useEffect(() => {
     if (solConnected && publicKey && pendingChain === 'solana') {
@@ -70,14 +80,28 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
     openConnectModal?.();
   };
 
+  const handleSolana = () => {
+    setError('');
+    if (solConnected && publicKey) {
+      setConnecting(true);
+      setActiveChain('solana');
+      solanaSign()
+        .catch((e: any) => setError(e.message || 'Verification failed'))
+        .finally(() => setConnecting(false));
+    } else {
+      setPendingChain('solana');
+      setSolanaModalVisible(true);
+    }
+  };
+
   return (
     <div className="landingPage">
-      <LandingNav onConnect={handleBase} connecting={connecting} />
-      <HeroSection onConnect={handleBase} onFreePlay={onFreePlay} connecting={connecting} />
+      <LandingNav onConnect={handleBase} onConnectSolana={handleSolana} connecting={connecting} />
+      <HeroSection onConnect={handleBase} onConnectSolana={handleSolana} onFreePlay={onFreePlay} connecting={connecting} />
       <StatsStrip />
       <HowItWorks />
       <FeatureStrip />
-      <CTASection onConnect={handleBase} onFreePlay={onFreePlay} connecting={connecting} />
+      <CTASection onConnect={handleBase} onConnectSolana={handleSolana} onFreePlay={onFreePlay} connecting={connecting} />
       <LandingFooter />
       {error && <div className="landingError">{error}</div>}
     </div>

@@ -96,6 +96,9 @@ try {
 try {
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_game_history_game_id ON game_history(game_id)`).run();
 } catch { /* index already exists */ }
+try {
+  db.prepare(`ALTER TABLE game_history ADD COLUMN chain TEXT DEFAULT 'base'`).run();
+} catch { /* column already exists */ }
 
 // Backfill game_id for existing rows that have a room_code but no game_id
 function backfillGameIds() {

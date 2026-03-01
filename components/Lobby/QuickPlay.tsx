@@ -10,8 +10,12 @@ import { getChainId } from '@/lib/contracts/addresses';
 import { createGameOnChain, joinGameOnChain } from '@/lib/contracts/monopolyGame';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useChainId } from 'wagmi';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { createGameOnSolana, joinGameOnSolana, solToLamports, lamportsToSol } from '@/lib/solana-program/instructions';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const BUY_IN_OPTIONS = ['0.001', '0.01', '0.05', '0.25', '0.5'];
+const SOL_BUY_IN_OPTIONS = ['0.01', '0.1', '0.5', '2.5', '5.0'];
 
 function CampaignStrip() {
   const [label, setLabel] = useState<string | null>(null);
@@ -59,11 +63,16 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
     }
   }, [connectedAddress, refetchBalance]);
 
+  const { publicKey: solPublicKey, connected: solConnected, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
+  const { connection: solConnection } = useConnection();
+  const [solBalance, setSolBalance] = useState<number>(0);
+
   const [name, setName] = useState(user?.displayName ?? '');
   const [selectedChar, setSelectedChar] = useState(
     user?.characterId ?? CHARACTERS[0].id
   );
   const [buyIn, setBuyIn] = useState('0.01');
+  const [solBuyIn, setSolBuyIn] = useState('0.01');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -71,7 +80,20 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
 
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
   const isBase = activeChain === 'base';
+  const isSolana = activeChain === 'solana';
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
+  const balanceSol = solBalance / LAMPORTS_PER_SOL;
+
+  // Fetch SOL balance
+  useEffect(() => {
+    if (isSolana && solPublicKey && solConnection) {
+      solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
+      const interval = setInterval(() => {
+        solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
+      }, 10_000);
+      return () => clearInterval(interval);
+    }
+  }, [isSolana, solPublicKey, solConnection]);
 
   // After disconnect completes, open connect modal
   useEffect(() => {
@@ -85,6 +107,84 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
 
   const handleFindMatch = async () => {
     const playerName = name.trim() || user?.displayName || 'Player';
+
+    if (isSolana) {
+      // Solana quick-play flow
+      if (!solPublicKey) {
+        setError('Solana wallet not connected.');
+        return;
+      }
+      setLoading(true);
+      setError('');
+
+      try {
+        const { getSocket } = await import('@/lib/socket');
+        const socket = getSocket();
+
+        if (!socket.connected) {
+          setStatus('Connecting to server...');
+          socket.connect();
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Connection timeout. Try again.')), 8000);
+            socket.once('connect', () => { clearTimeout(timeout); resolve(); });
+            socket.once('connect_error', (err) => { clearTimeout(timeout); reject(new Error(`Connection failed: ${err.message}`)); });
+          });
+        }
+
+        const buyInLamports = solToLamports(parseFloat(solBuyIn));
+
+        // Step 1: Find/create room on server
+        setStatus('Finding match...');
+        const result = await new Promise<{ ok: boolean; code?: string; isHost?: boolean; error?: string }>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Server did not respond. Try again.')), 10000);
+          socket.emit('room:quick-play', {
+            name: playerName,
+            color: char.color,
+            entryFeeLamports: buyInLamports,
+            walletAddress: user?.walletAddress ?? '',
+            characterId: selectedChar,
+          }, (res: any) => { clearTimeout(timeout); resolve(res); });
+        });
+
+        if (!result.ok || !result.code) {
+          throw new Error(result.error ?? 'Failed to find match');
+        }
+
+        const roomCode = result.code;
+        const isHost = result.isHost ?? false;
+
+        // Step 2: On-chain deposit
+        setStatus('Waiting for wallet approval...');
+        if (!solSignTransaction) throw new Error('Wallet does not support signing');
+        const wallet = { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => { const out = []; for (const tx of txs) out.push(await solSignTransaction(tx)); return out; }) };
+        let txSig: string;
+        if (isHost) {
+          txSig = await createGameOnSolana(wallet as any, roomCode, 6, buyInLamports);
+        } else {
+          txSig = await joinGameOnSolana(wallet as any, roomCode);
+        }
+
+        // Step 3: Notify server deposit confirmed
+        setStatus('Deposit confirmed! Entering lobby...');
+        await new Promise<void>((resolve) => {
+          socket.emit('room:deposit', { txSignature: txSig }, () => resolve());
+        });
+
+        onMatched();
+      } catch (err: any) {
+        try {
+          const { getSocket } = await import('@/lib/socket');
+          getSocket().emit('room:leave');
+        } catch {}
+        setError(err?.shortMessage || err?.message || 'Something went wrong');
+      } finally {
+        setLoading(false);
+        setStatus('');
+      }
+      return;
+    }
+
+    // Base quick-play flow
     if (!walletReady || !walletClient) {
       setError('Wallet not connected.');
       if (openConnectModal) {
@@ -224,8 +324,8 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
           ))}
         </div>
 
-        {/* Buy-in selector — Base is the only active chain */}
-        <div className="setupPlayerCount">
+        {isBase && (
+          <div className="setupPlayerCount">
             <label>Buy-In (ETH)</label>
             <div className="setupCountBtns">
               {BUY_IN_OPTIONS.map((amt) => (
@@ -246,6 +346,31 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
               )}
             </p>
           </div>
+        )}
+
+        {isSolana && (
+          <div className="setupPlayerCount">
+            <label>Buy-In (SOL)</label>
+            <div className="setupCountBtns">
+              {SOL_BUY_IN_OPTIONS.map((amt) => (
+                <button
+                  key={amt}
+                  className={`setupCountBtn ${solBuyIn === amt ? 'active' : ''}`}
+                  onClick={() => setSolBuyIn(amt)}
+                  disabled={balanceSol < parseFloat(amt)}
+                >
+                  {amt}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 4 }}>
+              Balance: {balanceSol.toFixed(4)} SOL
+              {balanceSol < parseFloat(solBuyIn) && (
+                <span style={{ color: '#ff4444' }}> (insufficient)</span>
+              )}
+            </p>
+          </div>
+        )}
 
         {!walletReady && (
           <p className="lobbyError" style={{ color: '#d4a843' }}>
@@ -268,9 +393,9 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
         <button
           className="setupStartBtn"
           onClick={handleFindMatch}
-          disabled={loading || (isBase && !walletReady) || (isBase && balanceEth < parseFloat(buyIn))}
+          disabled={loading || (isBase && !walletReady) || (isBase && balanceEth < parseFloat(buyIn)) || (isSolana && balanceSol < parseFloat(solBuyIn))}
         >
-          {loading ? status || 'Processing...' : `Find Match (${buyIn} ETH)`}
+          {loading ? status || 'Processing...' : isSolana ? `Find Match (${solBuyIn} SOL)` : `Find Match (${buyIn} ETH)`}
         </button>
         <button className="lobbyBackBtn" onClick={onBack} disabled={loading}>Back</button>
       </div>

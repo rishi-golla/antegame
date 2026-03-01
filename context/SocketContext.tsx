@@ -34,7 +34,7 @@ interface SocketContextValue {
   reconnecting: boolean;
   reconnectFailed: boolean;
   clearReconnectFailed: () => void;
-  createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }) => Promise<{ ok: boolean; code?: string; error?: string }>;
+  createRoom: (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string; chain?: 'base' | 'solana'; entryFeeLamports?: number }) => Promise<{ ok: boolean; code?: string; error?: string }>;
   joinRoom: (code: string, name: string, color: string, opts?: { walletAddress?: string; onChainTxHash?: string; characterId?: string }) => Promise<{ ok: boolean; error?: string }>;
   leaveRoom: () => void;
   toggleReady: () => void;
@@ -207,7 +207,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createRoom = useCallback(
-    (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string }) => {
+    (name: string, color: string, maxPlayers: number, opts?: { walletAddress?: string; buyInEth?: string; onChainTxHash?: string; characterId?: string; chain?: 'base' | 'solana'; entryFeeLamports?: number }) => {
       return new Promise<{ ok: boolean; code?: string; error?: string }>((resolve) => {
         const socket = getSocket();
         socket.emit('room:create', { name, color, maxPlayers, ...opts }, (res) => {

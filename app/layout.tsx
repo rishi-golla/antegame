@@ -1,4 +1,5 @@
 import './globals.css';
+import '@solana/wallet-adapter-react-ui/styles.css';
 import type { Metadata } from 'next';
 import { AudioProvider } from '@/context/AudioContext';
 export const metadata: Metadata = {

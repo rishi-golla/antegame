@@ -18,6 +18,8 @@ interface SecureKeys {
   GAME_SIGNER_PRIVATE_KEY?: string;
   ALCHEMY_API_KEY?: string;
   BASESCAN_API_KEY?: string;
+  /** Solana Ed25519 keypair secret (JSON array or base58). Used by solana-contracts.ts. */
+  SOLANA_GAME_SIGNER_SECRET?: string;
   [key: string]: string | undefined;
 }
 

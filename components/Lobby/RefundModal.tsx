@@ -10,6 +10,11 @@ import { getChainEnv, getRpcUrl, getAddresses } from '@/lib/contracts/addresses'
 import { base, baseSepolia } from 'viem/chains';
 function getChain() { return getChainEnv() === 'base-mainnet' ? base : baseSepolia; }
 import { MONOPOLY_GAME_ABI } from '@/lib/contracts/abi/MonopolyGame';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useMultiChain } from '@/context/MultiChainContext';
+import { cancelGameOnSolana, claimRefundOnSolana } from '@/lib/solana-program/instructions';
+
+const SOLANA_GAME_SIGNER = process.env.NEXT_PUBLIC_SOLANA_GAME_SIGNER ?? '';
 
 interface RefundModalProps {
   refund: { nonce: string; signature: string; gameId: string; roomCode: string };
@@ -37,12 +42,80 @@ async function canClaimRefund(roomCode: string, playerAddress: string): Promise<
 export default function RefundModal({ refund, onDone }: RefundModalProps) {
   const { data: walletClient } = useWalletClient();
   const { address } = useAccount();
+  const { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
+  const { activeChain } = useMultiChain();
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const handleRefund = async () => {
+  const isSolana = activeChain === 'solana';
+
+  const handleSolanaRefund = async () => {
+    if (!solPublicKey || !solSignTransaction) {
+      setError('Solana wallet not connected');
+      return;
+    }
+    setLoading(true);
+    setError('');
+
+    try {
+      const wallet = {
+        publicKey: solPublicKey,
+        signTransaction: solSignTransaction,
+        signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => {
+          const out = [];
+          for (const tx of txs) out.push(await solSignTransaction(tx));
+          return out;
+        }),
+      };
+
+      // Step 1: Cancel game on-chain
+      setStatus('Cancelling game on-chain...');
+      try {
+        await cancelGameOnSolana(
+          wallet as any,
+          refund.roomCode,
+          refund.nonce,
+          refund.signature,
+          SOLANA_GAME_SIGNER
+        );
+      } catch (cancelErr: any) {
+        const msg = cancelErr?.message || '';
+        console.error('[RefundModal] cancelGameOnSolana failed:', msg);
+        if (msg.includes('User rejected') || msg.includes('denied')) {
+          setError('Transaction rejected');
+          setLoading(false);
+          return;
+        }
+        // Only continue if game is already cancelled
+        if (!msg.includes('GameAlreadySettled') && !msg.includes('6006')) {
+          setError(`Cancel failed: ${msg}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Step 2: Claim refund
+      setStatus('Claiming refund...');
+      await claimRefundOnSolana(wallet as any, refund.roomCode);
+
+      setStatus('');
+      setDone(true);
+      setTimeout(onDone, 3000);
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('User rejected') || msg.includes('denied')) {
+        setError('Transaction rejected');
+      } else {
+        setError(msg || 'Refund failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBaseRefund = async () => {
     if (!walletClient || !address) {
       setError('Wallet not connected');
       return;
@@ -67,13 +140,10 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
             setLoading(false);
             return;
           }
-          // Otherwise assume already cancelled by another player, continue
         }
 
-        // Wait for state to index after cancel
         await new Promise(r => setTimeout(r, 2000));
 
-        // Re-check: maybe another player's cancel went through
         const recheckState = await getOnChainGameState(refund.roomCode);
         if (recheckState !== OnChainGameState.CANCELLED) {
           setError('Failed to cancel game on-chain. Try again.');
@@ -82,16 +152,14 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
         }
       }
 
-      // Step 2: Check if refund is still available (may have already been claimed)
       setStatus('Checking refund status...');
       const refundAvailable = await canClaimRefund(refund.roomCode, address);
       if (!refundAvailable) {
         setStatus('');
-        setDone(true); // Already claimed
+        setDone(true);
         return;
       }
 
-      // Step 3: Claim refund
       setStatus('Claiming refund...');
       const refundHash = await claimRefund(walletClient, refund.roomCode);
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: refundHash as `0x${string}` });
@@ -117,6 +185,9 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
     }
   };
 
+  const handleRefund = isSolana ? handleSolanaRefund : handleBaseRefund;
+  const walletConnected = isSolana ? !!solPublicKey : !!(walletClient && address);
+
   return (
     <div className="setupScreen" style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="setupCard" style={{ maxWidth: 400 }}>
@@ -126,17 +197,18 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
           {!done && ' Your deposit is available for refund.'}
         </p>
 
+        {!walletConnected && <p className="lobbyError">Wallet not connected</p>}
         {error && <p className="lobbyError">{error}</p>}
         {status && <p style={{ textAlign: 'center', color: '#d4a843', fontSize: '0.85rem', marginBottom: 12 }}>{status}</p>}
 
         {!done && (
-          <button className="setupStartBtn" onClick={handleRefund} disabled={loading}>
+          <button className="setupStartBtn" onClick={handleRefund} disabled={loading || !walletConnected}>
             {loading ? status || 'Processing...' : 'Claim Refund'}
           </button>
         )}
         {done && (
           <>
-            <p style={{ textAlign: 'center', color: '#4caf50', fontWeight: 700 }}>✅ Refund complete</p>
+            <p style={{ textAlign: 'center', color: '#4caf50', fontWeight: 700 }}>Refund complete</p>
             <button className="lobbyBackBtn" onClick={onDone} style={{ marginTop: 12 }}>Close</button>
           </>
         )}

@@ -17,6 +17,7 @@ export function getCampaignReferralRate(): number {
 
 export interface GameResultData {
   roomCode?: string;
+  chain?: string;
   durationMs: number;
   playerCount: number;
   players: Array<{ walletAddress: string; name: string; placing: number }>;
@@ -29,8 +30,8 @@ export interface GameResultData {
 
 export function recordGameResult(data: GameResultData): number {
   const insertHistory = db.prepare(`
-    INSERT INTO game_history (finished_at, duration_ms, player_count, players, winner_wallet, winner_name, entry_fee_lamports, winner_payout_lamports, house_profit_lamports, room_code, game_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO game_history (finished_at, duration_ms, player_count, players, winner_wallet, winner_name, entry_fee_lamports, winner_payout_lamports, house_profit_lamports, room_code, game_id, chain)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const updateStats = db.prepare(`
@@ -58,7 +59,8 @@ export function recordGameResult(data: GameResultData): number {
       data.winnerPayoutLamports,
       data.houseProfitLamports,
       data.roomCode ?? '',
-      computedGameId
+      computedGameId,
+      data.chain ?? 'base'
     );
 
     for (const player of data.players) {

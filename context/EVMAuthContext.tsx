@@ -47,7 +47,7 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
-        if (data.user) {
+        if (data.user && data.user.chain === 'base') {
           setUser(data.user);
           setIsNewUser(!data.user.displayName);
         }

@@ -36,11 +36,12 @@ export function readPendingRefunds(): any[] {
   }
 }
 
-export function findSettlement(roomCode: string, walletAddress: string): any | undefined {
+export function findSettlement(roomCode: string, walletAddress: string, chain?: string): any | undefined {
   const refunds = readPendingRefunds();
   return refunds.find(
     (r: any) => r.type === 'settlement' && r.roomCode === roomCode &&
-      r.walletAddress?.toLowerCase() === walletAddress.toLowerCase()
+      r.walletAddress?.toLowerCase() === walletAddress.toLowerCase() &&
+      (!chain || (r.chain ?? 'base') === chain)
   );
 }
 

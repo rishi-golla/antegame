@@ -13,7 +13,7 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   const { connectAndSign: solanaSign } = useAuth();
   const { connectAndSign: evmSign } = useEVMAuth();
   const { setActiveChain } = useMultiChain();
-  const { connected: solConnected, publicKey } = useWallet();
+  const { connected: solConnected, publicKey, wallet, connect } = useWallet();
   const { setVisible: setSolanaModalVisible } = useWalletModal();
   const { openConnectModal } = useConnectModal();
   const { isConnected: evmConnected, address: evmAddress } = useAccount();
@@ -21,6 +21,16 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
   const [connecting, setConnecting] = useState(false);
   const [pendingChain, setPendingChain] = useState<Chain | null>(null);
 
+
+  // When user picks a wallet from the modal, trigger connect() (autoConnect is off)
+  useEffect(() => {
+    if (wallet && !solConnected && pendingChain === 'solana') {
+      connect().catch((e: any) => {
+        setError(e.message || 'Wallet connection failed');
+        setPendingChain(null);
+      });
+    }
+  }, [wallet, solConnected, pendingChain, connect]);
 
   // Auto-sign after Solana wallet connects
   useEffect(() => {
@@ -92,9 +102,10 @@ export default function ConnectScreen({ onFreePlay }: { onFreePlay?: () => void 
           </button>
           <button
             className="connectBtn connectBtnSolana"
-            disabled
+            onClick={handleSolana}
+            disabled={connecting}
           >
-            Connect with Solana (Coming Soon)
+            {connecting && pendingChain === 'solana' ? 'Connecting...' : 'Connect with Solana'}
           </button>
         </div>
 

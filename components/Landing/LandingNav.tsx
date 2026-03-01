@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 
 interface LandingNavProps {
   onConnect: () => void;
+  onConnectSolana: () => void;
   connecting: boolean;
 }
 
@@ -15,7 +16,7 @@ const navLinks = [
   { label: 'Docs', href: '/docs' },
 ];
 
-export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
+export default function LandingNav({ onConnect, onConnectSolana, connecting }: LandingNavProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -56,15 +57,26 @@ export default function LandingNav({ onConnect, connecting }: LandingNavProps) {
           ))}
         </div>
 
-        <motion.button
-          className="landingNavCTA"
-          onClick={onConnect}
-          disabled={connecting}
-          whileHover={{ scale: 1.05, boxShadow: '0 6px 30px rgba(212, 175, 55, 0.5)' }}
-          whileTap={{ scale: 0.95 }}
-        >
-          {connecting ? 'Connecting...' : 'Connect Wallet'}
-        </motion.button>
+        <div className="landingNavCTAs">
+          <motion.button
+            className="landingNavCTA"
+            onClick={onConnect}
+            disabled={connecting}
+            whileHover={{ scale: 1.05, boxShadow: '0 6px 30px rgba(212, 175, 55, 0.5)' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {connecting ? 'Connecting...' : 'Base'}
+          </motion.button>
+          <motion.button
+            className="landingNavCTA landingNavCTASolana"
+            onClick={onConnectSolana}
+            disabled={connecting}
+            whileHover={{ scale: 1.05, boxShadow: '0 6px 30px rgba(153, 69, 255, 0.5)' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {connecting ? 'Connecting...' : 'Solana'}
+          </motion.button>
+        </div>
 
         <button
           className="landingNavHamburger"

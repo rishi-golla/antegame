@@ -10,8 +10,12 @@ import { getChainId } from '@/lib/contracts/addresses';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '@/context/EVMWalletContext';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { createGameOnSolana, solToLamports, lamportsToSol } from '@/lib/solana-program/instructions';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const BUY_IN_OPTIONS = ['0.001', '0.01', '0.05', '0.25', '0.5'];
+const SOL_BUY_IN_OPTIONS = ['0.01', '0.1', '0.5', '2.5', '5.0'];
 const TX_RECEIPT_TIMEOUT = 60_000; // 60 seconds
 
 function CampaignStrip() {
@@ -51,12 +55,17 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
     chainId: getChainId(),
   });
 
+  const { publicKey: solPublicKey, connected: solConnected, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
+  const { connection: solConnection } = useConnection();
+  const [solBalance, setSolBalance] = useState<number>(0);
+
   const [name, setName] = useState(user?.displayName ?? '');
   const [selectedChar, setSelectedChar] = useState(
     user?.characterId ?? CHARACTERS[0].id
   );
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [buyIn, setBuyIn] = useState('0.001');
+  const [solBuyIn, setSolBuyIn] = useState('0.01');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -64,9 +73,19 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
 
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[0];
   const isBase = activeChain === 'base';
+  const isSolana = activeChain === 'solana';
 
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
-  const canAfford = balanceEth >= parseFloat(buyIn);
+  const canAfford = isBase ? balanceEth >= parseFloat(buyIn) : true;
+  const balanceSol = solBalance / LAMPORTS_PER_SOL;
+  const canAffordSol = balanceSol >= parseFloat(solBuyIn);
+
+  // Fetch SOL balance
+  useEffect(() => {
+    if (isSolana && solPublicKey && solConnection) {
+      solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
+    }
+  }, [isSolana, solPublicKey, solConnection]);
 
   // After disconnect completes, open connect modal
   useEffect(() => {
@@ -166,8 +185,47 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
         });
 
         onCreated();
+      } else if (isSolana && solPublicKey) {
+        // Solana on-chain flow
+        const buyInLamports = solToLamports(parseFloat(solBuyIn));
+
+        // Step 1: Create room on server
+        setStatus('Creating room...');
+        const result = await createRoom(playerName, char.color, maxPlayers, {
+          walletAddress: user?.walletAddress,
+          characterId: selectedChar,
+          chain: 'solana',
+          entryFeeLamports: buyInLamports,
+        });
+        if (!result.ok || !result.code) {
+          setError(result.error ?? 'Failed to create room');
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Create game on-chain (deposit buy-in)
+        setStatus('Waiting for wallet approval...');
+        let txSig: string;
+        try {
+          if (!solSignTransaction) throw new Error('Wallet does not support signing');
+          const wallet = { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => { const out = []; for (const tx of txs) out.push(await solSignTransaction(tx)); return out; }) };
+          txSig = await createGameOnSolana(wallet as any, result.code, maxPlayers, buyInLamports);
+        } catch (err: any) {
+          const { getSocket } = await import('@/lib/socket');
+          getSocket().emit('room:leave');
+          throw err;
+        }
+
+        // Step 3: Notify server of confirmed deposit
+        setStatus('Deposit confirmed! Entering room...');
+        const { getSocket } = await import('@/lib/socket');
+        await new Promise<void>((resolve) => {
+          getSocket().emit('room:deposit' as any, { txSignature: txSig }, () => resolve());
+        });
+
+        onCreated();
       } else {
-        // Non-Base flow (Solana or free play)
+        // Free play (no chain)
         const result = await createRoom(playerName, char.color, maxPlayers, { characterId: selectedChar });
         if (result.ok) {
           onCreated();
@@ -266,6 +324,28 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
           </div>
         )}
 
+        {isSolana && (
+          <div className="setupPlayerCount">
+            <label>Buy-In (SOL)</label>
+            <div className="setupCountBtns">
+              {SOL_BUY_IN_OPTIONS.map((amt) => (
+                <button
+                  key={amt}
+                  className={`setupCountBtn ${solBuyIn === amt ? 'active' : ''}`}
+                  onClick={() => setSolBuyIn(amt)}
+                  disabled={balanceSol < parseFloat(amt)}
+                >
+                  {amt}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 4 }}>
+              Balance: {balanceSol.toFixed(4)} SOL
+              {!canAffordSol && <span style={{ color: '#ff4444' }}> (insufficient)</span>}
+            </p>
+          </div>
+        )}
+
         {isBase && !walletReady && (
           <p className="lobbyError" style={{ color: '#d4a843' }}>
             Wallet not connected.{' '}
@@ -292,9 +372,9 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
         <button
           className="setupStartBtn"
           onClick={handleCreate}
-          disabled={loading || (isBase && (!walletReady || !canAfford))}
+          disabled={loading || (isBase && (!walletReady || !canAfford)) || (isSolana && !canAffordSol)}
         >
-          {loading ? status || 'Creating...' : isBase ? `Create Room (${buyIn} ETH)` : 'Create Room'}
+          {loading ? status || 'Creating...' : isBase ? `Create Room (${buyIn} ETH)` : isSolana ? `Create Room (${solBuyIn} SOL)` : 'Create Room'}
         </button>
         <button className="lobbyBackBtn" onClick={onBack}>Back</button>
       </div>
