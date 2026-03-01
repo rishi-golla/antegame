@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
+import { createHmac, randomUUID } from 'crypto';
 import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { getSessionFromCookie, validateSession } from './auth';
@@ -41,6 +42,41 @@ setRoomManager(rm);
 const recordedRooms = new Set<string>();
 // Assigned inside nextApp.prepare() closure
 let _persistSettlementForWinner: (code: string) => Promise<void> = async () => {};
+
+async function emitDiscordGameEvent(payload: {
+  type: 'game.started' | 'game.ended' | 'game.cancelled';
+  roomCode: string;
+  winnerName?: string;
+  reason?: string;
+}) {
+  const webhookUrl = process.env.DISCORD_BOT_GAME_WEBHOOK_URL;
+  const secret = process.env.GAME_WEBHOOK_SECRET;
+  if (!webhookUrl || !secret) return;
+
+  const body = {
+    event_id: randomUUID(),
+    type: payload.type,
+    room_code: payload.roomCode,
+    winner_name: payload.winnerName,
+    reason: payload.reason,
+    timestamp: Date.now(),
+  };
+  const raw = JSON.stringify(body);
+  const sig = createHmac('sha256', secret).update(raw).digest('hex');
+
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-ante-signature': `sha256=${sig}`,
+      },
+      body: raw,
+    });
+  } catch (err) {
+    console.error('[discord-webhook] Failed to emit game event:', err);
+  }
+}
 
 function tryRecordGameResult(room: Room) {
   if (recordedRooms.has(room.code)) return;
@@ -102,6 +138,11 @@ function tryRecordGameResult(room: Room) {
       winnerPayoutLamports: winnerPayout,
       houseProfitLamports: houseCut,
     });
+    emitDiscordGameEvent({
+      type: 'game.ended',
+      roomCode: room.code,
+      winnerName: winnerPlayer?.name ?? 'Unknown',
+    }).catch((err) => console.error('[discord-webhook] emit game.ended failed:', err));
     console.log(`[stats] Recorded game result for room ${room.code}`);
   } catch (e) {
     console.error('[stats] Failed to record game result:', e);
@@ -386,6 +427,11 @@ nextApp.prepare().then(() => {
     if (room.gameState) {
       broadcastGameState(code);
     }
+    emitDiscordGameEvent({
+      type: 'game.cancelled',
+      roomCode: code,
+      reason,
+    }).catch((err) => console.error('[discord-webhook] emit game.cancelled failed:', err));
   }
 
   /**
