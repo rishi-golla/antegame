@@ -1,0 +1,30 @@
+name: Discord Commit Notifications
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post formatted commit summary to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_HASH: ${{ github.sha }}
+          AUTHOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMPARE_URL: ${{ github.event.compare }}
+        run: |
+          set -euo pipefail
+          [ -n "${DISCORD_WEBHOOK_URL:-}" ] || exit 0
+
+          SHORT_HASH="${COMMIT_HASH:0:7}"
+          SUBJECT="$(printf '%s' "${COMMIT_MESSAGE:-No commit message}" | head -n1)"
+          DESCRIPTION="This push updates ${REPOSITORY}. The latest commit '${SUBJECT}' was authored by ${AUTHOR}. Review the compare link for complete file-level changes."
+
+          CONTENT=$(printf "**Repository:** %s\n**Commit:** %s\n**Hash:** %s\n**Author:** %s\n**Description:** %s\n**Compare:** %s" \
+            "$REPOSITORY" "$SUBJECT" "$SHORT_HASH" "$AUTHOR" "$DESCRIPTION" "$COMPARE_URL")
+
+          jq -n --arg content "$CONTENT" '{content:$content}' | curl -sS -X POST -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL" >/dev/null
