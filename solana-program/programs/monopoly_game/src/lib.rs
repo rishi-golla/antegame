@@ -227,6 +227,14 @@ pub mod monopoly_game {
 
         game.refunded[idx] = true;
 
+        // Verify game PDA has enough lamports for refund (rent must remain)
+        let game_lamports = game.to_account_info().lamports();
+        let rent = Rent::get()?.minimum_balance(GameAccount::SIZE);
+        require!(
+            game_lamports >= game.buy_in.checked_add(rent).ok_or(MonopolyError::Overflow)?,
+            MonopolyError::InsufficientBalance
+        );
+
         // Transfer buy-in back to player from game PDA
         **game.to_account_info().try_borrow_mut_lamports()? -= game.buy_in;
         **ctx.accounts.player.try_borrow_mut_lamports()? += game.buy_in;
@@ -258,6 +266,31 @@ pub mod monopoly_game {
 
         game.state = GameState::Cancelled;
 
+        Ok(())
+    }
+
+    /// Close a settled or fully-refunded game account, reclaiming rent to the recipient.
+    pub fn close_game(ctx: Context<CloseGame>) -> Result<()> {
+        let game = &ctx.accounts.game;
+
+        match game.state {
+            GameState::Settled => {
+                // Settled games can be closed immediately (winner already claimed)
+            }
+            GameState::Cancelled => {
+                // Cancelled games can only be closed once ALL deposited players have refunded
+                for i in 0..game.players.len() {
+                    if game.deposited[i] {
+                        require!(game.refunded[i], MonopolyError::RefundsNotComplete);
+                    }
+                }
+            }
+            _ => {
+                return Err(MonopolyError::GameNotFinalized.into());
+            }
+        }
+
+        // Anchor's `close = recipient` constraint handles the lamport transfer and zeroing
         Ok(())
     }
 }
@@ -374,9 +407,8 @@ pub struct ClaimWinnings<'info> {
         bump = config.bump,
     )]
     pub config: Account<'info, GlobalConfig>,
-    /// CHECK: Winner receives lamports
     #[account(mut)]
-    pub winner: AccountInfo<'info>,
+    pub winner: Signer<'info>,
     /// CHECK: Fee vault receives lamports
     #[account(
         mut,
@@ -440,6 +472,21 @@ pub struct ClaimRefund<'info> {
     /// CHECK: Player receives refund lamports
     #[account(mut)]
     pub player: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct CloseGame<'info> {
+    #[account(
+        mut,
+        close = recipient,
+        seeds = [b"game", game.game_id.as_ref()],
+        bump = game.bump,
+    )]
+    pub game: Account<'info, GameAccount>,
+    /// CHECK: Recipient of rent lamports (authority or any player)
+    #[account(mut)]
+    pub recipient: AccountInfo<'info>,
+    pub authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
@@ -603,4 +650,10 @@ pub enum MonopolyError {
     Overflow,
     #[msg("Need at least 2 players for settlement")]
     InsufficientPlayers,
+    #[msg("Insufficient lamport balance for refund")]
+    InsufficientBalance,
+    #[msg("Game must be settled or cancelled to close")]
+    GameNotFinalized,
+    #[msg("All refunds must be claimed before closing a cancelled game")]
+    RefundsNotComplete,
 }

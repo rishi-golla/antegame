@@ -39,3 +39,4 @@ next-env.d.ts
 keys.json
 tmp-*/
 game-signer-keypair.json
+solana-program/target/

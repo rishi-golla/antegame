@@ -40,7 +40,7 @@ export function findSettlement(roomCode: string, walletAddress: string, chain?: 
   const refunds = readPendingRefunds();
   return refunds.find(
     (r: any) => r.type === 'settlement' && r.roomCode === roomCode &&
-      r.walletAddress?.toLowerCase() === walletAddress.toLowerCase() &&
+      (!walletAddress || r.walletAddress?.toLowerCase() === walletAddress.toLowerCase()) &&
       (!chain || (r.chain ?? 'base') === chain)
   );
 }
@@ -50,10 +50,11 @@ const CANCELLATION_REASONS = new Set([
   'cancellation', 'player_left_lobby', 'room_deleted', 'lobby_cancelled',
 ]);
 
-/** Find an existing cancellation signature for a room (any player). */
-export function findCancellation(roomCode: string): any | undefined {
+/** Find an existing cancellation signature for a room (any player). Optionally filter by chain. */
+export function findCancellation(roomCode: string, chain?: string): any | undefined {
   const refunds = readPendingRefunds();
   return refunds.find(
-    (r: any) => CANCELLATION_REASONS.has(r.reason) && r.roomCode === roomCode && r.nonce && r.signature
+    (r: any) => CANCELLATION_REASONS.has(r.reason) && r.roomCode === roomCode && r.nonce && r.signature &&
+      (!chain || (r.chain ?? 'base') === chain)
   );
 }

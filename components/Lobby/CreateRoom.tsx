@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
@@ -98,7 +98,10 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
   // Base chain users MUST have a wallet connected — no exceptions
   const walletReady = !isBase || (evmConnected && walletClient);
 
+  const inFlight = useRef(false);
   const handleCreate = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     const playerName = name.trim() || user?.displayName || 'Player';
     setLoading(true);
     setError('');
@@ -240,6 +243,7 @@ export default function CreateRoom({ onCreated, onBack }: CreateRoomProps) {
         setError(err.shortMessage ?? err.message ?? 'Transaction failed');
       }
     } finally {
+      inFlight.current = false;
       setLoading(false);
       setStatus('');
     }

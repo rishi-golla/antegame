@@ -79,10 +79,20 @@ router.post('/settlement-signature', async (req: Request, res: Response) => {
     return;
   }
 
-  if (_rm) {
+  if (!_rm) {
+    res.status(503).json({ error: 'Room manager not available' });
+    return;
+  }
+
+  {
     const room = _rm.getRoom(roomCode);
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+    // Chain guard: this endpoint is for Base/EVM only
+    if (room.chain === 'solana') {
+      res.status(400).json({ error: 'Use /solana/settlement-signature for Solana games' });
       return;
     }
     if (room.phase !== 'finished' && room.gameState?.phase !== 'game-over') {
@@ -92,7 +102,6 @@ router.post('/settlement-signature', async (req: Request, res: Response) => {
     if (room.gameState?.phase === 'game-over' && room.phase !== 'finished') {
       room.phase = 'finished';
     }
-    // C1: Reject if no winner determined (prevents fund theft on cancelled games)
     if (room.gameState?.winner === null || room.gameState?.winner === undefined) {
       res.status(400).json({ error: 'No winner determined for this game' });
       return;
@@ -102,12 +111,18 @@ router.post('/settlement-signature', async (req: Request, res: Response) => {
       res.status(403).json({ error: 'You are not the winner' });
       return;
     }
+    // Mutual exclusion: reject if a cancellation was already issued
+    const existingCancel = findCancellation(roomCode, 'base');
+    if (existingCancel) {
+      res.status(409).json({ error: 'Cancellation already issued for this game' });
+      return;
+    }
   }
 
   const gameId = roomCodeToGameId(roomCode);
 
   // Check for an existing persisted settlement (idempotent)
-  const existing = findSettlement(roomCode, winnerAddress);
+  const existing = findSettlement(roomCode, winnerAddress, 'base');
   if (existing) {
     res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
     return;
@@ -152,10 +167,21 @@ router.post('/cancellation-signature', async (req: Request, res: Response) => {
   }
 
   // Verify caller is a player in this game and game is cancellable
-  if (_rm) {
+  if (!_rm) {
+    res.status(503).json({ error: 'Room manager not available' });
+    return;
+  }
+
+  {
     const room = _rm.getRoom(roomCode);
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    // Chain guard: this endpoint is for Base/EVM only
+    if (room.chain === 'solana') {
+      res.status(400).json({ error: 'Use /solana/cancellation-signature for Solana games' });
       return;
     }
 
@@ -174,7 +200,7 @@ router.post('/cancellation-signature', async (req: Request, res: Response) => {
       return;
     }
 
-    // H7: In lobby phase, only the host can request cancellation
+    // In lobby phase, only the host can request cancellation
     if (room.phase === 'lobby') {
       const hostPlayer = room.players.find((p) => p.id === room.hostId);
       if (hostPlayer?.walletAddress?.toLowerCase() !== user.wallet_address.toLowerCase()) {
@@ -182,12 +208,19 @@ router.post('/cancellation-signature', async (req: Request, res: Response) => {
         return;
       }
     }
+
+    // Mutual exclusion: reject if a settlement was already issued
+    const existingSettle = findSettlement(roomCode, '', 'base');
+    if (existingSettle) {
+      res.status(409).json({ error: 'Settlement already issued for this game' });
+      return;
+    }
   }
 
   const gameId = roomCodeToGameId(roomCode);
 
-  // H1: Return existing cancellation signature if one was already generated (idempotent)
-  const existingCancel = findCancellation(roomCode);
+  // Return existing cancellation signature if one was already generated (idempotent)
+  const existingCancel = findCancellation(roomCode, 'base');
   if (existingCancel) {
     res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
     return;
@@ -326,7 +359,9 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/signer', (_req, res) => {
+router.get('/signer', (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
   const address = getSignerAddress();
   if (!address) {
     res.json({ address: null, configured: false });
@@ -388,6 +423,12 @@ router.post('/solana/settlement-signature', async (req: Request, res: Response) 
     const winnerPlayer = room.players[room.gameState.winner];
     if (winnerPlayer?.walletAddress !== winnerAddress) {
       res.status(403).json({ error: 'You are not the winner' });
+      return;
+    }
+    // Mutual exclusion: reject if a cancellation was already issued
+    const existingCancel = findCancellation(roomCode, 'solana');
+    if (existingCancel) {
+      res.status(409).json({ error: 'Cancellation already issued for this game' });
       return;
     }
   }
@@ -471,11 +512,18 @@ router.post('/solana/cancellation-signature', async (req: Request, res: Response
         return;
       }
     }
+
+    // Mutual exclusion: reject if a settlement was already issued
+    const existingSettle = findSettlement(roomCode, '', 'solana');
+    if (existingSettle) {
+      res.status(409).json({ error: 'Settlement already issued for this game' });
+      return;
+    }
   }
 
   const gameId = roomCodeToSolanaGameIdHex(roomCode);
 
-  const existingCancel = findCancellation(roomCode);
+  const existingCancel = findCancellation(roomCode, 'solana');
   if (existingCancel) {
     res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
     return;
@@ -500,7 +548,9 @@ router.post('/solana/cancellation-signature', async (req: Request, res: Response
   res.json({ nonce: result.nonce, signature: result.signature, gameId });
 });
 
-router.get('/solana/signer', (_req, res) => {
+router.get('/solana/signer', (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
   const address = getSolanaSignerAddress();
   if (!address) {
     res.json({ address: null, configured: false });

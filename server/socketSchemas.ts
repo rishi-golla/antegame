@@ -28,7 +28,10 @@ export const roomCreateSchema = z.object({
   onChainTxHash: z.string().optional(),
   characterId: z.string().optional(),
   chain: z.enum(['base', 'solana']).optional(),
-  entryFeeLamports: z.number().int().optional(),
+  entryFeeLamports: z.number().int().optional().refine(
+    (v) => !v || (ALLOWED_SOL_BUY_INS as readonly number[]).includes(v),
+    { message: 'Invalid SOL entry fee' }
+  ),
 });
 
 export const roomJoinSchema = z.object({

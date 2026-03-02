@@ -217,7 +217,8 @@
         },
         {
           "name": "winner",
-          "writable": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "fee_vault",
@@ -270,6 +271,55 @@
           }
         }
       ]
+    },
+    {
+      "name": "close_game",
+      "docs": [
+        "Close a settled or fully-refunded game account, reclaiming rent to the recipient."
+      ],
+      "discriminator": [
+        237,
+        236,
+        157,
+        201,
+        253,
+        20,
+        248,
+        67
+      ],
+      "accounts": [
+        {
+          "name": "game",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  109,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "game.game_id",
+                "account": "GameAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipient",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
     },
     {
       "name": "create_game",
@@ -635,6 +685,21 @@
       "code": 6019,
       "name": "InsufficientPlayers",
       "msg": "Need at least 2 players for settlement"
+    },
+    {
+      "code": 6020,
+      "name": "InsufficientBalance",
+      "msg": "Insufficient lamport balance for refund"
+    },
+    {
+      "code": 6021,
+      "name": "GameNotFinalized",
+      "msg": "Game must be settled or cancelled to close"
+    },
+    {
+      "code": 6022,
+      "name": "RefundsNotComplete",
+      "msg": "All refunds must be claimed before closing a cancelled game"
     }
   ],
   "types": [

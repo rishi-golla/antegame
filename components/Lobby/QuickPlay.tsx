@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 import { useWalletClient, useBalance, useAccount, useSwitchChain, useDisconnect } from 'wagmi';
@@ -105,7 +105,10 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
 
   const walletReady = !isBase || (evmConnected && walletClient);
 
+  const inFlight = useRef(false);
   const handleFindMatch = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     const playerName = name.trim() || user?.displayName || 'Player';
 
     if (isSolana) {
@@ -277,6 +280,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
       } catch {}
       setError(err?.shortMessage || err?.message || 'Something went wrong');
     } finally {
+      inFlight.current = false;
       setLoading(false);
       setStatus('');
     }

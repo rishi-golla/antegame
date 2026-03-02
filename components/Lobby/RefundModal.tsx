@@ -14,7 +14,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { cancelGameOnSolana, claimRefundOnSolana } from '@/lib/solana-program/instructions';
 
-const SOLANA_GAME_SIGNER = process.env.NEXT_PUBLIC_SOLANA_GAME_SIGNER ?? '';
+// Signer fetched at runtime from server (not from env var)
 
 interface RefundModalProps {
   refund: { nonce: string; signature: string; gameId: string; roomCode: string };
@@ -70,6 +70,16 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
         }),
       };
 
+      // Fetch signer from server (not env var)
+      setStatus('Preparing cancellation...');
+      const signerRes = await fetch('/api/contracts/solana/signer');
+      const signerData = await signerRes.json();
+      if (!signerData.address) {
+        setError('Solana signer not configured');
+        setLoading(false);
+        return;
+      }
+
       // Step 1: Cancel game on-chain
       setStatus('Cancelling game on-chain...');
       try {
@@ -78,7 +88,7 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
           refund.roomCode,
           refund.nonce,
           refund.signature,
-          SOLANA_GAME_SIGNER
+          signerData.address
         );
       } catch (cancelErr: any) {
         const msg = cancelErr?.message || '';

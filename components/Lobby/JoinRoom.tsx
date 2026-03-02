@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
@@ -93,12 +93,15 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   // Base chain users MUST have a wallet connected
   const walletReady = !isBase || (evmConnected && walletClient);
 
+  const inFlight = useRef(false);
   const handleJoin = async () => {
+    if (inFlight.current) return;
     const playerName = name.trim() || user?.displayName || 'Player';
     if (!code.trim() || code.trim().length !== 6) {
       setError('Enter a 6-character room code');
       return;
     }
+    inFlight.current = true;
     setLoading(true);
     setError('');
     setStatus('');
@@ -273,6 +276,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         setError(err.shortMessage ?? err.message ?? 'Transaction failed');
       }
     } finally {
+      inFlight.current = false;
       setLoading(false);
       setStatus('');
     }
