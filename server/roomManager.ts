@@ -350,6 +350,7 @@ export class RoomManager {
     if (!room || room.chain !== 'solana') return false;
     const player = room.players.find((p) => p.id === socketId);
     if (!player) return false;
+    if (player.deposited) return true; // Already deposited, idempotent
     player.deposited = true;
     room.potLamports += room.entryFeeLamports;
     // Auto-ready on deposit for quick play rooms
@@ -370,6 +371,7 @@ export class RoomManager {
     if (!room || !room.isOnChain) return false;
     const player = room.players.find((p) => p.id === socketId);
     if (!player) return false;
+    if (player.deposited) return true; // Already deposited, idempotent
     player.deposited = true;
     // Auto-ready on deposit for quick play rooms
     if (room.isQuickPlay) {

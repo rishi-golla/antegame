@@ -17,8 +17,12 @@ import { loadSecureKeys } from './keys';
 
 // --- Config ---
 
+const SOLANA_PROGRAM_ID_STR = process.env.SOLANA_PROGRAM_ID;
+if (!SOLANA_PROGRAM_ID_STR && process.env.NODE_ENV === 'production') {
+  throw new Error('SOLANA_PROGRAM_ID must be set in production');
+}
 const PROGRAM_ID = new PublicKey(
-  process.env.SOLANA_PROGRAM_ID ?? '8HvezzN7yPPPNri1pjPzsM79YtevVFGwV66FWNsaoP1U'
+  SOLANA_PROGRAM_ID_STR ?? '8HvezzN7yPPPNri1pjPzsM79YtevVFGwV66FWNsaoP1U'
 );
 
 // Load game signer keypair from secure keyfile or env

@@ -66,7 +66,7 @@ db.exec(`
     referee_wallet TEXT NOT NULL,
     game_id INTEGER NOT NULL REFERENCES game_history(id),
     amount_wei TEXT NOT NULL DEFAULT '0',
-    chain TEXT NOT NULL DEFAULT 'base',
+    chain TEXT NOT NULL DEFAULT 'solana',
     created_at INTEGER NOT NULL DEFAULT (unixepoch()),
     paid_out INTEGER NOT NULL DEFAULT 0
   );
@@ -97,7 +97,7 @@ try {
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_game_history_game_id ON game_history(game_id)`).run();
 } catch { /* index already exists */ }
 try {
-  db.prepare(`ALTER TABLE game_history ADD COLUMN chain TEXT DEFAULT 'base'`).run();
+  db.prepare(`ALTER TABLE game_history ADD COLUMN chain TEXT DEFAULT 'solana'`).run();
 } catch { /* column already exists */ }
 
 // Backfill game_id for existing rows that have a room_code but no game_id
@@ -217,7 +217,7 @@ export function getReferrals(referrerWallet: string): Array<{ referee_wallet: st
   return db.prepare('SELECT referee_wallet, created_at FROM referrals WHERE referrer_wallet = ? ORDER BY created_at DESC').all(referrerWallet) as any[];
 }
 
-export function recordReferralEarning(referrerWallet: string, refereeWallet: string, gameId: number, amountWei: string, chain: string = 'base'): void {
+export function recordReferralEarning(referrerWallet: string, refereeWallet: string, gameId: number, amountWei: string, chain: string = 'solana'): void {
   db.prepare('INSERT INTO referral_earnings (referrer_wallet, referee_wallet, game_id, amount_wei, chain) VALUES (?, ?, ?, ?, ?)').run(referrerWallet, refereeWallet, gameId, amountWei, chain);
 }
 
@@ -278,14 +278,16 @@ export function getCampaignLeaderboard(startTime: number, endTime: number, limit
 // --- Verified Deposits ---
 
 export function isDepositVerified(txHash: string): boolean {
-  const row = db.prepare('SELECT 1 FROM verified_deposits WHERE tx_hash = ?').get(txHash.toLowerCase());
+  // Do not lowercase: Solana base58 signatures are case-sensitive
+  const row = db.prepare('SELECT 1 FROM verified_deposits WHERE tx_hash = ?').get(txHash);
   return !!row;
 }
 
 export function markDepositVerified(txHash: string, roomCode: string, walletAddress: string): void {
+  // Do not lowercase txHash: Solana base58 signatures are case-sensitive
   db.prepare(
     'INSERT OR IGNORE INTO verified_deposits (tx_hash, room_code, wallet_address) VALUES (?, ?, ?)'
-  ).run(txHash.toLowerCase(), roomCode, walletAddress.toLowerCase());
+  ).run(txHash, roomCode, walletAddress);
 }
 
 export { db };

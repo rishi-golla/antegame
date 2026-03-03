@@ -18,7 +18,7 @@ import contractsRouter, { setRoomManager } from './routes/contracts';
 import { signCancellation, signSettlement, roomCodeToGameId } from './contracts';
 import { signSolanaSettlement, signSolanaCancellation, roomCodeToSolanaGameIdHex, roomCodeToSolanaGameId } from './solana-contracts';
 import { verifySolanaDeposit } from './solana-depositVerifier';
-import { appendPendingRefunds, findSettlement } from './refundStore';
+import { appendPendingRefunds, findSettlement, findCancellation, withRoomLock } from './refundStore';
 import { recordGameResult } from './stats';
 import { db } from './db';
 import { initMinigame, recordMinigameAction, resolveServerMinigame, cleanupMinigame, hasActiveMinigame } from './minigameEngine';
@@ -347,51 +347,60 @@ nextApp.prepare().then(() => {
     const winnerPlayer = room.players.find((p) => p.playerIndex === winnerIdx);
     if (!winnerPlayer?.walletAddress) return;
 
-    // Deduplicate: skip if already persisted
-    const existing = findSettlement(code, winnerPlayer.walletAddress);
-    if (existing) return;
+    const chain = room.chain ?? 'base';
 
-    try {
-      if (room.chain === 'solana') {
-        // Solana Ed25519 settlement
-        const settlement = signSolanaSettlement(code, winnerPlayer.walletAddress);
-        if (!settlement) return;
-
-        const gameId = roomCodeToSolanaGameIdHex(code);
-        await appendPendingRefunds([{
-          walletAddress: winnerPlayer.walletAddress,
-          roomCode: code,
-          gameId,
-          nonce: settlement.nonce,
-          signature: settlement.signature,
-          timestamp: Date.now(),
-          reason: 'unclaimed_settlement',
-          type: 'settlement',
-          chain: 'solana',
-        }]);
-        console.log(`[persistSettlement:solana] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
-      } else {
-        // Base EVM settlement
-        const settlement = await signSettlement(code, winnerPlayer.walletAddress as `0x${string}`);
-        if (!settlement) return;
-
-        const gameId = roomCodeToGameId(code);
-        await appendPendingRefunds([{
-          walletAddress: winnerPlayer.walletAddress,
-          roomCode: code,
-          gameId,
-          nonce: settlement.nonce,
-          signature: settlement.signature,
-          timestamp: Date.now(),
-          reason: 'unclaimed_settlement',
-          type: 'settlement',
-          chain: 'base',
-        }]);
-        console.log(`[persistSettlement:base] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+    await withRoomLock(code, async () => {
+      // Mutual exclusion: skip if cancellation already issued
+      const existingCancel = findCancellation(code, chain);
+      if (existingCancel) {
+        console.log(`[persistSettlement] Skipping for ${code}: cancellation already exists`);
+        return;
       }
-    } catch (err) {
-      console.error(`[persistSettlement] Failed for room ${code}:`, err);
-    }
+
+      // Deduplicate: skip if already persisted
+      const existing = findSettlement(code, winnerPlayer.walletAddress!, chain);
+      if (existing) return;
+
+      try {
+        if (chain === 'solana') {
+          const settlement = signSolanaSettlement(code, winnerPlayer.walletAddress!);
+          if (!settlement) return;
+
+          const gameId = roomCodeToSolanaGameIdHex(code);
+          await appendPendingRefunds([{
+            walletAddress: winnerPlayer.walletAddress,
+            roomCode: code,
+            gameId,
+            nonce: settlement.nonce,
+            signature: settlement.signature,
+            timestamp: Date.now(),
+            reason: 'unclaimed_settlement',
+            type: 'settlement',
+            chain: 'solana',
+          }]);
+          console.log(`[persistSettlement:solana] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+        } else {
+          const settlement = await signSettlement(code, winnerPlayer.walletAddress as `0x${string}`);
+          if (!settlement) return;
+
+          const gameId = roomCodeToGameId(code);
+          await appendPendingRefunds([{
+            walletAddress: winnerPlayer.walletAddress,
+            roomCode: code,
+            gameId,
+            nonce: settlement.nonce,
+            signature: settlement.signature,
+            timestamp: Date.now(),
+            reason: 'unclaimed_settlement',
+            type: 'settlement',
+            chain: 'base',
+          }]);
+          console.log(`[persistSettlement:base] Stored settlement for winner ${winnerPlayer.name} in room ${code}`);
+        }
+      } catch (err) {
+        console.error(`[persistSettlement] Failed for room ${code}:`, err);
+      }
+    });
   }
   _persistSettlementForWinner = persistSettlementForWinner;
 
@@ -416,44 +425,64 @@ nextApp.prepare().then(() => {
 
     // Sign cancellation for on-chain games so players can claim refunds
     if (room.isOnChain) {
+      const chain = room.chain ?? 'base';
       try {
-        let cancellation: { nonce: string; signature: string } | null = null;
-        let gameId: string;
-
-        if (room.chain === 'solana') {
-          cancellation = signSolanaCancellation(code);
-          gameId = roomCodeToSolanaGameIdHex(code);
-        } else {
-          cancellation = await signCancellation(code);
-          gameId = roomCodeToGameId(code);
-        }
-
-        if (cancellation) {
-          const pendingRefunds = room.players
-            .filter((p: any) => p.deposited && p.walletAddress)
-            .map((p: any) => ({
-              walletAddress: p.walletAddress,
+        await withRoomLock(code, async () => {
+          // Mutual exclusion: skip if settlement already issued
+          const existingSettle = findSettlement(code, '', chain);
+          if (existingSettle) {
+            console.log(`[forceGameCancellation] Skipping cancellation for ${code}: settlement already exists`);
+            return;
+          }
+          // Skip if cancellation already issued
+          const existingCancel = findCancellation(code, chain);
+          if (existingCancel) {
+            console.log(`[forceGameCancellation] Cancellation already exists for ${code}`);
+            io.to(code).emit('game:cancellation:signature', {
+              nonce: existingCancel.nonce,
+              signature: existingCancel.signature,
+              gameId: existingCancel.gameId,
               roomCode: code,
+            });
+            return;
+          }
+
+          let cancellation: { nonce: string; signature: string } | null = null;
+          let gameId: string;
+
+          if (chain === 'solana') {
+            cancellation = signSolanaCancellation(code);
+            gameId = roomCodeToSolanaGameIdHex(code);
+          } else {
+            cancellation = await signCancellation(code);
+            gameId = roomCodeToGameId(code);
+          }
+
+          if (cancellation) {
+            const pendingRefunds = room.players
+              .filter((p: any) => p.deposited && p.walletAddress)
+              .map((p: any) => ({
+                walletAddress: p.walletAddress,
+                roomCode: code,
+                gameId,
+                nonce: cancellation!.nonce,
+                signature: cancellation!.signature,
+                timestamp: Date.now(),
+                reason,
+                chain,
+              }));
+
+            await appendPendingRefunds(pendingRefunds);
+            console.log(`[forceGameCancellation] Stored ${pendingRefunds.length} pending refunds for room ${code}`);
+
+            io.to(code).emit('game:cancellation:signature', {
+              nonce: cancellation.nonce,
+              signature: cancellation.signature,
               gameId,
-              nonce: cancellation!.nonce,
-              signature: cancellation!.signature,
-              timestamp: Date.now(),
-              reason,
-              chain: room.chain ?? 'base',
-            }));
-
-          // Persist refunds (serialized to prevent race conditions)
-          await appendPendingRefunds(pendingRefunds);
-          console.log(`[forceGameCancellation] Stored ${pendingRefunds.length} pending refunds for room ${code}`);
-
-          // Notify connected players
-          io.to(code).emit('game:cancellation:signature', {
-            nonce: cancellation.nonce,
-            signature: cancellation.signature,
-            gameId,
-            roomCode: code,
-          });
-        }
+              roomCode: code,
+            });
+          }
+        });
       } catch (err) {
         console.error(`[forceGameCancellation] Failed to sign cancellation for room ${code}:`, err);
       }
@@ -1225,6 +1254,21 @@ nextApp.prepare().then(() => {
         if (playerDeposited && (result.deleted || (room && room.phase === 'lobby'))) {
           try {
             const isSolanaRoom = room?.chain === 'solana';
+            const chain = isSolanaRoom ? 'solana' : 'base';
+
+            // Mutual exclusion: skip if settlement already issued
+            const existingSettle = findSettlement(code, '', chain);
+            if (existingSettle) {
+              console.log(`[room:leave] Skipping cancellation for ${code}: settlement already exists`);
+              return;
+            }
+            // Skip if cancellation already issued
+            const existingCancelSig = findCancellation(code, chain);
+            if (existingCancelSig) {
+              console.log(`[room:leave] Cancellation already exists for ${code}`);
+              return;
+            }
+
             const cancellation = isSolanaRoom
               ? signSolanaCancellation(code)
               : await signCancellation(code);
@@ -2035,42 +2079,55 @@ nextApp.prepare().then(() => {
           // Check if ALL players are now disconnected — auto-cancel and prepare refunds
           const allDisconnected = room.players.every((p: any) => !p.connected);
           if (allDisconnected && room.isOnChain) {
+            const chain = room.chain ?? 'base';
             console.log(`[room ${code}] All players disconnected — auto-cancelling for refunds`);
             try {
-              let cancellation: { nonce: string; signature: string } | null = null;
-              let gameId: string;
+              await withRoomLock(code, async () => {
+                // Mutual exclusion: skip if settlement already issued
+                const existingSettle = findSettlement(code, '', chain);
+                if (existingSettle) {
+                  console.log(`[disconnect] Skipping cancellation for ${code}: settlement already exists`);
+                  return;
+                }
+                const existingCancel = findCancellation(code, chain);
+                if (existingCancel) {
+                  console.log(`[disconnect] Cancellation already exists for ${code}`);
+                  return;
+                }
 
-              if (room.chain === 'solana') {
-                cancellation = signSolanaCancellation(code);
-                gameId = roomCodeToSolanaGameIdHex(code);
-              } else {
-                cancellation = await signCancellation(code);
-                gameId = roomCodeToGameId(code);
-              }
+                let cancellation: { nonce: string; signature: string } | null = null;
+                let gameId: string;
 
-              if (cancellation) {
-                // Store pending refunds so players can claim later
-                const pendingRefunds = room.players
-                  .filter((p: any) => p.deposited && p.walletAddress)
-                  .map((p: any) => ({
-                    walletAddress: p.walletAddress,
-                    roomCode: code,
-                    gameId,
-                    nonce: cancellation!.nonce,
-                    signature: cancellation!.signature,
-                    timestamp: Date.now(),
-                    chain: room.chain ?? 'base',
-                  }));
+                if (chain === 'solana') {
+                  cancellation = signSolanaCancellation(code);
+                  gameId = roomCodeToSolanaGameIdHex(code);
+                } else {
+                  cancellation = await signCancellation(code);
+                  gameId = roomCodeToGameId(code);
+                }
 
-                // Persist refunds (serialized to prevent race conditions)
-                await appendPendingRefunds(pendingRefunds);
-                console.log(`[room ${code}] Stored ${pendingRefunds.length} pending refunds`);
+                if (cancellation) {
+                  const pendingRefunds = room.players
+                    .filter((p: any) => p.deposited && p.walletAddress)
+                    .map((p: any) => ({
+                      walletAddress: p.walletAddress,
+                      roomCode: code,
+                      gameId,
+                      nonce: cancellation!.nonce,
+                      signature: cancellation!.signature,
+                      timestamp: Date.now(),
+                      chain,
+                    }));
 
-                room.phase = 'finished';
-                clearAllDisconnectTimers(code);
-                clearTurnTimer(code);
-                broadcastRoomState(code);
-              }
+                  await appendPendingRefunds(pendingRefunds);
+                  console.log(`[room ${code}] Stored ${pendingRefunds.length} pending refunds`);
+
+                  room.phase = 'finished';
+                  clearAllDisconnectTimers(code);
+                  clearTurnTimer(code);
+                  broadcastRoomState(code);
+                }
+              });
             } catch (err) {
               console.error(`[room ${code}] Failed to auto-cancel:`, err);
             }

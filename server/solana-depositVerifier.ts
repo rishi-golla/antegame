@@ -9,9 +9,15 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { isDepositVerified, markDepositVerified } from './db';
 
-const RPC_URL = process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com';
+const SOLANA_RPC_URL_STR = process.env.SOLANA_RPC_URL;
+const SOLANA_PROGRAM_ID_STR = process.env.SOLANA_PROGRAM_ID;
+if (process.env.NODE_ENV === 'production') {
+  if (!SOLANA_RPC_URL_STR) throw new Error('SOLANA_RPC_URL must be set in production');
+  if (!SOLANA_PROGRAM_ID_STR) throw new Error('SOLANA_PROGRAM_ID must be set in production');
+}
+const RPC_URL = SOLANA_RPC_URL_STR ?? 'https://api.devnet.solana.com';
 const PROGRAM_ID = new PublicKey(
-  process.env.SOLANA_PROGRAM_ID ?? '8HvezzN7yPPPNri1pjPzsM79YtevVFGwV66FWNsaoP1U'
+  SOLANA_PROGRAM_ID_STR ?? '8HvezzN7yPPPNri1pjPzsM79YtevVFGwV66FWNsaoP1U'
 );
 
 const connection = new Connection(RPC_URL, 'confirmed');
@@ -187,7 +193,8 @@ export async function verifySolanaDeposit(
 
     return { ok: true };
   } catch (err: any) {
-    return { ok: false, error: `Verification failed: ${err.message}` };
+    console.error('[solana-depositVerifier] Verification failed:', err);
+    return { ok: false, error: 'Deposit verification failed' };
   }
 }
 

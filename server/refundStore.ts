@@ -2,6 +2,9 @@
  * Shared pending-refunds.json read/write helpers.
  * Uses a promise chain to serialize writes and prevent race conditions.
  * Writes use atomic rename to prevent data corruption on crash.
+ *
+ * Room-level locks ensure settlement/cancellation mutual exclusion
+ * is checked and written atomically (prevents TOCTOU races).
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -57,4 +60,29 @@ export function findCancellation(roomCode: string, chain?: string): any | undefi
     (r: any) => CANCELLATION_REASONS.has(r.reason) && r.roomCode === roomCode && r.nonce && r.signature &&
       (!chain || (r.chain ?? 'base') === chain)
   );
+}
+
+// --- Room-level locking ---
+
+const roomLocks = new Map<string, Promise<void>>();
+
+/**
+ * Acquire a per-room lock for atomic check-then-sign operations.
+ * Ensures settlement/cancellation mutual exclusion is not vulnerable to TOCTOU.
+ */
+export async function withRoomLock<T>(roomCode: string, fn: () => Promise<T>): Promise<T> {
+  const prev = roomLocks.get(roomCode) ?? Promise.resolve();
+  let resolve: () => void;
+  const next = new Promise<void>((r) => { resolve = r; });
+  roomLocks.set(roomCode, next);
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    resolve!();
+    // Clean up lock entry if no one else is waiting
+    if (roomLocks.get(roomCode) === next) {
+      roomLocks.delete(roomCode);
+    }
+  }
 }

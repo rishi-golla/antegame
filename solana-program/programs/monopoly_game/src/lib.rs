@@ -269,6 +269,33 @@ pub mod monopoly_game {
         Ok(())
     }
 
+    /// Update global config fields. Authority-only. Pass None to keep current value.
+    pub fn update_config(
+        ctx: Context<UpdateConfig>,
+        new_game_signer: Option<Pubkey>,
+        new_fee_vault: Option<Pubkey>,
+        new_fee_bps: Option<u16>,
+        new_authority: Option<Pubkey>,
+    ) -> Result<()> {
+        if let Some(bps) = new_fee_bps {
+            require!(bps <= 10000, MonopolyError::InvalidFeeBps);
+        }
+        let config = &mut ctx.accounts.config;
+        if let Some(gs) = new_game_signer {
+            config.game_signer = gs;
+        }
+        if let Some(fv) = new_fee_vault {
+            config.fee_vault = fv;
+        }
+        if let Some(bps) = new_fee_bps {
+            config.fee_bps = bps;
+        }
+        if let Some(auth) = new_authority {
+            config.authority = auth;
+        }
+        Ok(())
+    }
+
     /// Close a settled or fully-refunded game account, reclaiming rent to the recipient.
     pub fn close_game(ctx: Context<CloseGame>) -> Result<()> {
         let game = &ctx.accounts.game;
@@ -483,9 +510,34 @@ pub struct CloseGame<'info> {
         bump = game.bump,
     )]
     pub game: Account<'info, GameAccount>,
-    /// CHECK: Recipient of rent lamports (authority or any player)
-    #[account(mut)]
+    #[account(
+        seeds = [b"config"],
+        bump = config.bump,
+    )]
+    pub config: Account<'info, GlobalConfig>,
+    /// CHECK: Recipient of rent lamports (must be config authority)
+    #[account(
+        mut,
+        constraint = recipient.key() == config.authority @ MonopolyError::Unauthorized,
+    )]
     pub recipient: AccountInfo<'info>,
+    #[account(
+        constraint = authority.key() == config.authority @ MonopolyError::Unauthorized,
+    )]
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateConfig<'info> {
+    #[account(
+        mut,
+        seeds = [b"config"],
+        bump = config.bump,
+    )]
+    pub config: Account<'info, GlobalConfig>,
+    #[account(
+        constraint = authority.key() == config.authority @ MonopolyError::Unauthorized,
+    )]
     pub authority: Signer<'info>,
 }
 
@@ -656,4 +708,6 @@ pub enum MonopolyError {
     GameNotFinalized,
     #[msg("All refunds must be claimed before closing a cancelled game")]
     RefundsNotComplete,
+    #[msg("Unauthorized: caller is not the config authority")]
+    Unauthorized,
 }

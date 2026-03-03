@@ -7,7 +7,7 @@ import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
 import { signSolanaSettlement, signSolanaCancellation, getSolanaSignerAddress, roomCodeToSolanaGameIdHex } from '../solana-contracts';
 import { getSessionFromCookie, validateSession } from '../auth';
-import { appendPendingRefunds, findSettlement, findCancellation } from '../refundStore';
+import { appendPendingRefunds, readPendingRefunds, findSettlement, findCancellation, withRoomLock } from '../refundStore';
 import { db } from '../db';
 import type { RoomManager } from '../roomManager';
 
@@ -121,32 +121,39 @@ router.post('/settlement-signature', async (req: Request, res: Response) => {
 
   const gameId = roomCodeToGameId(roomCode);
 
-  // Check for an existing persisted settlement (idempotent)
-  const existing = findSettlement(roomCode, winnerAddress, 'base');
-  if (existing) {
-    res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
-    return;
-  }
+  await withRoomLock(roomCode, async () => {
+    const existing = findSettlement(roomCode, winnerAddress, 'base');
+    if (existing) {
+      res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
+      return;
+    }
 
-  const result = await signSettlement(roomCode, winnerAddress);
-  if (!result) {
-    res.status(503).json({ error: 'Signing not available -- signer key not configured' });
-    return;
-  }
+    // Re-check cancellation inside lock
+    const cancelCheck = findCancellation(roomCode, 'base');
+    if (cancelCheck) {
+      res.status(409).json({ error: 'Cancellation already issued for this game' });
+      return;
+    }
 
-  // Persist for future idempotent retrieval
-  await appendPendingRefunds([{
-    walletAddress: winnerAddress,
-    roomCode,
-    gameId,
-    nonce: result.nonce,
-    signature: result.signature,
-    timestamp: Date.now(),
-    reason: 'unclaimed_settlement',
-    type: 'settlement',
-  }]);
+    const result = await signSettlement(roomCode, winnerAddress);
+    if (!result) {
+      res.status(503).json({ error: 'Signing not available -- signer key not configured' });
+      return;
+    }
 
-  res.json({ nonce: result.nonce, signature: result.signature, gameId });
+    await appendPendingRefunds([{
+      walletAddress: winnerAddress,
+      roomCode,
+      gameId,
+      nonce: result.nonce,
+      signature: result.signature,
+      timestamp: Date.now(),
+      reason: 'unclaimed_settlement',
+      type: 'settlement',
+    }]);
+
+    res.json({ nonce: result.nonce, signature: result.signature, gameId });
+  });
 });
 
 router.post('/cancellation-signature', async (req: Request, res: Response) => {
@@ -219,30 +226,37 @@ router.post('/cancellation-signature', async (req: Request, res: Response) => {
 
   const gameId = roomCodeToGameId(roomCode);
 
-  // Return existing cancellation signature if one was already generated (idempotent)
-  const existingCancel = findCancellation(roomCode, 'base');
-  if (existingCancel) {
-    res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
-    return;
-  }
+  await withRoomLock(roomCode, async () => {
+    const existingCancel = findCancellation(roomCode, 'base');
+    if (existingCancel) {
+      res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
+      return;
+    }
 
-  const result = await signCancellation(roomCode);
-  if (!result) {
-    res.status(503).json({ error: 'Signing not available -- signer key not configured' });
-    return;
-  }
+    // Re-check settlement inside lock
+    const settleCheck = findSettlement(roomCode, '', 'base');
+    if (settleCheck) {
+      res.status(409).json({ error: 'Settlement already issued for this game' });
+      return;
+    }
 
-  // Persist so future requests return the same signature
-  await appendPendingRefunds([{
-    roomCode,
-    gameId,
-    nonce: result.nonce,
-    signature: result.signature,
-    timestamp: Date.now(),
-    reason: 'cancellation',
-  }]);
+    const result = await signCancellation(roomCode);
+    if (!result) {
+      res.status(503).json({ error: 'Signing not available -- signer key not configured' });
+      return;
+    }
 
-  res.json({ nonce: result.nonce, signature: result.signature, gameId });
+    await appendPendingRefunds([{
+      roomCode,
+      gameId,
+      nonce: result.nonce,
+      signature: result.signature,
+      timestamp: Date.now(),
+      reason: 'cancellation',
+    }]);
+
+    res.json({ nonce: result.nonce, signature: result.signature, gameId });
+  });
 });
 
 router.post('/cancellation-signature-by-id', async (req: Request, res: Response) => {
@@ -268,6 +282,16 @@ router.post('/cancellation-signature-by-id', async (req: Request, res: Response)
     return;
   }
 
+  // Check if a settlement already exists for this game ID
+  const refunds = readPendingRefunds();
+  const existingSettle = refunds.find(
+    (r: any) => r.type === 'settlement' && r.gameId === gameId
+  );
+  if (existingSettle) {
+    res.status(409).json({ error: 'Settlement already issued for this game' });
+    return;
+  }
+
   try {
     const result = await signCancellationByGameId(gameId as `0x${string}`);
     if (!result) {
@@ -277,7 +301,7 @@ router.post('/cancellation-signature-by-id', async (req: Request, res: Response)
     res.json({ nonce: result.nonce, signature: result.signature, gameId });
   } catch (err: any) {
     console.error('[contracts] cancellation-signature-by-id error:', err);
-    res.status(500).json({ error: err.message || 'Signing failed' });
+    res.status(500).json({ error: 'Internal signing error' });
   }
 });
 
@@ -355,7 +379,7 @@ router.post('/retroactive-settlement', async (req: Request, res: Response) => {
     res.json({ nonce: result.nonce, signature: result.signature, gameId });
   } catch (err: any) {
     console.error('[contracts] retroactive-settlement error:', err);
-    res.status(500).json({ error: err.message || 'Signing failed' });
+    res.status(500).json({ error: 'Internal signing error' });
   }
 });
 
@@ -381,10 +405,18 @@ router.post('/solana/settlement-signature', async (req: Request, res: Response) 
     res.status(429).json({ error: 'Too many requests' });
     return;
   }
+  if (!contractRateLimit(`sol-settlement:user:${user.wallet_address}`, 3, 60000)) {
+    res.status(429).json({ error: 'Too many requests for this wallet' });
+    return;
+  }
 
   const { roomCode, winnerAddress } = req.body ?? {};
-  if (!roomCode || !winnerAddress) {
-    res.status(400).json({ error: 'roomCode and winnerAddress required' });
+  if (!roomCode || typeof roomCode !== 'string' || roomCode.length < 1 || roomCode.length > 10) {
+    res.status(400).json({ error: 'roomCode must be a string (1-10 chars)' });
+    return;
+  }
+  if (!winnerAddress || typeof winnerAddress !== 'string' || winnerAddress.length < 32 || winnerAddress.length > 44) {
+    res.status(400).json({ error: 'winnerAddress must be a valid Solana address (32-44 chars)' });
     return;
   }
 
@@ -435,32 +467,41 @@ router.post('/solana/settlement-signature', async (req: Request, res: Response) 
 
   const gameId = roomCodeToSolanaGameIdHex(roomCode);
 
-  // Idempotent: check for existing settlement
-  const existing = findSettlement(roomCode, winnerAddress, 'solana');
-  if (existing) {
-    res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
-    return;
-  }
+  await withRoomLock(roomCode, async () => {
+    // Idempotent: check for existing settlement
+    const existing = findSettlement(roomCode, winnerAddress, 'solana');
+    if (existing) {
+      res.json({ nonce: existing.nonce, signature: existing.signature, gameId });
+      return;
+    }
 
-  const result = signSolanaSettlement(roomCode, winnerAddress);
-  if (!result) {
-    res.status(503).json({ error: 'Solana signing not available -- signer key not configured' });
-    return;
-  }
+    // Re-check cancellation inside lock
+    const cancelCheck = findCancellation(roomCode, 'solana');
+    if (cancelCheck) {
+      res.status(409).json({ error: 'Cancellation already issued for this game' });
+      return;
+    }
 
-  await appendPendingRefunds([{
-    walletAddress: winnerAddress,
-    roomCode,
-    gameId,
-    nonce: result.nonce,
-    signature: result.signature,
-    timestamp: Date.now(),
-    reason: 'unclaimed_settlement',
-    type: 'settlement',
-    chain: 'solana',
-  }]);
+    const result = signSolanaSettlement(roomCode, winnerAddress);
+    if (!result) {
+      res.status(503).json({ error: 'Solana signing not available -- signer key not configured' });
+      return;
+    }
 
-  res.json({ nonce: result.nonce, signature: result.signature, gameId });
+    await appendPendingRefunds([{
+      walletAddress: winnerAddress,
+      roomCode,
+      gameId,
+      nonce: result.nonce,
+      signature: result.signature,
+      timestamp: Date.now(),
+      reason: 'unclaimed_settlement',
+      type: 'settlement',
+      chain: 'solana',
+    }]);
+
+    res.json({ nonce: result.nonce, signature: result.signature, gameId });
+  });
 });
 
 router.post('/solana/cancellation-signature', async (req: Request, res: Response) => {
@@ -472,10 +513,14 @@ router.post('/solana/cancellation-signature', async (req: Request, res: Response
     res.status(429).json({ error: 'Too many requests' });
     return;
   }
+  if (!contractRateLimit(`sol-cancel:user:${user.wallet_address}`, 3, 60000)) {
+    res.status(429).json({ error: 'Too many requests for this wallet' });
+    return;
+  }
 
   const { roomCode } = req.body ?? {};
-  if (!roomCode) {
-    res.status(400).json({ error: 'roomCode required' });
+  if (!roomCode || typeof roomCode !== 'string' || roomCode.length < 1 || roomCode.length > 10) {
+    res.status(400).json({ error: 'roomCode must be a string (1-10 chars)' });
     return;
   }
 
@@ -523,29 +568,38 @@ router.post('/solana/cancellation-signature', async (req: Request, res: Response
 
   const gameId = roomCodeToSolanaGameIdHex(roomCode);
 
-  const existingCancel = findCancellation(roomCode, 'solana');
-  if (existingCancel) {
-    res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
-    return;
-  }
+  await withRoomLock(roomCode, async () => {
+    const existingCancel = findCancellation(roomCode, 'solana');
+    if (existingCancel) {
+      res.json({ nonce: existingCancel.nonce, signature: existingCancel.signature, gameId });
+      return;
+    }
 
-  const result = signSolanaCancellation(roomCode);
-  if (!result) {
-    res.status(503).json({ error: 'Solana signing not available -- signer key not configured' });
-    return;
-  }
+    // Re-check settlement inside lock
+    const settleCheck = findSettlement(roomCode, '', 'solana');
+    if (settleCheck) {
+      res.status(409).json({ error: 'Settlement already issued for this game' });
+      return;
+    }
 
-  await appendPendingRefunds([{
-    roomCode,
-    gameId,
-    nonce: result.nonce,
-    signature: result.signature,
-    timestamp: Date.now(),
-    reason: 'cancellation',
-    chain: 'solana',
-  }]);
+    const result = signSolanaCancellation(roomCode);
+    if (!result) {
+      res.status(503).json({ error: 'Solana signing not available -- signer key not configured' });
+      return;
+    }
 
-  res.json({ nonce: result.nonce, signature: result.signature, gameId });
+    await appendPendingRefunds([{
+      roomCode,
+      gameId,
+      nonce: result.nonce,
+      signature: result.signature,
+      timestamp: Date.now(),
+      reason: 'cancellation',
+      chain: 'solana',
+    }]);
+
+    res.json({ nonce: result.nonce, signature: result.signature, gameId });
+  });
 });
 
 router.get('/solana/signer', (req: Request, res: Response) => {

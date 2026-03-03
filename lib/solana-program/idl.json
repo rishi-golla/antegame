@@ -311,6 +311,24 @@
           }
         },
         {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "recipient",
           "writable": true
         },
@@ -542,6 +560,73 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "update_config",
+      "docs": [
+        "Update global config fields. Authority-only. Pass None to keep current value."
+      ],
+      "discriminator": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_game_signer",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "new_fee_vault",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "new_fee_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "new_authority",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -700,6 +785,11 @@
       "code": 6022,
       "name": "RefundsNotComplete",
       "msg": "All refunds must be claimed before closing a cancelled game"
+    },
+    {
+      "code": 6023,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: caller is not the config authority"
     }
   ],
   "types": [

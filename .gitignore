@@ -40,3 +40,5 @@ keys.json
 tmp-*/
 game-signer-keypair.json
 solana-program/target/
+solana-program/test-ledger/
+solana-program/.anchor/
