@@ -218,7 +218,7 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
             )}
             {isSolana && (
               <a
-                href={`https://explorer.solana.com/tx/${claimTxHash}?cluster=devnet`}
+                href={`https://explorer.solana.com/tx/${claimTxHash}${process.env.NEXT_PUBLIC_SOLANA_NETWORK === 'devnet' ? '?cluster=devnet' : ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: '#d4a843', fontSize: '0.75rem' }}

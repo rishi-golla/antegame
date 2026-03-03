@@ -36,7 +36,8 @@ export function getProvider(wallet: AnchorWallet): AnchorProvider {
  */
 export function getProgram(wallet: AnchorWallet): Program {
   const provider = getProvider(wallet);
-  return new Program(idl as any, provider);
+  const programIdl = { ...idl, address: PROGRAM_ID.toBase58() };
+  return new Program(programIdl as any, provider);
 }
 
 export { PROGRAM_ID } from './addresses';

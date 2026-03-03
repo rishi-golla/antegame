@@ -50,7 +50,7 @@ export function findSettlement(roomCode: string, walletAddress: string, chain?: 
 
 /** Reasons that represent a cancellation (as opposed to a settlement). */
 const CANCELLATION_REASONS = new Set([
-  'cancellation', 'player_left_lobby', 'room_deleted', 'lobby_cancelled',
+  'cancellation', 'player_left_lobby', 'room_deleted', 'lobby_cancelled', 'admin_cancellation',
 ]);
 
 /** Find an existing cancellation signature for a room (any player). Optionally filter by chain. */

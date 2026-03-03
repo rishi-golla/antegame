@@ -7,8 +7,8 @@ import { SolflareWalletAdapter, WalletConnectWalletAdapter } from '@solana/walle
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 
-const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC || 'https://api.devnet.solana.com';
-const SOLANA_NETWORK = (process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet') as 'devnet' | 'mainnet-beta';
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+const SOLANA_NETWORK = (process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'mainnet-beta') as 'devnet' | 'mainnet-beta';
 const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 
 export function WalletContextProvider({ children }: { children: ReactNode }) {

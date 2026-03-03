@@ -1256,97 +1256,100 @@ nextApp.prepare().then(() => {
             const isSolanaRoom = room?.chain === 'solana';
             const chain = isSolanaRoom ? 'solana' : 'base';
 
-            // Mutual exclusion: skip if settlement already issued
-            const existingSettle = findSettlement(code, '', chain);
-            if (existingSettle) {
-              console.log(`[room:leave] Skipping cancellation for ${code}: settlement already exists`);
-              return;
-            }
-            // Skip if cancellation already issued
-            const existingCancelSig = findCancellation(code, chain);
-            if (existingCancelSig) {
-              console.log(`[room:leave] Cancellation already exists for ${code}`);
-              return;
-            }
+            await withRoomLock(code, async () => {
+              // Mutual exclusion: skip if settlement already issued
+              const existingSettle = findSettlement(code, '', chain);
+              if (existingSettle) {
+                console.log(`[room:leave] Skipping cancellation for ${code}: settlement already exists`);
+                return;
+              }
+              // Skip if cancellation already issued
+              const existingCancelSig = findCancellation(code, chain);
+              if (existingCancelSig) {
+                console.log(`[room:leave] Cancellation already exists for ${code}`);
+                return;
+              }
 
-            const cancellation = isSolanaRoom
-              ? signSolanaCancellation(code)
-              : await signCancellation(code);
-            console.log(`[room:leave] sign${isSolanaRoom ? 'Solana' : ''}Cancellation result for ${code}:`, cancellation ? 'OK' : 'NULL (signer not configured)');
-            if (cancellation) {
-              const gameId = isSolanaRoom ? roomCodeToSolanaGameIdHex(code) : roomCodeToGameId(code);
-              // Persist refund for the leaving player
-              const refundsToStore: any[] = [];
-              if (player?.walletAddress) {
-                refundsToStore.push({
-                  walletAddress: player.walletAddress,
-                  roomCode: code,
-                  gameId,
+              const cancellation = isSolanaRoom
+                ? signSolanaCancellation(code)
+                : await signCancellation(code);
+              console.log(`[room:leave] sign${isSolanaRoom ? 'Solana' : ''}Cancellation result for ${code}:`, cancellation ? 'OK' : 'NULL (signer not configured)');
+              if (cancellation) {
+                const gameId = isSolanaRoom ? roomCodeToSolanaGameIdHex(code) : roomCodeToGameId(code);
+                // Persist refund for the leaving player
+                const refundsToStore: any[] = [];
+                if (player?.walletAddress) {
+                  refundsToStore.push({
+                    walletAddress: player.walletAddress,
+                    roomCode: code,
+                    gameId,
+                    nonce: cancellation.nonce,
+                    signature: cancellation.signature,
+                    timestamp: Date.now(),
+                    reason: 'player_left_lobby',
+                    chain,
+                  });
+                }
+                // Also persist for remaining deposited players if room was deleted
+                if (result.deleted && room) {
+                  for (const p of room.players) {
+                    if (p.deposited && p.walletAddress && p.id !== socket.id) {
+                      refundsToStore.push({
+                        walletAddress: p.walletAddress,
+                        roomCode: code,
+                        gameId,
+                        nonce: cancellation.nonce,
+                        signature: cancellation.signature,
+                        timestamp: Date.now(),
+                        reason: 'room_deleted',
+                        chain,
+                      });
+                    }
+                  }
+                }
+                // Emit to the leaving player so they can claim refund (emit BEFORE persist so client always gets notified)
+                console.log(`[room:leave] Emitting game:cancellation:signature to ${socket.id} for ${code}`);
+                socket.emit('game:cancellation:signature', {
                   nonce: cancellation.nonce,
                   signature: cancellation.signature,
-                  timestamp: Date.now(),
-                  reason: 'player_left_lobby',
+                  gameId,
+                  roomCode: code,
                 });
-              }
-              // Also persist for remaining deposited players if room was deleted
-              if (result.deleted && room) {
-                for (const p of room.players) {
-                  if (p.deposited && p.walletAddress && p.id !== socket.id) {
-                    refundsToStore.push({
+                // Emit to remaining deposited players and close the room --
+                // once a cancellation is signed, the room cannot continue
+                if (!result.deleted && room) {
+                  io.to(code).emit('game:cancellation:signature', {
+                    nonce: cancellation.nonce,
+                    signature: cancellation.signature,
+                    gameId,
+                    roomCode: code,
+                  });
+                  // Persist refunds for remaining deposited players
+                  const remainingRefunds = room.players
+                    .filter((p: any) => p.deposited && p.walletAddress && p.id !== socket.id)
+                    .map((p: any) => ({
                       walletAddress: p.walletAddress,
                       roomCode: code,
                       gameId,
                       nonce: cancellation.nonce,
                       signature: cancellation.signature,
                       timestamp: Date.now(),
-                      reason: 'room_deleted',
-                    });
+                      reason: 'lobby_cancelled',
+                      chain,
+                    }));
+                  if (remainingRefunds.length > 0) {
+                    await appendPendingRefunds(remainingRefunds);
                   }
+                  // Close the room so remaining players can't ready up
+                  room.phase = 'finished';
+                  broadcastRoomState(code);
+                }
+                // Persist refunds
+                if (refundsToStore.length > 0) {
+                  await appendPendingRefunds(refundsToStore);
                 }
               }
-              // Emit to the leaving player so they can claim refund (emit BEFORE persist so client always gets notified)
-              console.log(`[room:leave] Emitting game:cancellation:signature to ${socket.id} for ${code}`);
-              socket.emit('game:cancellation:signature', {
-                nonce: cancellation.nonce,
-                signature: cancellation.signature,
-                gameId,
-                roomCode: code,
-              });
-              // Emit to remaining deposited players and close the room —
-              // once a cancellation is signed, the room cannot continue
-              if (!result.deleted && room) {
-                io.to(code).emit('game:cancellation:signature', {
-                  nonce: cancellation.nonce,
-                  signature: cancellation.signature,
-                  gameId,
-                  roomCode: code,
-                });
-                // Persist refunds for remaining deposited players
-                const remainingRefunds = room.players
-                  .filter((p: any) => p.deposited && p.walletAddress && p.id !== socket.id)
-                  .map((p: any) => ({
-                    walletAddress: p.walletAddress,
-                    roomCode: code,
-                    gameId,
-                    nonce: cancellation.nonce,
-                    signature: cancellation.signature,
-                    timestamp: Date.now(),
-                    reason: 'lobby_cancelled',
-                  }));
-                if (remainingRefunds.length > 0) {
-                  appendPendingRefunds(remainingRefunds).catch(err =>
-                    console.error('[room:leave] Failed to persist remaining refunds:', err));
-                }
-                // Close the room so remaining players can't ready up
-                room.phase = 'finished';
-                broadcastRoomState(code);
-              }
-              // Persist refunds (non-blocking -- emit already sent)
-              if (refundsToStore.length > 0) {
-                appendPendingRefunds(refundsToStore).catch(err =>
-                  console.error('[room:leave] Failed to persist refunds:', err));
-              }
-            }
+            });
           } catch (err) {
             console.error('Failed to sign cancellation for room', code, err);
           }
