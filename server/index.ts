@@ -166,7 +166,7 @@ nextApp.prepare().then(() => {
     contentSecurityPolicy: dev ? false : {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-eval'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
@@ -176,6 +176,8 @@ nextApp.prepare().then(() => {
           'wss://api.mainnet-beta.solana.com', 'https://api.mainnet-beta.solana.com',
           'https://*.walletconnect.com', 'wss://*.walletconnect.com',
           'https://*.walletconnect.org', 'wss://*.walletconnect.org',
+          'https://*.debridge.finance',
+          'https://*.rainbow.me', 'https://*.rainbowkit.com',
           ...ALLOWED_ORIGINS.map(o => o.replace('https://', 'wss://')),
           ...ALLOWED_ORIGINS,
         ],
