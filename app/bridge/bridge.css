@@ -1,0 +1,198 @@
+.bridgePage {
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(107, 26, 58, 0.2), transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(107, 26, 58, 0.16), transparent 50%),
+    linear-gradient(165deg, #0a0a0a 0%, #1a0f0f 40%, #0d0d0d 100%);
+}
+
+.bridgeViewport {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 84px 20px 20px;
+}
+
+.bridgeShell {
+  width: min(820px, 96vw);
+  border-radius: 22px;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  background: linear-gradient(180deg, rgba(26, 15, 15, 0.96), rgba(18, 10, 10, 0.95));
+  backdrop-filter: blur(14px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  padding: 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bridgeShell::before {
+  content: '';
+  position: absolute;
+  inset: -30% 0 auto;
+  height: 240px;
+  background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.2), transparent 62%);
+  pointer-events: none;
+}
+
+.bridgeBusy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.06) 50%, transparent 62%);
+  animation: bridgeShimmer 1.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes bridgeShimmer { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+
+.bridgeHeaderRow { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; position: relative; z-index: 1; }
+.bridgeHeaderTitle { font-family: 'Cinzel', serif; color: var(--gold-bright); font-size: 1.45rem; font-weight: 800; letter-spacing: 0.04em; }
+.bridgeHeaderSub { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.05em; font-family: 'Nunito', sans-serif; text-transform: uppercase; }
+
+.bridgeConnect {
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  color: var(--ink-secondary);
+  background: rgba(42, 15, 31, 0.45);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bridgePanel {
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.sellPanel { background: linear-gradient(180deg, rgba(45, 20, 35, 0.75), rgba(30, 12, 22, 0.82)); }
+.buyPanel { background: linear-gradient(180deg, rgba(34, 17, 28, 0.78), rgba(22, 10, 18, 0.86)); }
+
+.bridgePanelTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: var(--ink-secondary); font-size: 0.88rem; font-weight: 700; font-family: 'Nunito', sans-serif; }
+.bridgeWalletTag { font-size: 0.72rem; color: var(--gold); background: rgba(212, 175, 55, 0.12); border-radius: 999px; padding: 5px 9px; }
+
+.bridgeInputRow { display: flex; align-items: center; gap: 10px; }
+.bridgeInputRow.full { gap: 0; }
+
+.bridgeMainInput {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: 'Cinzel', serif;
+  font-size: 2.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 6px 0;
+}
+
+.bridgeMainInput::placeholder { color: rgba(232, 213, 181, 0.34); }
+
+.bridgeTokenPill {
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
+  background: rgba(42, 15, 31, 0.72);
+  color: var(--gold-bright);
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  font-size: 0.92rem;
+  padding: 10px 14px;
+}
+
+.bridgeMeta {
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.bridgeDivider {
+  width: 50px;
+  height: 50px;
+  margin: -10px auto;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.42);
+  display: grid;
+  place-items: center;
+  color: var(--gold-bright);
+  background: rgba(26, 12, 20, 0.95);
+  position: relative;
+  z-index: 2;
+  font-size: 1.3rem;
+  transition: box-shadow 120ms ease;
+}
+
+.bridgeDivider:hover {
+  box-shadow: 0 6px 14px rgba(212, 175, 55, 0.16);
+}
+
+.bridgeCta {
+  margin-top: 16px;
+  width: 100%;
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  border-radius: 14px;
+  padding: 15px;
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-size: 1.04rem;
+  color: #2a1800;
+  background: linear-gradient(180deg, #ffe066 0%, #d4af37 35%, #b8960b 100%);
+  box-shadow: 0 12px 24px rgba(139, 115, 32, 0.28);
+  cursor: pointer;
+}
+
+.bridgeCta:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.bridgeStatus { margin-top: 12px; color: #ffd27a; font-size: 0.84rem; font-family: 'Nunito', sans-serif; }
+.bridgeSuccess { margin: 8px 0 0; color: #8dffa7; font-size: 0.78rem; word-break: break-all; font-family: 'Nunito', sans-serif; }
+.bridgeInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 12px;
+  padding-top: 6px;
+}
+
+.bridgeTinyBtn {
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 8px;
+  background: rgba(42, 15, 31, 0.62);
+  color: var(--ink-secondary);
+  padding: 7px 11px;
+  font-size: 0.7rem;
+  min-width: 64px;
+  cursor: pointer;
+}
+
+.bridgeLinksRow { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+.bridgeGhostBtn {
+  text-decoration: none;
+  color: var(--ink-secondary);
+  border: 1px solid rgba(212, 175, 55, 0.36);
+  border-radius: 10px;
+  background: rgba(42, 15, 31, 0.5);
+  padding: 9px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.bridgeInfoRow .bridgeSuccess {
+  flex: 1;
+  margin-top: 0;
+}
+
+@media (max-width: 700px) {
+  .bridgeViewport { padding-top: 74px; }
+  .bridgeShell { padding: 18px; }
+  .bridgeMainInput { font-size: 1.7rem; }
+  .bridgeInfoRow { flex-direction: column; gap: 8px; }
+  .bridgeTinyBtn { align-self: flex-end; }
+}

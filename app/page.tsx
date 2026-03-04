@@ -219,6 +219,9 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
             <img src="/assets/menu-icons/leaderboard.webp" alt="" className="menuGhostImg" />
             Leaderboard
           </button>
+          <button className="menuGhostBtn" onClick={() => window.location.assign('/bridge')}>
+            Bridge SOL → Base
+          </button>
         </div>
       </div>
     </div>

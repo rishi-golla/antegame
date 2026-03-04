@@ -1091,11 +1091,11 @@ nextApp.prepare().then(() => {
         return cb({ ok: false, error: 'Too many room creations. Try again later.' });
       }
       const parsed = roomCreateSchema.safeParse(data);
-      console.log(`[room:create] raw data:`, JSON.stringify({ chain: data?.chain, buyInEth: data?.buyInEth }), `parsed ok:`, parsed.success, parsed.success ? `chain=${parsed.data.chain}` : parsed.error?.message);
+      console.log(`[room:create] raw data:`, JSON.stringify({ buyInEth: data?.buyInEth }), `parsed ok:`, parsed.success, parsed.success ? `buyInEth=${parsed.data.buyInEth ?? 'none'}` : parsed.error?.message);
       if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
 
       // C3+C4: On-chain rooms require authenticated session; wallet comes from session
-      const isOnChain = !!parsed.data.buyInEth || parsed.data.chain === 'solana';
+      const isOnChain = !!parsed.data.buyInEth;
       const sessionWallet = (socket as any).walletAddress as string | undefined;
       if (isOnChain) {
         if (!sessionWallet) {

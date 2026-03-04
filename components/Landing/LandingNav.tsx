@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 interface LandingNavProps {
   onConnect: () => void;
-  onConnectSolana: () => void;
+  onConnectSolana?: () => void;
   connecting: boolean;
 }
 
@@ -18,6 +18,7 @@ const navLinks = [
 
 export default function LandingNav({ onConnect, onConnectSolana, connecting }: LandingNavProps) {
   const [scrolled, setScrolled] = useState(false);
+  const onConnectSol = onConnectSolana ?? onConnect;
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function LandingNav({ onConnect, onConnectSolana, connecting }: L
           </motion.button>
           <motion.button
             className="landingNavCTA landingNavCTASolana"
-            onClick={onConnectSolana}
+            onClick={onConnectSol}
             disabled={connecting}
             whileHover={{ scale: 1.05, boxShadow: '0 6px 30px rgba(153, 69, 255, 0.5)' }}
             whileTap={{ scale: 0.95 }}

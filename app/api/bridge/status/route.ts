@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEBRIDGE_STATUS_API = "https://deswap.debridge.finance/v1.0/dln/order/status";
+const DEBRIDGE_STATUS_API = "https://dln.debridge.finance/v1.0/dln/order";
 
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get("orderId");
@@ -8,8 +8,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
   }
 
+  if (!/^0x[0-9a-fA-F]{64}$/.test(orderId)) {
+    return NextResponse.json({ error: "orderId must be a 0x-prefixed 64-byte hex" }, { status: 400 });
+  }
+
   try {
-    const res = await fetch(`${DEBRIDGE_STATUS_API}?orderId=${orderId}`);
+    const res = await fetch(`${DEBRIDGE_STATUS_API}/${orderId}/status`);
     if (!res.ok) {
       const text = await res.text();
       // deBridge returns 404 for new orders that haven't propagated yet
