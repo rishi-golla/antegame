@@ -35,7 +35,7 @@ const features = [
 export default function FeaturesPage() {
   return (
     <div className="landingPage">
-      <LandingNav onConnect={() => window.location.href = '/'} connecting={false} />
+      <LandingNav onConnect={() => window.location.href = '/'} onConnectSolana={() => window.location.href = '/'} connecting={false} />
 
       <section className="subpageHero">
         <div className="subpageHeroBg">

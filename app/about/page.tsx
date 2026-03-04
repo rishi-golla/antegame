@@ -17,7 +17,7 @@ const container = {
 export default function AboutPage() {
   return (
     <div className="landingPage">
-      <LandingNav onConnect={() => window.location.href = '/'} connecting={false} />
+      <LandingNav onConnect={() => window.location.href = '/'} onConnectSolana={() => window.location.href = '/'} connecting={false} />
 
       <section className="subpageHero">
         <div className="subpageHeroBg">
