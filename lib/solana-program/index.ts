@@ -11,7 +11,7 @@ import { PROGRAM_ID } from './addresses';
 
 export type MonopolyGameIDL = typeof idl;
 
-const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.devnet.solana.com';
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
 /**
  * Create a Connection to the Solana cluster.

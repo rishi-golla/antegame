@@ -6,7 +6,7 @@
 import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
 import { signSolanaSettlement, signSolanaCancellation, getSolanaSignerAddress, roomCodeToSolanaGameIdHex } from '../solana-contracts';
-import { getSessionFromCookie, validateSession } from '../auth';
+import { getSessionFromCookie, validateSession, isAdmin } from '../auth';
 import { appendPendingRefunds, readPendingRefunds, findSettlement, findCancellation, withRoomLock } from '../refundStore';
 import { db } from '../db';
 import type { RoomManager } from '../roomManager';
@@ -51,8 +51,6 @@ function requireAuth(req: Request, res: Response): ReturnType<typeof validateSes
   }
   return user;
 }
-
-const ADMIN_WALLETS = (process.env.ADMIN_WALLET ?? '').toLowerCase().split(',').filter(Boolean);
 
 const router = Router();
 
@@ -264,7 +262,7 @@ router.post('/cancellation-signature-by-id', async (req: Request, res: Response)
   if (!user) return;
 
   // Admin-only endpoint
-  if (!ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+  if (!isAdmin(user.wallet_address)) {
     res.status(403).json({ error: 'Forbidden — admin only' });
     return;
   }

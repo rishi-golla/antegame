@@ -9,6 +9,8 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+const MAX_SESSIONS_PER_WALLET = 5;
+
 export function createSession(walletAddress: string): string {
   const token = crypto.randomBytes(32).toString('hex'); // 64-char hex — sent to client
   const hashed = hashToken(token); // stored in DB
@@ -18,6 +20,16 @@ export function createSession(walletAddress: string): string {
     walletAddress,
     expiresAt
   );
+  // Evict oldest sessions if over limit
+  const sessions = db.prepare(
+    'SELECT token FROM sessions WHERE wallet_address = ? ORDER BY expires_at DESC'
+  ).all(walletAddress) as { token: string }[];
+  if (sessions.length > MAX_SESSIONS_PER_WALLET) {
+    const toDelete = sessions.slice(MAX_SESSIONS_PER_WALLET).map(s => s.token);
+    db.prepare(
+      `DELETE FROM sessions WHERE token IN (${toDelete.map(() => '?').join(',')})`
+    ).run(...toDelete);
+  }
   return token;
 }
 
@@ -67,6 +79,15 @@ export function consumeNonce(nonce: string): boolean {
   }
   nonceStore.delete(nonce);
   return true;
+}
+
+/** Centralized admin wallet parsing -- supports comma-separated list. */
+export function getAdminWallets(): string[] {
+  return (process.env.ADMIN_WALLET ?? '').toLowerCase().split(',').filter(Boolean);
+}
+
+export function isAdmin(walletAddress: string): boolean {
+  return getAdminWallets().includes(walletAddress.toLowerCase());
 }
 
 // Cleanup expired nonces periodically

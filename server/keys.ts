@@ -33,6 +33,9 @@ export function loadSecureKeys(): SecureKeys {
     const stat = fs.statSync(KEYS_PATH);
     const mode = stat.mode & 0o777;
     if (mode !== 0o600) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`[keys] FATAL: ${KEYS_PATH} has permissions ${mode.toString(8)}, expected 600. Refusing to load keys in production.`);
+      }
       console.warn(`[keys] WARNING: ${KEYS_PATH} has permissions ${mode.toString(8)}, expected 600. Run: chmod 600 ${KEYS_PATH}`);
     }
 

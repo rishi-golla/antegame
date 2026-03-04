@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { getLeaderboard, getPlayerStats, getPlayerHistory } from '../stats';
-import { getSessionFromCookie, validateSession } from '../auth';
+import { getSessionFromCookie, validateSession, isAdmin } from '../auth';
 
 const router = Router();
 
@@ -19,8 +19,7 @@ router.get('/profile/:wallet', (req: Request, res: Response) => {
 
   const wallet = req.params.wallet as string;
   // Only allow viewing your own profile (or admin)
-  const ADMIN_WALLETS = (process.env.ADMIN_WALLET ?? '').toLowerCase().split(',').filter(Boolean);
-  if (user.wallet_address.toLowerCase() !== wallet.toLowerCase() && !ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+  if (user.wallet_address.toLowerCase() !== wallet.toLowerCase() && !isAdmin(user.wallet_address)) {
     res.status(403).json({ error: 'Can only view your own profile' });
     return;
   }

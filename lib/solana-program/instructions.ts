@@ -9,6 +9,7 @@ import {
   Ed25519Program,
   LAMPORTS_PER_SOL,
   Transaction,
+  ComputeBudgetProgram,
 } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import type { AnchorWallet } from '@solana/wallet-adapter-react';
@@ -118,14 +119,16 @@ export async function claimWinningsOnSolana(
 
   // Build tx manually to guarantee Ed25519 is at index 0
   const connection = getConnection();
-  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
   const tx = new Transaction({ recentBlockhash: blockhash, feePayer: wallet.publicKey });
+  tx.add(ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }));
+  tx.add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }));
   tx.add(ed25519Ix);
   tx.add(claimIx);
 
   const signed = await wallet.signTransaction(tx);
   const txSig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-  await connection.confirmTransaction(txSig, 'confirmed');
+  await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
 
   return txSig;
 }
@@ -178,14 +181,16 @@ export async function cancelGameOnSolana(
 
   // Build tx manually to guarantee Ed25519 is at index 0
   const connection = getConnection();
-  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
   const tx = new Transaction({ recentBlockhash: blockhash, feePayer: wallet.publicKey });
+  tx.add(ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }));
+  tx.add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }));
   tx.add(ed25519Ix);
   tx.add(cancelIx);
 
   const signed = await wallet.signTransaction(tx);
   const txSig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-  await connection.confirmTransaction(txSig, 'confirmed');
+  await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
 
   return txSig;
 }

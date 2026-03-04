@@ -9,6 +9,7 @@ import {
   validateSession,
   destroySession,
   getSessionFromCookie,
+  isAdmin,
 } from '../auth';
 import { upsertUser, getUser, getUserStats, setReferral, getReferrer, getReferralCount, getReferrals, getReferralEarnings, getUnpaidReferralPayouts, markReferralsPaid, getCampaignLeaderboard, db } from '../db';
 import type { DbUser } from '../db';
@@ -178,7 +179,12 @@ router.post('/logout', (req: Request, res: Response) => {
   if (token) {
     destroySession(token);
   }
-  res.clearCookie('session', { path: '/' });
+  res.clearCookie('session', {
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
   res.json({ ok: true });
 });
 
@@ -216,6 +222,11 @@ router.patch('/profile', (req: Request, res: Response) => {
   }
 
   if (characterId !== undefined) {
+    const VALID_CHARACTER_IDS = ['high-roller', 'singer', 'dealer', 'mobster', 'tourist', 'card-shark', 'vip', 'bartender'];
+    if (!VALID_CHARACTER_IDS.includes(characterId)) {
+      res.status(400).json({ error: 'Invalid character ID' });
+      return;
+    }
     db.prepare('UPDATE users SET character_id = ? WHERE wallet_address = ?').run(characterId, user.wallet_address);
   }
 
@@ -274,8 +285,7 @@ router.get('/referrals/payouts', (req: Request, res: Response) => {
   if (!user) { res.status(401).json({ error: 'Session expired' }); return; }
 
   // Only allow your wallet (admin check)
-  const ADMIN_WALLETS = [process.env.ADMIN_WALLET?.toLowerCase()].filter(Boolean);
-  if (!ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+  if (!isAdmin(user.wallet_address)) {
     res.status(403).json({ error: 'Forbidden' });
     return;
   }
@@ -291,8 +301,7 @@ router.post('/referrals/mark-paid', (req: Request, res: Response) => {
   const user = validateSession(token);
   if (!user) { res.status(401).json({ error: 'Session expired' }); return; }
 
-  const ADMIN_WALLETS = [process.env.ADMIN_WALLET?.toLowerCase()].filter(Boolean);
-  if (!ADMIN_WALLETS.includes(user.wallet_address.toLowerCase())) {
+  if (!isAdmin(user.wallet_address)) {
     res.status(403).json({ error: 'Forbidden' });
     return;
   }

@@ -10,16 +10,16 @@ import { PublicKey, Keypair } from '@solana/web3.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const PROGRAM_ID = new PublicKey('8HvezzN7yPPPNri1pjPzsM79YtevVFGwV66FWNsaoP1U');
+if (!process.env.SOLANA_PROGRAM_ID) throw new Error('Missing SOLANA_PROGRAM_ID');
+if (!process.env.SOLANA_GAME_SIGNER_PUBKEY) throw new Error('Missing SOLANA_GAME_SIGNER_PUBKEY');
+if (!process.env.SOLANA_FEE_VAULT_PUBKEY) throw new Error('Missing SOLANA_FEE_VAULT_PUBKEY');
+if (!process.env.SOLANA_RPC_URL) throw new Error('Missing SOLANA_RPC_URL');
 
-// Game signer pubkey (the Ed25519 key the server uses to sign settlements)
-const GAME_SIGNER = new PublicKey('J8TTdGCcTZKhuTu1hKPaiRP17EwRCB3851jwVnpuyLU8');
-
-// Fee vault (deploy wallet receives 5% fees)
-const FEE_VAULT = new PublicKey('4yYbxAcrx5CpfUrpWs6Bsk2M99bdewtRf2bTPReLKJuA');
-
-// Fee basis points (500 = 5%)
-const FEE_BPS = 500;
+const PROGRAM_ID = new PublicKey(process.env.SOLANA_PROGRAM_ID);
+const GAME_SIGNER = new PublicKey(process.env.SOLANA_GAME_SIGNER_PUBKEY);
+const FEE_VAULT = new PublicKey(process.env.SOLANA_FEE_VAULT_PUBKEY);
+const FEE_BPS = parseInt(process.env.SOLANA_FEE_BPS ?? '500', 10);
+const CLUSTER = process.env.SOLANA_CLUSTER ?? 'devnet';
 
 async function main() {
   // Load deploy wallet
@@ -28,7 +28,7 @@ async function main() {
   const payer = Keypair.fromSecretKey(Uint8Array.from(rawKey));
 
   const connection = new anchor.web3.Connection(
-    'https://api.devnet.solana.com',
+    process.env.SOLANA_RPC_URL!,
     'confirmed'
   );
 
@@ -81,8 +81,9 @@ async function main() {
     .rpc();
 
   console.log('Initialized! Tx:', tx);
+  const clusterParam = CLUSTER === 'mainnet-beta' ? '' : `?cluster=${CLUSTER}`;
   console.log(
-    `View: https://explorer.solana.com/tx/${tx}?cluster=devnet`
+    `View: https://explorer.solana.com/tx/${tx}${clusterParam}`
   );
 }
 

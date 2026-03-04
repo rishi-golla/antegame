@@ -158,16 +158,27 @@ nextApp.prepare().then(() => {
 
   const app = express();
 
+  // Trust reverse proxy (Railway) for correct req.ip in rate limiting
+  app.set('trust proxy', 1);
+
   // M1: Security headers
   app.use(helmet({
     contentSecurityPolicy: dev ? false : {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc: ["'self'", 'wss:', 'ws:', 'https:'],
+        connectSrc: [
+          "'self'",
+          'wss://*.helius-rpc.com', 'https://*.helius-rpc.com',
+          'wss://api.mainnet-beta.solana.com', 'https://api.mainnet-beta.solana.com',
+          'https://*.walletconnect.com', 'wss://*.walletconnect.com',
+          'https://*.walletconnect.org', 'wss://*.walletconnect.org',
+          ...ALLOWED_ORIGINS.map(o => o.replace('https://', 'wss://')),
+          ...ALLOWED_ORIGINS,
+        ],
       },
     },
   }));
@@ -222,6 +233,9 @@ nextApp.prepare().then(() => {
     // Allow unauthenticated connections for now (free play), but tag them
     next();
   });
+
+  // Track socket IP for free-play reconnection binding
+  const playerIpMap = new Map<string, string>();
 
   // H5: Socket rate limiting
   const socketEventCounts = new Map<string, { total: number; chat: number; resetAt: number }>();
@@ -801,10 +815,20 @@ nextApp.prepare().then(() => {
             case 'in-debt':
               r.gameState = declareBankruptcy(r.gameState, currentIdx);
               break;
-            case 'minigame':
+            case 'minigame': {
+              const serverResult = resolveServerMinigame(code);
+              const tier = serverResult?.tier ?? 'catastrophic';
+              r.gameState = autoAdvanceTurnEnd(resolveMinigame(r.gameState, tier));
+              // Reveal secret/salt for fairness verification
+              io.to(code).emit('game:minigame-server-result' as any, {
+                tier,
+                secret: serverResult?.secret,
+                salt: serverResult?.salt,
+                commitHash: serverResult?.commitHash,
+              });
               cleanupMinigame(code);
-              r.gameState = autoAdvanceTurnEnd(resolveMinigame(r.gameState, 'catastrophic'));
               break;
+            }
             default:
               // Unknown phase: force end turn
               r.gameState = endTurn(r.gameState);
@@ -1069,6 +1093,9 @@ nextApp.prepare().then(() => {
   };
 
   io.on('connection', (socket) => {
+    // Store IP for free-play reconnection binding
+    playerIpMap.set(socket.id, socket.handshake.address);
+
     // Wrap event handlers with rate limiting
     const originalOn = socket.on.bind(socket);
     const rateLimitedOn: typeof socket.on = (event: any, handler: any) => {
@@ -1505,6 +1532,12 @@ nextApp.prepare().then(() => {
         if (!socketUser || socketUser.wallet_address.toLowerCase() !== disconnected.walletAddress.toLowerCase()) {
           return cb({ ok: false, error: 'Wallet mismatch — cannot reconnect as this player' });
         }
+      } else {
+        // Free-play: bind reconnection to the original socket's IP
+        const originalIp = playerIpMap.get(disconnected.id);
+        if (originalIp && originalIp !== socket.handshake.address) {
+          return cb({ ok: false, error: 'Cannot reconnect from a different address' });
+        }
       }
 
       // Capture old socket ID before reconnect mutates it
@@ -1536,6 +1569,12 @@ nextApp.prepare().then(() => {
 
       if (!isCurrentPlayer(room, socket.id)) {
         socket.emit('room:error', 'Not your turn');
+        return;
+      }
+
+      // Only allow bankruptcy when in debt (prevent voluntary bankruptcy abuse)
+      if (room.gameState.phase !== 'in-debt') {
+        socket.emit('room:error', 'Can only declare bankruptcy when in debt');
         return;
       }
 
@@ -1629,6 +1668,11 @@ nextApp.prepare().then(() => {
       const proposer = room.players.find((p) => p.id === socket.id);
       if (!proposer || proposer.playerIndex !== parsed.data.offer.fromPlayer) {
         socket.emit('room:error', 'You can only propose trades as yourself');
+        return;
+      }
+      // Restrict trade proposals to the current player's turn
+      if (!isCurrentPlayer(room, socket.id)) {
+        socket.emit('room:error', 'You can only propose trades on your turn');
         return;
       }
       try {
@@ -1772,9 +1816,15 @@ nextApp.prepare().then(() => {
         socket.emit('room:error', `Cannot gamble during ${room.gameState.phase} phase`);
         return;
       }
+      // Validate context matches current phase
+      const expectedContext = room.gameState.phase === 'buying' ? 'buying' : 'rent';
+      if (parsed.data.context !== expectedContext) {
+        socket.emit('room:error', 'Gamble context does not match current phase');
+        return;
+      }
       try {
         resetIdleWarnings(code, room.gameState.currentPlayerIndex);
-        room.gameState = startMinigame(room.gameState, data.context);
+        room.gameState = startMinigame(room.gameState, parsed.data.context);
         room.lastActivity = Date.now();
 
         // H2: Initialize server-side minigame state
@@ -1877,6 +1927,10 @@ nextApp.prepare().then(() => {
       if (!code) return;
       const room = rm.getRoom(code);
       if (!room?.gameState) return;
+      if (room.gameState.phase !== 'paying-rent') {
+        socket.emit('room:error', 'Not in paying-rent phase');
+        return;
+      }
       if (!isCurrentPlayer(room, socket.id)) {
         socket.emit('room:error', 'Not your turn');
         return;

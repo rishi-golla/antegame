@@ -4,6 +4,10 @@
 
 import { z } from 'zod';
 
+/** Valid character IDs (must match lib/assetMap.ts CHARACTERS array). */
+const VALID_CHARACTER_IDS = ['high-roller', 'singer', 'dealer', 'mobster', 'tourist', 'card-shark', 'vip', 'bartender'] as const;
+const characterIdSchema = z.enum(VALID_CHARACTER_IDS).optional();
+
 /** Allowed buy-in tiers (ETH). Any other value is rejected server-side. */
 export const ALLOWED_BUY_INS = ['0.001', '0.01', '0.05', '0.25', '0.5'] as const;
 
@@ -26,7 +30,7 @@ export const roomCreateSchema = z.object({
     { message: 'Invalid buy-in amount' }
   ),
   onChainTxHash: z.string().optional(),
-  characterId: z.string().optional(),
+  characterId: characterIdSchema,
   chain: z.enum(['base', 'solana']).optional(),
   entryFeeLamports: z.number().int().optional().refine(
     (v) => !v || (ALLOWED_SOL_BUY_INS as readonly number[]).includes(v),
@@ -40,7 +44,7 @@ export const roomJoinSchema = z.object({
   color: z.string().min(1).max(20),
   walletAddress: z.string().optional(),
   onChainTxHash: z.string().optional(),
-  characterId: z.string().optional(),
+  characterId: characterIdSchema,
 });
 
 export const chatSendSchema = z.object({
@@ -98,13 +102,13 @@ export const quickPlayBaseSchema = z.object({
     { message: 'Invalid buy-in amount' }
   ),
   walletAddress: evmAddressSchema,
-  characterId: z.string().optional(),
+  characterId: characterIdSchema,
 });
 
 export const validateJoinSchema = z.object({
   code: z.string().min(1).max(10),
   color: z.string().min(1).max(20),
-  characterId: z.string().optional(),
+  characterId: characterIdSchema,
 });
 
 export const quickPlaySolanaSchema = z.object({
@@ -115,7 +119,7 @@ export const quickPlaySolanaSchema = z.object({
     { message: 'Invalid SOL buy-in amount' }
   ),
   walletAddress: z.string().min(32).max(44),
-  characterId: z.string().optional(),
+  characterId: characterIdSchema,
 });
 
 /** @deprecated Use quickPlaySolanaSchema */
