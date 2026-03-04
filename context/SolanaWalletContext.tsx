@@ -8,12 +8,11 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
 
 export function WalletProviderWrapper({ children }: { children: React.ReactNode }) {
-  // Empty array — Wallet Standard auto-detects Phantom, Solflare, etc.
   const wallets = useMemo(() => [], []);
 
   return (
     <ConnectionProvider endpoint={RPC_URL}>
-      <WalletProvider wallets={wallets} autoConnect={false}>
+      <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           {children}
         </WalletModalProvider>
