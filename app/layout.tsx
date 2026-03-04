@@ -3,6 +3,7 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { AudioProvider } from '@/context/AudioContext';
+import AppCrashBoundary from '@/components/AppCrashBoundary';
 export const metadata: Metadata = {
   title: 'Ante',
   description: 'Stake crypto. Roll dice. Win the pot.',
@@ -73,9 +74,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             });
           })();
         `}</Script>
-        <AudioProvider>
-          {children}
-        </AudioProvider>
+        <AppCrashBoundary>
+          <AudioProvider>
+            {children}
+          </AudioProvider>
+        </AppCrashBoundary>
       </body>
     </html>
   );
