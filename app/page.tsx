@@ -14,10 +14,7 @@ import { MultiplayerGameProvider } from '@/context/MultiplayerGameContext';
 import Board from '@/components/Board/Board';
 import SidePanel from '@/components/SidePanel/SidePanel';
 import PlayerList from '@/components/PlayerList/PlayerList';
-import GameOver from '@/components/GameOver/GameOver';
 import GameSetup from '@/components/GameSetup/GameSetup';
-import CreateRoom from '@/components/Lobby/CreateRoom';
-import JoinRoom from '@/components/Lobby/JoinRoom';
 import RoomLobby from '@/components/Lobby/RoomLobby';
 import TradeModal, { TradeOfferView } from '@/components/Board/TradeModal';
 import ConnectScreen from '@/components/Auth/ConnectScreen';
@@ -28,8 +25,6 @@ import AudioControls from '@/components/UI/AudioControls';
 import WalletButton from '@/components/Auth/WalletButton';
 import ReferralButton from '@/components/Auth/ReferralButton';
 import CampaignLeaderboardScreen from '@/components/Auth/CampaignLeaderboardScreen';
-import RefundModal from '@/components/Lobby/RefundModal';
-import QuickPlay from '@/components/Lobby/QuickPlay';
 import QuickPlayLobby from '@/components/Lobby/QuickPlayLobby';
 import TurnSummary from '@/components/UI/TurnSummary';
 import StuckGameBanner from '@/components/UI/StuckGameBanner';
@@ -40,6 +35,12 @@ import { getGameSession, clearGameSession } from '@/lib/gameSession';
 type Screen = 'menu' | 'free-play-setup' | 'free-play-game' | 'quick-play' | 'create' | 'join' | 'lobby' | 'game' | 'profile' | 'leaderboard';
 
 const MENU_MUSIC_SCREENS: Screen[] = ['menu', 'quick-play', 'profile', 'leaderboard'];
+
+const GameOver = dynamic(() => import('@/components/GameOver/GameOver'), { ssr: false });
+const CreateRoom = dynamic(() => import('@/components/Lobby/CreateRoom'), { ssr: false });
+const JoinRoom = dynamic(() => import('@/components/Lobby/JoinRoom'), { ssr: false });
+const RefundModal = dynamic(() => import('@/components/Lobby/RefundModal'), { ssr: false });
+const QuickPlay = dynamic(() => import('@/components/Lobby/QuickPlay'), { ssr: false });
 
 function StopMusic() {
   const { stopMusic } = useAudio();
