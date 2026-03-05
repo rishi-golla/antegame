@@ -8,6 +8,17 @@ import { getChainEnv, getRpcUrl, getAddresses } from '@/lib/contracts/addresses'
 import { MONOPOLY_GAME_ABI } from '@/lib/contracts/abi/MonopolyGame';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { wagmiConfig } from '@/context/EVMWalletContext';
+import { useMultiChain } from '@/context/MultiChainContext';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
+import { getGameAccountRaw, type OnChainGameData } from '@/lib/solana-program/queries';
+import {
+  cancelGameOnSolana,
+  claimRefundOnSolana,
+  emergencyCancelOnSolana,
+  lamportsToSol,
+} from '@/lib/solana-program/instructions';
+import type { AnchorWallet } from '@solana/wallet-adapter-react';
 
 function getChain() {
   return getChainEnv() === 'base-mainnet' ? base : baseSepolia;
@@ -36,6 +47,19 @@ interface UnclaimedSettlement {
   buyIn: bigint;
 }
 
+// --- Solana-specific types ---
+
+interface SolanaRefundableGame {
+  roomCode: string;
+  gameId: string;
+  buyInLamports: number;
+  state: GameState;
+  canCancel: boolean;
+  hoursUntilCancel?: number;
+  nonce?: string;
+  signature?: string;
+}
+
 /**
  * Compute gameId from roomCode (must match server's roomCodeToGameId).
  */
@@ -44,9 +68,19 @@ function roomCodeToGameId(roomCode: string): `0x${string}` {
 }
 
 /**
+ * Map Solana on-chain state enum to GameState.
+ */
+function mapSolanaState(state: OnChainGameData['state']): GameState | 'SETTLED' {
+  if ('waiting' in state) return 'WAITING';
+  if ('active' in state) return 'ACTIVE';
+  if ('cancelled' in state) return 'CANCELLED';
+  return 'SETTLED';
+}
+
+/**
  * Find all games where this player deposited but can get money back.
  * Uses Alchemy transfer scan + server DB + pending-refunds to find gameIds.
- * Covers: CANCELLED (claimRefund), ACTIVE (emergencyCancel→claimRefund), WAITING (cancelGame→claimRefund)
+ * Covers: CANCELLED (claimRefund), ACTIVE (emergencyCancel->claimRefund), WAITING (cancelGame->claimRefund)
  */
 async function findRefundableGames(playerAddress: `0x${string}`): Promise<{ games: RefundableGame[]; activeGameIds: `0x${string}`[] }> {
   const client = getClient();
@@ -100,7 +134,7 @@ async function findRefundableGames(playerAddress: `0x${string}`): Promise<{ game
     if (profileResp.ok) {
       const profileData = await profileResp.json();
       for (const h of (profileData.history ?? [])) {
-        if (h.room_code) gameIdSet.add(roomCodeToGameId(h.room_code));
+        if (h.room_code && h.chain !== 'solana') gameIdSet.add(roomCodeToGameId(h.room_code));
       }
     }
   } catch { /* no stats available */ }
@@ -111,7 +145,7 @@ async function findRefundableGames(playerAddress: `0x${string}`): Promise<{ game
     if (refundsResp.ok) {
       const refundsData = await refundsResp.json();
       for (const r of (refundsData.refunds ?? [])) {
-        if (r.type !== 'settlement' && r.gameId) {
+        if (r.type !== 'settlement' && r.gameId && r.chain !== 'solana') {
           gameIdSet.add(r.gameId as `0x${string}`);
         }
       }
@@ -277,10 +311,107 @@ async function findUnclaimedSettlements(
   return results;
 }
 
+// --- Solana refund discovery ---
+
+async function findRefundableSolanaGames(solAddress: string): Promise<SolanaRefundableGame[]> {
+  const roomCodeSet = new Set<string>();
+  // Map roomCode -> persisted refund data (nonce/signature)
+  const persistedRefunds = new Map<string, { nonce: string; signature: string }>();
+
+  // Source 1: Persisted refunds -- include chain === 'solana' or missing chain (legacy entries)
+  try {
+    const resp = await fetch(`/api/refunds/${solAddress}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      for (const r of (data.refunds ?? [])) {
+        if (r.roomCode && r.chain !== 'base') {
+          roomCodeSet.add(r.roomCode);
+          if (r.nonce && r.signature && r.type !== 'settlement') {
+            persistedRefunds.set(r.roomCode, { nonce: r.nonce, signature: r.signature });
+          }
+        }
+      }
+    }
+  } catch { /* no refunds */ }
+
+  // Source 2: Game history DB filtered by chain === 'solana'
+  try {
+    const resp = await fetch('/api/stats/me');
+    if (resp.ok) {
+      const data = await resp.json();
+      for (const h of (data.history ?? [])) {
+        if (h.chain === 'solana' && h.room_code) {
+          roomCodeSet.add(h.room_code);
+        }
+      }
+    }
+  } catch { /* no stats */ }
+
+  if (roomCodeSet.size === 0) return [];
+
+  const playerPubkey = new PublicKey(solAddress);
+  const refundable: SolanaRefundableGame[] = [];
+
+  await Promise.all(
+    [...roomCodeSet].map(async (roomCode) => {
+      try {
+        const game = await getGameAccountRaw(roomCode);
+        if (!game) return;
+
+        const state = mapSolanaState(game.state);
+        if (state === 'SETTLED') return;
+
+        // Find player index
+        const playerIdx = game.players.findIndex(
+          (p) => p.toBase58() === playerPubkey.toBase58()
+        );
+        if (playerIdx === -1) return;
+
+        // Check if already refunded
+        if (game.refunded[playerIdx]) return;
+
+        // Check if actually deposited
+        if (!game.deposited[playerIdx]) return;
+
+        // For ACTIVE: check 24h emergency timeout
+        const now = Math.floor(Date.now() / 1000);
+        const EMERGENCY_TIMEOUT = 24 * 60 * 60;
+        let canCancel = true;
+        let hoursUntilCancel: number | undefined;
+
+        if (state === 'ACTIVE') {
+          canCancel = game.startedAt > 0 && (now - game.startedAt >= EMERGENCY_TIMEOUT);
+          if (!canCancel) {
+            hoursUntilCancel = Math.ceil((EMERGENCY_TIMEOUT - (now - game.startedAt)) / 3600);
+          }
+        }
+
+        const persisted = persistedRefunds.get(roomCode);
+        refundable.push({
+          roomCode,
+          gameId: roomCode, // use roomCode as display ID
+          buyInLamports: game.buyIn,
+          state: state as GameState,
+          canCancel,
+          hoursUntilCancel,
+          nonce: persisted?.nonce,
+          signature: persisted?.signature,
+        });
+      } catch { /* skip */ }
+    })
+  );
+
+  return refundable;
+}
+
 export default function ProfileRefunds() {
   const { data: walletClient } = useWalletClient();
   const { address } = useAccount();
+  const { activeChain } = useMultiChain();
+  const solWallet = useWallet();
+
   const [games, setGames] = useState<RefundableGame[]>([]);
+  const [solanaGames, setSolanaGames] = useState<SolanaRefundableGame[]>([]);
   const [settlements, setSettlements] = useState<UnclaimedSettlement[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -290,41 +421,52 @@ export default function ProfileRefunds() {
   const [successCount, setSuccessCount] = useState(0);
   const [statusMsg, setStatusMsg] = useState('');
 
+  const isSolana = activeChain === 'solana';
+
   const fetchGames = useCallback(async () => {
-    if (!address) return;
     setLoading(true);
     setError('');
     try {
-      const { games: refundResults, activeGameIds } = await findRefundableGames(address as `0x${string}`);
-      const settlementResults = await findUnclaimedSettlements(address as `0x${string}`, activeGameIds);
-      // Remove ACTIVE games from refunds if they turned out to be settlements
-      const settlementGameIds = new Set(settlementResults.map((s) => s.gameId));
-      const filteredRefunds = refundResults.filter((g) => !settlementGameIds.has(g.gameId));
-      setGames(filteredRefunds);
-      setSettlements(settlementResults);
+      if (isSolana) {
+        const solAddress = solWallet.publicKey?.toBase58();
+        if (!solAddress) return;
+        const solResults = await findRefundableSolanaGames(solAddress);
+        setSolanaGames(solResults);
+        setGames([]);
+        setSettlements([]);
+      } else {
+        if (!address) return;
+        const { games: refundResults, activeGameIds } = await findRefundableGames(address as `0x${string}`);
+        const settlementResults = await findUnclaimedSettlements(address as `0x${string}`, activeGameIds);
+        // Remove ACTIVE games from refunds if they turned out to be settlements
+        const settlementGameIds = new Set(settlementResults.map((s) => s.gameId));
+        const filteredRefunds = refundResults.filter((g) => !settlementGameIds.has(g.gameId));
+        setGames(filteredRefunds);
+        setSettlements(settlementResults);
+        setSolanaGames([]);
+      }
     } catch (err) {
       console.error('Failed to scan:', err);
       setGames([]);
       setSettlements([]);
+      setSolanaGames([]);
     } finally {
       setLoading(false);
     }
-  }, [address]);
+  }, [address, isSolana, solWallet.publicKey]);
 
   useEffect(() => {
-    if (expanded && games.length === 0 && settlements.length === 0 && !loading) fetchGames();
+    if (expanded && games.length === 0 && settlements.length === 0 && solanaGames.length === 0 && !loading) fetchGames();
   }, [expanded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /**
-   * Cancel + claim a single game. Handles all 3 states.
-   */
+  // --- Base refund processing (unchanged) ---
+
   const processRefund = async (game: RefundableGame): Promise<boolean> => {
     if (!walletClient || !address) return false;
     const [account] = await walletClient.getAddresses();
     const contractAddr = getAddresses().monopolyGame;
     const chain = getChain();
 
-    // Step 1: Cancel if not already cancelled
     if (game.state === 'ACTIVE') {
       setStatusMsg('Emergency cancelling...');
       const hash = await walletClient.writeContract({
@@ -352,7 +494,6 @@ export default function ProfileRefunds() {
       await waitForTransactionReceipt(wagmiConfig, { hash });
     }
 
-    // Step 2: Claim refund
     setStatusMsg('Claiming refund...');
     const refundHash = await walletClient.writeContract({
       account, address: contractAddr, abi: MONOPOLY_GAME_ABI, chain,
@@ -362,6 +503,71 @@ export default function ProfileRefunds() {
     await waitForTransactionReceipt(wagmiConfig, { hash: refundHash });
     return true;
   };
+
+  // --- Solana refund processing ---
+
+  const buildAnchorWallet = (): AnchorWallet | null => {
+    if (!solWallet.publicKey || !solWallet.signTransaction || !solWallet.signAllTransactions) return null;
+    return {
+      publicKey: solWallet.publicKey,
+      signTransaction: solWallet.signTransaction,
+      signAllTransactions: solWallet.signAllTransactions,
+    };
+  };
+
+  const processSolanaRefund = async (game: SolanaRefundableGame): Promise<boolean> => {
+    const wallet = buildAnchorWallet();
+    if (!wallet) throw new Error('Solana wallet not connected');
+
+    const signerPubkey = process.env.NEXT_PUBLIC_SOLANA_GAME_SIGNER;
+    if (!signerPubkey) throw new Error('Game signer not configured');
+
+    if (game.state === 'ACTIVE') {
+      // Emergency cancel (24h+ timeout)
+      setStatusMsg('Emergency cancelling...');
+      await emergencyCancelOnSolana(wallet, game.roomCode);
+      setStatusMsg('Claiming refund...');
+      await claimRefundOnSolana(wallet, game.roomCode);
+    } else if (game.state === 'WAITING') {
+      // Always request fresh signature from server (persisted ones may be stale)
+      setStatusMsg('Getting cancel signature...');
+      let nonce: string | undefined;
+      let signature: string | undefined;
+      try {
+        const sigResp = await fetch('/api/contracts/solana/cancellation-signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomCode: game.roomCode }),
+        });
+        if (sigResp.ok) {
+          const sigData = await sigResp.json();
+          nonce = sigData.nonce;
+          signature = sigData.signature;
+        }
+      } catch { /* fall back to persisted */ }
+
+      // Fall back to persisted if server unavailable
+      if (!nonce || !signature) {
+        nonce = game.nonce;
+        signature = game.signature;
+      }
+      if (!nonce || !signature) {
+        throw new Error('No cancellation signature available');
+      }
+
+      setStatusMsg('Cancelling game...');
+      await cancelGameOnSolana(wallet, game.roomCode, nonce, signature, signerPubkey);
+      setStatusMsg('Claiming refund...');
+      await claimRefundOnSolana(wallet, game.roomCode);
+    } else if (game.state === 'CANCELLED') {
+      setStatusMsg('Claiming refund...');
+      await claimRefundOnSolana(wallet, game.roomCode);
+    }
+
+    return true;
+  };
+
+  // --- Handlers ---
 
   const handleClaim = async (game: RefundableGame) => {
     setProcessingId(game.gameId);
@@ -384,40 +590,93 @@ export default function ProfileRefunds() {
     }
   };
 
-  const handleClaimAll = async () => {
-    if (!walletClient || games.length === 0) return;
-    setClaimAllLoading(true);
+  const handleSolanaClaim = async (game: SolanaRefundableGame) => {
+    setProcessingId(game.roomCode);
     setError('');
-    let claimed = 0;
-
-    // Only auto-claim CANCELLED games in Claim All (stuck ones need manual action)
-    const claimable = [...games].filter((g) => g.state === 'CANCELLED');
-    const skipped = games.length - claimable.length;
-
-    for (const game of claimable) {
-      setProcessingId(game.gameId);
-      try {
-        await processRefund(game);
-        claimed++;
-        setGames((prev) => prev.filter((g) => g.gameId !== game.gameId));
-      } catch (err: any) {
-        const msg = err?.shortMessage || err?.message || '';
-        if (msg.includes('User rejected') || msg.includes('denied')) {
-          setError(`Rejected after claiming ${claimed} refund(s)`);
-          break;
-        }
-        // Skip and continue
-      }
-    }
-
-    if (skipped > 0 && !error) {
-      setError(`${skipped} stuck game(s) skipped — claim those individually`);
-    }
-
-    setSuccessCount((prev) => prev + claimed);
-    setClaimAllLoading(false);
-    setProcessingId(null);
     setStatusMsg('');
+    try {
+      await processSolanaRefund(game);
+      setSuccessCount((prev) => prev + 1);
+      setSolanaGames((prev) => prev.filter((g) => g.roomCode !== game.roomCode));
+    } catch (err: any) {
+      const msg = err?.shortMessage || err?.message || '';
+      if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('Reject')) {
+        setError('Transaction rejected');
+      } else {
+        setError(msg || 'Failed');
+      }
+    } finally {
+      setProcessingId(null);
+      setStatusMsg('');
+    }
+  };
+
+  const handleClaimAll = async () => {
+    if (isSolana) {
+      if (solanaGames.length === 0) return;
+      setClaimAllLoading(true);
+      setError('');
+      let claimed = 0;
+
+      const claimable = solanaGames.filter((g) => g.state === 'CANCELLED');
+      const skipped = solanaGames.length - claimable.length;
+
+      for (const game of claimable) {
+        setProcessingId(game.roomCode);
+        try {
+          await processSolanaRefund(game);
+          claimed++;
+          setSolanaGames((prev) => prev.filter((g) => g.roomCode !== game.roomCode));
+        } catch (err: any) {
+          const msg = err?.shortMessage || err?.message || '';
+          if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('Reject')) {
+            setError(`Rejected after claiming ${claimed} refund(s)`);
+            break;
+          }
+        }
+      }
+
+      if (skipped > 0 && !error) {
+        setError(`${skipped} stuck game(s) skipped -- claim those individually`);
+      }
+
+      setSuccessCount((prev) => prev + claimed);
+      setClaimAllLoading(false);
+      setProcessingId(null);
+      setStatusMsg('');
+    } else {
+      if (!walletClient || games.length === 0) return;
+      setClaimAllLoading(true);
+      setError('');
+      let claimed = 0;
+
+      const claimable = [...games].filter((g) => g.state === 'CANCELLED');
+      const skipped = games.length - claimable.length;
+
+      for (const game of claimable) {
+        setProcessingId(game.gameId);
+        try {
+          await processRefund(game);
+          claimed++;
+          setGames((prev) => prev.filter((g) => g.gameId !== game.gameId));
+        } catch (err: any) {
+          const msg = err?.shortMessage || err?.message || '';
+          if (msg.includes('User rejected') || msg.includes('denied')) {
+            setError(`Rejected after claiming ${claimed} refund(s)`);
+            break;
+          }
+        }
+      }
+
+      if (skipped > 0 && !error) {
+        setError(`${skipped} stuck game(s) skipped -- claim those individually`);
+      }
+
+      setSuccessCount((prev) => prev + claimed);
+      setClaimAllLoading(false);
+      setProcessingId(null);
+      setStatusMsg('');
+    }
   };
 
   const handleClaimWinnings = async (settlement: UnclaimedSettlement) => {
@@ -454,14 +713,25 @@ export default function ProfileRefunds() {
     }
   };
 
-  const totalClaimable = games.reduce((sum, g) => sum + g.buyIn, BigInt(0))
-    + settlements.reduce((sum, s) => sum + s.buyIn, BigInt(0));
+  // --- Computed values ---
+
+  const totalItems = isSolana
+    ? solanaGames.length
+    : games.length + settlements.length;
+
+  const cancelledCount = isSolana
+    ? solanaGames.filter((g) => g.state === 'CANCELLED').length
+    : games.filter((g) => g.state === 'CANCELLED').length;
+
+  const totalDisplay = isSolana
+    ? `${lamportsToSol(solanaGames.reduce((sum, g) => sum + g.buyInLamports, 0)).toFixed(4)} SOL`
+    : `${formatEther(games.reduce((sum, g) => sum + g.buyIn, BigInt(0)) + settlements.reduce((sum, s) => sum + s.buyIn, BigInt(0)))} ETH`;
 
   const stateLabel = (s: GameState) => {
     switch (s) {
-      case 'CANCELLED': return '🔴 Cancelled';
-      case 'ACTIVE': return '🟡 Stuck (active)';
-      case 'WAITING': return '🟠 Stuck (waiting)';
+      case 'CANCELLED': return 'Cancelled';
+      case 'ACTIVE': return 'Stuck (active)';
+      case 'WAITING': return 'Stuck (waiting)';
     }
   };
 
@@ -479,36 +749,37 @@ export default function ProfileRefunds() {
         className="profileRefundsToggle"
         onClick={() => setExpanded(!expanded)}
       >
-        <span>$ Refunds{(games.length + settlements.length) > 0 ? ` (${games.length + settlements.length})` : ''}</span>
-        <span className="profileRefundsArrow">{expanded ? '▲' : '▼'}</span>
+        <span>$ Refunds{totalItems > 0 ? ` (${totalItems})` : ''}</span>
+        <span className="profileRefundsArrow">{expanded ? '\u25B2' : '\u25BC'}</span>
       </button>
 
       {expanded && (
         <div className="profileRefundsContent">
           {loading && <p className="profileRefundsStatus">Scanning on-chain deposits...</p>}
 
-          {!loading && games.length === 0 && settlements.length === 0 && (
+          {!loading && totalItems === 0 && (
             <p className="profileRefundsStatus">No unclaimed refunds</p>
           )}
 
           {error && <p className="lobbyError" style={{ fontSize: '0.45rem' }}>{error}</p>}
           {statusMsg && <p style={{ color: '#d4a843', fontSize: '0.4rem', textAlign: 'center' }}>{statusMsg}</p>}
-          {successCount > 0 && <p style={{ color: '#4caf50', fontSize: '0.45rem', textAlign: 'center' }}>✅ {successCount} refund(s) claimed!</p>}
+          {successCount > 0 && <p style={{ color: '#4caf50', fontSize: '0.45rem', textAlign: 'center' }}>{successCount} refund(s) claimed!</p>}
 
-          {(games.length > 0 || settlements.length > 0) && (
+          {totalItems > 0 && (
             <div className="profileRefundsSummary">
-              <span>Total: <strong>{formatEther(totalClaimable)} ETH</strong></span>
+              <span>Total: <strong>{totalDisplay}</strong></span>
               <button
                 className="profileRefundClaimAllBtn"
                 onClick={handleClaimAll}
                 disabled={claimAllLoading || !!processingId}
               >
-                {claimAllLoading ? 'Claiming...' : `Claim All (${games.filter(g => g.state === 'CANCELLED').length})`}
+                {claimAllLoading ? 'Claiming...' : `Claim All (${cancelledCount})`}
               </button>
             </div>
           )}
 
-          {settlements.map((s) => (
+          {/* Base settlements */}
+          {!isSolana && settlements.map((s) => (
             <div key={`settlement-${s.gameId}`} className="profileRefundRow">
               <div className="profileRefundInfo">
                 <span className="profileRefundRoom" title={s.gameId}>
@@ -528,7 +799,8 @@ export default function ProfileRefunds() {
             </div>
           ))}
 
-          {[...games].sort((a, b) => {
+          {/* Base refundable games */}
+          {!isSolana && [...games].sort((a, b) => {
             const order: Record<GameState, number> = { CANCELLED: 0, WAITING: 1, ACTIVE: 2 };
             return order[a.state] - order[b.state];
           }).map((g) => (
@@ -550,7 +822,36 @@ export default function ProfileRefunds() {
                 </button>
               ) : (
                 <span className="profileRefundLocked">
-                  ⏳ {g.hoursUntilCancel}h
+                  {g.hoursUntilCancel}h
+                </span>
+              )}
+            </div>
+          ))}
+
+          {/* Solana refundable games */}
+          {isSolana && [...solanaGames].sort((a, b) => {
+            const order: Record<GameState, number> = { CANCELLED: 0, WAITING: 1, ACTIVE: 2 };
+            return order[a.state] - order[b.state];
+          }).map((g) => (
+            <div key={g.roomCode} className="profileRefundRow">
+              <div className="profileRefundInfo">
+                <span className="profileRefundRoom" title={g.roomCode}>
+                  {g.roomCode}
+                </span>
+                <span className="profileRefundAmount">{lamportsToSol(g.buyInLamports).toFixed(4)} SOL</span>
+                <span className="profileRefundState">{stateLabel(g.state)}</span>
+              </div>
+              {g.canCancel !== false ? (
+                <button
+                  className="profileRefundClaimBtn"
+                  onClick={() => handleSolanaClaim(g)}
+                  disabled={processingId === g.roomCode || claimAllLoading}
+                >
+                  {processingId === g.roomCode ? '...' : stateAction(g.state)}
+                </button>
+              ) : (
+                <span className="profileRefundLocked">
+                  {g.hoursUntilCancel}h
                 </span>
               )}
             </div>
@@ -562,7 +863,7 @@ export default function ProfileRefunds() {
               onClick={fetchGames}
               style={{ marginTop: 8 }}
             >
-              ↻ Refresh
+              Refresh
             </button>
           )}
         </div>
