@@ -547,7 +547,7 @@ const sections: DocSection[] = [
         </div>
         <div className="docsFaq">
           <h3>What chain is Ante on?</h3>
-          <p>Base (Ethereum L2). Low gas fees, fast finality.</p>
+          <p>Base + Solana. Low gas fees, fast finality.</p>
         </div>
         <div className="docsFaq">
           <h3>Can I play for free?</h3>
