@@ -18,7 +18,7 @@ const sections: DocSection[] = [
     content: (
       <>
         <p>
-          Ante is a multiplayer crypto board game built on Base (Ethereum L2). Players stake ETH,
+          Ante is a multiplayer crypto board game built on Base + Solana. Players stake ETH/SOL,
           roll dice around a 40-tile casino-themed board, buy properties, collect rent, play minigames,
           and trade with opponents. The last player standing takes the pot.
         </p>
@@ -495,7 +495,7 @@ const sections: DocSection[] = [
     content: (
       <>
         <p>
-          Ante uses smart contracts on Base for escrow and settlement. Game logic runs on the server
+          Ante uses smart contracts on Base and Solana for escrow and settlement. Game logic runs on the server
           in real time. The blockchain handles money in and money out.
         </p>
         <h3>Flow</h3>

@@ -55,7 +55,7 @@ export default function LandingFooter() {
 
       <div className="landingFooterBottom">
         <span>Copyright 2026</span>
-        <span>Built on Base</span>
+        <span>Built on Base + Solana</span>
       </div>
     </motion.footer>
   );

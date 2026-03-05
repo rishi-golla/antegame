@@ -44,7 +44,7 @@ export default function AboutPage() {
         <motion.div className="subpageBlock" variants={fadeUp}>
           <h2>What is Ante?</h2>
           <p>
-            Ante is a multiplayer crypto board game built on Base. Think Monopoly meets poker night,
+            Ante is a multiplayer crypto board game built on Base + Solana. Think Monopoly meets poker night,
             but every dollar is real ETH, every property is a casino, and every roll of the dice
             could make or break you.
           </p>

@@ -31,7 +31,7 @@ export default function AboutSection() {
           About
         </motion.h2>
         <motion.p className="landingAboutText" variants={fadeUp}>
-          Ante is a multiplayer crypto board game on Base. Stake ETH, roll dice,
+          Ante is a multiplayer crypto board game on Base + Solana. Stake ETH/SOL, roll dice,
           land on properties, and play casino minigames to win or lose it all.
           The pot goes to the last player standing.
         </motion.p>

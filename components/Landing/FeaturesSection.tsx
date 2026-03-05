@@ -27,7 +27,7 @@ const features: FeaturePanel[] = [
   {
     id: 'onchain',
     title: 'Fully On-Chain',
-    text: 'Smart contract escrow on Base. Every game is settled transparently. Your crypto, your keys, your winnings.',
+    text: 'Smart contract escrow on Base + Solana. Every game is settled transparently. Your crypto, your keys, your winnings.',
     image: '/assets/landing/feature-onchain.webp',
   },
   {

@@ -22,7 +22,7 @@ const features = [
   },
   {
     title: 'On-Chain Escrow',
-    text: 'All game funds are held in a smart contract on Base. When the game ends, the contract settles payouts automatically. No trust required. Just math.',
+    text: 'All game funds are held in smart contracts on Base + Solana. When the game ends, contracts settle payouts automatically. No trust required. Just math.',
     image: '/assets/landing/feature-onchain.webp',
   },
   {
