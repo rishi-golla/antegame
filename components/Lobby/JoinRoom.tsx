@@ -141,7 +141,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         setStatus('Validating...');
         const { getSocket } = await import('@/lib/socket');
         const validation = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
-          getSocket().emit('room:validate-join' as any, { code: roomCode, color: char.color, characterId: selectedChar }, resolve);
+          getSocket().emit('room:validate-join' as any, { code: roomCode, name: playerName, color: char.color, characterId: selectedChar }, resolve);
         });
         if (!validation.ok) {
           setError(validation.error ?? 'Cannot join room');
@@ -224,7 +224,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
         setStatus('Validating...');
         const { getSocket } = await import('@/lib/socket');
         const validation = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
-          getSocket().emit('room:validate-join' as any, { code: roomCode, color: char.color, characterId: selectedChar }, resolve);
+          getSocket().emit('room:validate-join' as any, { code: roomCode, name: playerName, color: char.color, characterId: selectedChar }, resolve);
         });
         if (!validation.ok) {
           setError(validation.error ?? 'Cannot join room');

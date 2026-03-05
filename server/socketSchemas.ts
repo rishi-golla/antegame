@@ -107,6 +107,7 @@ export const quickPlayBaseSchema = z.object({
 
 export const validateJoinSchema = z.object({
   code: z.string().min(1).max(10),
+  name: z.string().min(1).max(20),
   color: z.string().min(1).max(20),
   characterId: characterIdSchema,
 });

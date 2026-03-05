@@ -1196,6 +1196,7 @@ nextApp.prepare().then(() => {
       if (!room) { cb({ ok: false, error: 'Room not found' }); return; }
       if (room.phase !== 'lobby') { cb({ ok: false, error: 'Game already started' }); return; }
       if (room.players.length >= room.maxPlayers) { cb({ ok: false, error: 'Room is full' }); return; }
+      if (room.players.some((p: any) => p.name.toLowerCase() === parsed.data.name.toLowerCase())) { cb({ ok: false, error: 'Name already taken in this room' }); return; }
       if (room.players.some((p: any) => p.color === parsed.data.color)) { cb({ ok: false, error: 'Color already taken in this room' }); return; }
       if (parsed.data.characterId && room.players.some((p: any) => p.characterId === parsed.data.characterId)) { cb({ ok: false, error: 'Character already taken in this room' }); return; }
       cb({ ok: true });
