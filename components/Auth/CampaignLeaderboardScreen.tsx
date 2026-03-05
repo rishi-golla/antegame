@@ -23,18 +23,21 @@ interface CampaignData {
 }
 
 export default function CampaignLeaderboardScreen({ onBack }: { onBack: () => void }) {
-  const { user } = useMultiChain();
+  const { user, activeChain } = useMultiChain();
+  const currencyLabel = activeChain === 'solana' ? 'SOL' : 'ETH';
   const [data, setData] = useState<CampaignData | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    fetch('/api/auth/referrals/campaign')
+    setLoading(true);
+    const chainParam = activeChain ? `?chain=${activeChain}` : '';
+    fetch(`/api/auth/referrals/campaign${chainParam}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setData(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeChain]);
 
   useEffect(() => {
     if (!data || data.phase === 'none' || data.phase === 'ended') return;
@@ -132,7 +135,7 @@ export default function CampaignLeaderboardScreen({ onBack }: { onBack: () => vo
                         {isMe && <span className="campaignLbYou"> (you)</span>}
                       </span>
                       <span className="campaignLbRefs">{entry.referral_count}</span>
-                      <span className="campaignLbVol">{(entry.total_volume / 1e9).toFixed(4)} ETH</span>
+                      <span className="campaignLbVol">{(entry.total_volume / 1e9).toFixed(4)} {currencyLabel}</span>
                     </div>
                   );
                 })}

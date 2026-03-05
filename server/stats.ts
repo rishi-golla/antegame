@@ -86,7 +86,7 @@ export function recordGameResult(data: GameResultData): number {
         for (const player of data.players) {
           const referrer = getReferrer(player.walletAddress);
           if (referrer) {
-            recordReferralEarning(referrer, player.walletAddress, gameId, String(perPlayerShare));
+            recordReferralEarning(referrer, player.walletAddress, gameId, String(perPlayerShare), data.chain ?? 'base');
           }
         }
       }
@@ -98,7 +98,22 @@ export function recordGameResult(data: GameResultData): number {
   return run();
 }
 
-export function getLeaderboard(limit = 50) {
+export function getLeaderboard(limit = 50, chain?: string) {
+  if (chain) {
+    return db
+      .prepare(
+        `SELECT gh.winner_wallet as wallet_address, u.display_name, u.character_id,
+                COUNT(*) as games_won,
+                SUM(gh.winner_payout_lamports) as total_earned_lamports
+         FROM game_history gh
+         JOIN users u ON gh.winner_wallet = u.wallet_address
+         WHERE gh.chain = ?
+         GROUP BY gh.winner_wallet
+         ORDER BY games_won DESC, total_earned_lamports DESC
+         LIMIT ?`
+      )
+      .all(chain, limit);
+  }
   return db
     .prepare(
       `SELECT s.*, u.display_name, u.character_id
@@ -109,7 +124,42 @@ export function getLeaderboard(limit = 50) {
     .all(limit);
 }
 
-export function getPlayerStats(walletAddress: string) {
+export function getPlayerStats(walletAddress: string, chain?: string) {
+  if (chain) {
+    const computed = db
+      .prepare(
+        `SELECT COUNT(*) as games_played,
+                SUM(CASE WHEN winner_wallet = ? THEN 1 ELSE 0 END) as games_won,
+                SUM(CASE WHEN winner_wallet = ? THEN winner_payout_lamports ELSE 0 END) as total_earned_lamports,
+                SUM(CASE WHEN winner_wallet != ? THEN entry_fee_lamports ELSE 0 END) as total_lost_lamports
+         FROM game_history
+         WHERE players LIKE ? AND chain = ?`
+      )
+      .get(walletAddress, walletAddress, walletAddress, `%${walletAddress}%`, chain) as any;
+
+    // Minigames stay from stats table (not chain-specific)
+    const statsRow = db
+      .prepare(`SELECT minigames_played, minigames_won FROM stats WHERE wallet_address = ?`)
+      .get(walletAddress) as any;
+
+    const userRow = db
+      .prepare(`SELECT display_name, character_id FROM users WHERE wallet_address = ?`)
+      .get(walletAddress) as any;
+
+    if (!userRow) return undefined;
+
+    return {
+      wallet_address: walletAddress,
+      display_name: userRow.display_name,
+      character_id: userRow.character_id,
+      games_played: computed?.games_played ?? 0,
+      games_won: computed?.games_won ?? 0,
+      total_earned_lamports: computed?.total_earned_lamports ?? 0,
+      total_lost_lamports: computed?.total_lost_lamports ?? 0,
+      minigames_played: statsRow?.minigames_played ?? 0,
+      minigames_won: statsRow?.minigames_won ?? 0,
+    };
+  }
   return db
     .prepare(
       `SELECT s.*, u.display_name, u.character_id
@@ -119,7 +169,17 @@ export function getPlayerStats(walletAddress: string) {
     .get(walletAddress);
 }
 
-export function getPlayerHistory(walletAddress: string, limit = 20) {
+export function getPlayerHistory(walletAddress: string, limit = 20, chain?: string) {
+  if (chain) {
+    return db
+      .prepare(
+        `SELECT * FROM game_history
+         WHERE players LIKE ? AND chain = ?
+         ORDER BY finished_at DESC
+         LIMIT ?`
+      )
+      .all(`%${walletAddress}%`, chain, limit);
+  }
   return db
     .prepare(
       `SELECT * FROM game_history

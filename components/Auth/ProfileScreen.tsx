@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 import ProfileRefunds from './ProfileRefunds';
 
@@ -25,6 +26,7 @@ interface HistoryEntry {
   winner_payout_lamports: number;
   room_code: string;
   players: string; // JSON string
+  chain?: string;
 }
 
 interface ReferralInfo {
@@ -58,6 +60,8 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onBack }: ProfileScreenProps) {
   const { user, updateProfile } = useAuth();
+  const { activeChain } = useMultiChain();
+  const currencyLabel = activeChain === 'solana' ? 'SOL' : 'ETH';
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [editing, setEditing] = useState(false);
@@ -69,7 +73,8 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    fetch('/api/stats/me')
+    const chainParam = activeChain ? `?chain=${activeChain}` : '';
+    fetch(`/api/stats/me${chainParam}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.stats) setStats(data.stats);
@@ -82,11 +87,11 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
         if (data) setReferralInfo({ referredBy: data.referredBy, referralCode: data.referralCode, count: data.count });
       })
       .catch(() => {});
-    fetch('/api/auth/referrals/campaign')
+    fetch(`/api/auth/referrals/campaign${chainParam}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setCampaign(data); })
       .catch(() => {});
-  }, []);
+  }, [activeChain]);
 
   // Countdown timer
   useEffect(() => {
@@ -239,7 +244,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
                         {entry.referral_count} refs
                       </span>
                       <span style={{ color: '#d4af37', fontWeight: 700 }}>
-                        {volEth} ETH
+                        {volEth} {currencyLabel}
                       </span>
                     </div>
                   );
@@ -265,11 +270,11 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
             </div>
             <div className="statBox">
               <div className="statValue">{(stats.total_earned_lamports / 1e9).toFixed(2)}</div>
-              <div className="statLabel">ETH Won</div>
+              <div className="statLabel">{currencyLabel} Won</div>
             </div>
             <div className="statBox">
               <div className="statValue">{(stats.total_lost_lamports / 1e9).toFixed(2)}</div>
-              <div className="statLabel">ETH Lost</div>
+              <div className="statLabel">{currencyLabel} Lost</div>
             </div>
             <div className="statBox">
               <div className="statValue">{stats.minigames_played}</div>
@@ -303,7 +308,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
                       {h.player_count}P · Winner: <strong className="profileHistoryWinner">{h.winner_name}</strong>
                     </span>
                     <span style={{ color: isWinner ? '#22c55e' : '#ff4444', fontWeight: 700 }}>
-                      {isWinner ? '+' : '-'}{(h.entry_fee_lamports / 1e9).toFixed(4)} ETH
+                      {isWinner ? '+' : '-'}{(h.entry_fee_lamports / 1e9).toFixed(4)} {currencyLabel}
                     </span>
                   </div>
                 </div>

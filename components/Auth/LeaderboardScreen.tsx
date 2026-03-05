@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 
 interface LeaderboardEntry {
@@ -17,16 +18,20 @@ interface LeaderboardScreenProps {
 }
 
 export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
+  const { activeChain } = useMultiChain();
+  const currencyLabel = activeChain === 'solana' ? 'SOL' : 'ETH';
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/stats/leaderboard')
+    setLoading(true);
+    const chainParam = activeChain ? `?chain=${activeChain}` : '';
+    fetch(`/api/stats/leaderboard${chainParam}`)
       .then((r) => (r.ok ? r.json() : { leaderboard: [] }))
       .then((data) => setEntries(data.leaderboard ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeChain]);
 
   const medalColors = ['var(--gold-bright)', '#c0c0c0', '#cd7f32'];
 
@@ -46,7 +51,7 @@ export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
               <span className="lbRank">#</span>
               <span className="lbPlayer">Player</span>
               <span className="lbWins">Wins</span>
-              <span className="lbEarned">SOL Won</span>
+              <span className="lbEarned">{currencyLabel} Won</span>
             </div>
             {entries.map((entry, i) => {
               const char = CHARACTERS.find((c) => c.id === entry.character_id);

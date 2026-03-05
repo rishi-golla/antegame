@@ -253,7 +253,12 @@ export interface CampaignLeaderboardEntry {
   total_volume: number;
 }
 
-export function getCampaignLeaderboard(startTime: number, endTime: number, limit = 10): CampaignLeaderboardEntry[] {
+export function getCampaignLeaderboard(startTime: number, endTime: number, limit = 10, chain?: string): CampaignLeaderboardEntry[] {
+  const chainFilter = chain ? 'AND gh.chain = ?' : '';
+  const params: any[] = [startTime, endTime];
+  if (chain) params.push(chain);
+  params.push(limit);
+
   return db.prepare(`
     SELECT combined.referrer_wallet,
            u.display_name,
@@ -267,12 +272,13 @@ export function getCampaignLeaderboard(startTime: number, endTime: number, limit
       LEFT JOIN referral_earnings re ON re.referrer_wallet = r.referrer_wallet
       LEFT JOIN game_history gh ON re.game_id = gh.id
         AND gh.finished_at >= ? AND gh.finished_at < ?
+        ${chainFilter}
       GROUP BY r.referrer_wallet
     ) combined
     LEFT JOIN users u ON combined.referrer_wallet = u.wallet_address
     ORDER BY combined.total_volume DESC, combined.referral_count DESC
     LIMIT ?
-  `).all(startTime, endTime, limit) as CampaignLeaderboardEntry[];
+  `).all(...params) as CampaignLeaderboardEntry[];
 }
 
 // --- Verified Deposits ---

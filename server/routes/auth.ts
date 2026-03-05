@@ -314,7 +314,7 @@ router.post('/referrals/mark-paid', (req: Request, res: Response) => {
 });
 
 // GET /api/auth/referrals/campaign — campaign leaderboard (public)
-router.get('/referrals/campaign', (_req: Request, res: Response) => {
+router.get('/referrals/campaign', (req: Request, res: Response) => {
   const campaignEnv = process.env.CAMPAIGN_START_UTC;
   const campaignStartMs = campaignEnv ? Date.parse(campaignEnv) : NaN;
 
@@ -341,7 +341,9 @@ router.get('/referrals/campaign', (_req: Request, res: Response) => {
 
   const startUnix = Math.floor(campaignStartMs / 1000);
   const endUnix = Math.floor(campaignEndMs / 1000);
-  const leaderboard = getCampaignLeaderboard(startUnix, endUnix);
+  const chainParam = req.query.chain;
+  const chain = (chainParam === 'base' || chainParam === 'solana') ? chainParam : undefined;
+  const leaderboard = getCampaignLeaderboard(startUnix, endUnix, 10, chain);
 
   res.json({
     active: phase === 'boost' || phase === 'normal',
