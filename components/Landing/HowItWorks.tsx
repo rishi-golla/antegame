@@ -12,7 +12,7 @@ const steps = [
   {
     number: '02',
     title: 'Stake',
-    desc: 'Pick a table. Throw ETH in the pot. The smart contract holds it.',
+    desc: 'Pick a table. Stake ETH or SOL in the pot. The smart contract holds it.',
     icon: '/assets/landing/icons/icon-stake.webp',
   },
   {
