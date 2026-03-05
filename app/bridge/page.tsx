@@ -13,7 +13,6 @@ import { base, baseSepolia } from 'wagmi/chains';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { getChainId } from '@/lib/contracts/addresses';
 import { wagmiConfig } from '@/context/EVMWalletContext';
-import LandingNav from '@/components/Landing/LandingNav';
 
 const TREASURY_WALLET = 'E6hWHJc6J3zzAGDgg9xphZtpBveAqZ8eNMwmFDeJ6TK8';
 const BRIDGE_FEE_SOL = 0.001;
@@ -402,8 +401,6 @@ export default function BridgePage() {
 
   return (
     <div className="landingPage bridgePage">
-      <LandingNav onConnect={() => setVisible(true)} connecting={false} />
-
       <section className="bridgeViewport">
         <motion.div className={`bridgeShell ${busy ? 'bridgeBusy' : ''}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
           <div className="bridgeHeaderRow">
