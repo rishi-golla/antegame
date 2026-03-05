@@ -9699,7 +9699,8 @@ img[src*="/assets/"] {
 
 .landingNavLinks {
   display: flex;
-  gap: 24px;
+  align-items: center;
+  gap: 34px;
 }
 
 .landingNavLink {
@@ -9715,7 +9716,7 @@ img[src*="/assets/"] {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s;
-  padding: 7px 14px;
+  padding: 7px 16px;
   text-decoration: none;
 }
 
@@ -9759,7 +9760,7 @@ img[src*="/assets/"] {
 }
 
 .landingNavCTASolana {
-  background: linear-gradient(135deg, #d4af37 0%, #c29b2b 52%, #9b69ff 100%);
+  background: linear-gradient(135deg, #d4af37 0%, #b8941e 100%);
 }
 
 .landingNavCTA:disabled {
