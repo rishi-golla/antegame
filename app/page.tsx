@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBalance, useAccount } from 'wagmi';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useAudio } from '@/context/AudioContext';
 import { GameProvider } from '@/context/GameContext';
 import { WalletContextProvider } from '@/context/WalletContext';
@@ -129,14 +131,33 @@ function CampaignBanner({ onNavigate }: { onNavigate: (screen: Screen) => void }
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   const router = useRouter();
   const { user } = useMultiChain();
+  const chain = user?.chain;
+
+  // EVM balance
   const { address } = useAccount();
   const { data: balanceData } = useBalance({ address });
 
+  // Solana balance
+  const { connection } = useConnection();
+  const { publicKey: solPubkey } = useWallet();
+  const [solBalance, setSolBalance] = useState<number | null>(null);
+  useEffect(() => {
+    if (chain !== 'solana' || !solPubkey) { setSolBalance(null); return; }
+    connection.getBalance(solPubkey).then((lamports) => {
+      setSolBalance(lamports / LAMPORTS_PER_SOL);
+    }).catch(() => setSolBalance(null));
+  }, [chain, solPubkey, connection]);
+
   const balanceStr = useMemo(() => {
+    if (chain === 'solana') {
+      if (solBalance === null) return null;
+      return solBalance > 0 ? solBalance.toFixed(4) : null;
+    }
     if (!balanceData) return null;
     const val = parseFloat(balanceData.formatted);
     return val > 0 ? val.toFixed(4) : null;
-  }, [balanceData]);
+  }, [chain, solBalance, balanceData]);
+  const currencyLabel = chain === 'solana' ? 'SOL' : 'ETH';
 
   useEffect(() => {
     router.prefetch('/bridge');
@@ -180,7 +201,7 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
           <p className="menuSubtitle">Stake crypto. Roll dice. Win the pot.</p>
           {balanceStr && (
             <div className="menuStatusRow">
-              <span className="menuBalance">$ {balanceStr} ETH</span>
+              <span className="menuBalance">$ {balanceStr} {currencyLabel}</span>
             </div>
           )}
         </div>
