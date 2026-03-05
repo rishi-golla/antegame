@@ -1748,7 +1748,7 @@ input {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(8, 4, 4, 0.68);
+  background: rgba(8, 4, 4, 0.55);
   pointer-events: none;
 }
 
