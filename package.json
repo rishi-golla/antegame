@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bash -lc 'pids=$(lsof -ti tcp:3000); [ -n \"$pids\" ] && kill -9 $pids || true; rm -rf .next; tsx server/index.ts'",
+    "dev": "bash -lc 'pkill -f \"tsx server/index.ts\" >/dev/null 2>&1 || true; pkill -f \"next/dist/server/next.js\" >/dev/null 2>&1 || true; rm -rf .next; tsx server/index.ts'",
     "dev:clean": "rm -rf .next && tsx server/index.ts",
     "dev:next": "next dev",
     "build": "next build",
