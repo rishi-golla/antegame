@@ -1,18 +1,53 @@
 .bridgePage {
+  position: relative;
   height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(107, 26, 58, 0.2), transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(107, 26, 58, 0.16), transparent 50%),
+    radial-gradient(ellipse at 20% 20%, rgba(107, 26, 58, 0.24), transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(107, 26, 58, 0.2), transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(11, 61, 11, 0.1), transparent 70%),
     linear-gradient(165deg, #0a0a0a 0%, #1a0f0f 40%, #0d0d0d 100%);
 }
 
+.bridgePage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/assets/landing/menu-bg.webp') center/cover no-repeat;
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.bridgePage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(212, 175, 55, 0.015) 2px,
+      rgba(212, 175, 55, 0.015) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(212, 175, 55, 0.012) 2px,
+      rgba(212, 175, 55, 0.012) 4px
+    );
+}
+
 .bridgeViewport {
+  position: relative;
+  z-index: 1;
   height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 84px 20px 20px;
+  padding: 24px 20px 20px;
 }
 
 .bridgeShell {
