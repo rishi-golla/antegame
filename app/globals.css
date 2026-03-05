@@ -9699,24 +9699,48 @@ img[src*="/assets/"] {
 
 .landingNavLinks {
   display: flex;
-  gap: 32px;
+  gap: 24px;
 }
 
 .landingNavLink {
+  position: relative;
   font-family: 'Cinzel', serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #a89070;
-  background: none;
-  border: none;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #bba178;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.02));
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 999px;
   cursor: pointer;
-  letter-spacing: 0.05em;
-  transition: color 0.2s;
-  padding: 4px 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s;
+  padding: 7px 14px;
+  text-decoration: none;
+}
+
+.landingNavLink::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.8), transparent);
+  opacity: 0.45;
 }
 
 .landingNavLink:hover {
-  color: var(--gold-bright, #d4af37);
+  color: var(--gold-bright, #f0cd6a);
+  border-color: rgba(212, 175, 55, 0.5);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.16), rgba(212, 175, 55, 0.06));
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.2);
+}
+
+.landingNavCTAs {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .landingNavCTA {
@@ -9732,6 +9756,10 @@ img[src*="/assets/"] {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.landingNavCTASolana {
+  background: linear-gradient(135deg, #d4af37 0%, #c29b2b 52%, #9b69ff 100%);
 }
 
 .landingNavCTA:disabled {
