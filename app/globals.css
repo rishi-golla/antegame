@@ -7964,7 +7964,7 @@ img[src*="/assets/"] {
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .walletBtnWrap {
@@ -7974,19 +7974,19 @@ img[src*="/assets/"] {
 .walletBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 9px;
+  padding: 8px 14px;
   background: var(--burgundy);
   border: 2px solid var(--gold);
   cursor: pointer;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.5rem;
+  font-size: 0.65rem;
   color: var(--gold-bright);
 }
 
 .walletBtnSprite {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   image-rendering: pixelated;
 }
 
@@ -8050,13 +8050,13 @@ img[src*="/assets/"] {
 .referralBtn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  gap: 7px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #b8860b, #daa520);
   border: 2px solid var(--gold-bright);
   cursor: pointer;
   font-family: 'Nunito', sans-serif;
-  font-size: 0.5rem;
+  font-size: 0.65rem;
   color: #1a0f0f;
   font-weight: bold;
   transition: transform 0.1s, box-shadow 0.2s;
