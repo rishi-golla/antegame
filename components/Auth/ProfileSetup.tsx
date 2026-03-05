@@ -14,16 +14,21 @@ export default function ProfileSetup() {
   const defaultChar = CHARACTERS[0].id;
 
   const handleSave = async () => {
-    if (!displayName.trim()) {
+    const name = displayName.trim();
+    if (!name) {
       setError('Enter a display name');
+      return;
+    }
+    if (!/^[a-zA-Z0-9 _\-\.]{1,20}$/.test(name)) {
+      setError('Only letters, numbers, spaces, hyphens, underscores, and dots allowed');
       return;
     }
     setSaving(true);
     setError('');
     try {
-      await updateProfile(displayName.trim(), defaultChar);
-    } catch {
-      setError('Failed to save profile');
+      await updateProfile(name, defaultChar);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to save profile');
     } finally {
       setSaving(false);
     }

@@ -105,8 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ displayName, characterId }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to save profile');
+      }
+      if (data.user) {
         setUser(data.user);
       }
     },

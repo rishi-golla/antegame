@@ -115,6 +115,9 @@ export function EVMAuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ displayName, characterId }),
     });
     const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || 'Failed to save profile');
+    }
     if (data.user) {
       setUser(data.user);
       setIsNewUser(false);
