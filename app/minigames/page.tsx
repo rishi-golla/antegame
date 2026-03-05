@@ -29,7 +29,7 @@ const minigames = [
 
 export default function MinigamesPage() {
   return (
-    <div className="landingPage">
+    <div className="landingPage subpageRichBg">
       <LandingNav onConnect={() => window.location.href = '/'} onConnectSolana={() => window.location.href = '/'} connecting={false} />
 
       <section className="subpageHero">
