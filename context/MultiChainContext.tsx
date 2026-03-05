@@ -58,8 +58,8 @@ export function MultiChainProvider({ children }: { children: ReactNode }) {
   // Auto-set activeChain when user session loads (e.g. from cookie on refresh)
   useEffect(() => {
     if (activeChain) return; // already set by user action
-    if (evm.user) setActiveChain('base');
-    else if (solana.user) setActiveChain('solana');
+    if (solana.user) setActiveChain('solana');
+    else if (evm.user) setActiveChain('base');
   }, [evm.user, solana.user, activeChain]);
 
   const loading = solana.loading || evm.loading;
@@ -77,14 +77,14 @@ export function MultiChainProvider({ children }: { children: ReactNode }) {
         chain: 'solana' as Chain,
       };
     }
-    // Auto-detect from existing session
-    if (evm.user) return { ...evm.user, chain: 'base' as Chain };
+    // Auto-detect from existing session (prefer Solana — it's the primary chain)
     if (solana.user) return {
       walletAddress: solana.user.walletAddress,
       displayName: solana.user.displayName,
       characterId: solana.user.characterId,
       chain: 'solana' as Chain,
     };
+    if (evm.user) return { ...evm.user, chain: 'base' as Chain };
     return null;
   })();
 

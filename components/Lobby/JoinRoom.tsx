@@ -232,34 +232,54 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
           return;
         }
 
-        // Step 1: Join on-chain (deposit buy-in)
-        setStatus('Waiting for wallet approval...');
-        let txSig: string;
-        try {
-          if (!solSignTransaction) throw new Error('Wallet does not support signing');
-          const wallet = { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => { const out = []; for (const tx of txs) out.push(await solSignTransaction(tx)); return out; }) };
-          txSig = await joinGameOnSolana(wallet as any, roomCode);
-        } catch (err: any) {
-          throw err;
+        // Step 1: Check on-chain if player already deposited (e.g. retry after a name/color error)
+        setStatus('Checking game...');
+        const solWallet = { publicKey: solPublicKey, signTransaction: solSignTransaction!, signAllTransactions: solSignAllTransactions ?? (async (txs: any[]) => { const out = []; for (const tx of txs) out.push(await solSignTransaction!(tx)); return out; }) };
+        const solGame = await getGameOnSolana(solWallet as any, roomCode);
+        if (!solGame) {
+          setError('No on-chain game found for this room. The host may not have deposited yet.');
+          setLoading(false);
+          return;
         }
 
-        // Step 2: Join server room
-        setStatus('Deposit confirmed! Joining room...');
+        const alreadyDeposited = solGame.players.some(
+          (addr) => addr.toBase58() === solPublicKey.toBase58()
+        );
+
+        let txSig: string | undefined;
+
+        if (alreadyDeposited) {
+          setStatus('Deposit already confirmed on-chain. Joining room...');
+        } else {
+          // Step 2: Join on-chain (deposit buy-in)
+          setStatus('Waiting for wallet approval...');
+          try {
+            if (!solSignTransaction) throw new Error('Wallet does not support signing');
+            txSig = await joinGameOnSolana(solWallet as any, roomCode);
+          } catch (err: any) {
+            throw err;
+          }
+          setStatus('Deposit confirmed! Joining room...');
+        }
+
+        // Step 3: Join server room
         const result = await joinRoom(roomCode, playerName, char.color, {
           walletAddress: user?.walletAddress,
           characterId: selectedChar,
         });
         if (!result.ok) {
-          setError(result.error ?? 'Failed to join room');
+          setError(result.error ?? 'Failed to join room. Your deposit is safe — check Refunds in your profile.');
           setLoading(false);
           return;
         }
 
-        // Step 3: Notify server of deposit
-        const { getSocket: getSocket2 } = await import('@/lib/socket');
-        await new Promise<void>((resolve) => {
-          getSocket2().emit('room:deposit' as any, { txSignature: txSig }, () => resolve());
-        });
+        // Step 4: Notify server of deposit
+        if (txSig) {
+          const { getSocket: getSocket2 } = await import('@/lib/socket');
+          await new Promise<void>((resolve) => {
+            getSocket2().emit('room:deposit' as any, { txSignature: txSig }, () => resolve());
+          });
+        }
 
         onJoined();
       } else {

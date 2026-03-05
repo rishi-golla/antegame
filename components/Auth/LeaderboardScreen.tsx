@@ -18,8 +18,8 @@ interface LeaderboardScreenProps {
 }
 
 export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
-  const { activeChain, user } = useMultiChain();
-  const chain = activeChain ?? user?.chain;
+  const { user } = useMultiChain();
+  const chain = user?.chain;
   const currencyLabel = chain === 'solana' ? 'SOL' : 'ETH';
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);

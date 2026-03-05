@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useMultiChain } from '@/context/MultiChainContext';
 import { CHARACTERS } from '@/lib/assetMap';
 import ProfileRefunds from './ProfileRefunds';
@@ -59,9 +58,9 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ onBack }: ProfileScreenProps) {
-  const { user, updateProfile } = useAuth();
-  const { activeChain, user: mcUser } = useMultiChain();
-  const chain = activeChain ?? mcUser?.chain;
+  const { user, updateProfile } = useMultiChain();
+  // Derive chain from the actual logged-in user, not from activeChain (which can be null/stale)
+  const chain = user?.chain;
   const currencyLabel = chain === 'solana' ? 'SOL' : 'ETH';
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);

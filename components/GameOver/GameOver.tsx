@@ -19,7 +19,7 @@ interface GameOverProps {
 
 export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
   const { state } = useGame();
-  const { user, activeChain } = useMultiChain();
+  const { user } = useMultiChain();
   const { roomState } = useSocket();
   const { data: walletClient } = useWalletClient();
   const { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
@@ -32,8 +32,9 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
   if (state.winner === null) return null;
 
   const winner = state.players[state.winner];
-  const isBase = activeChain === 'base';
-  const isSolana = activeChain === 'solana';
+  const chain = user?.chain;
+  const isBase = chain === 'base';
+  const isSolana = chain === 'solana';
   const isOnChain = isBase || isSolana;
   // Use room state's isYou to reliably identify the current player's index,
   // then compare with the winner index. Falls back to name match for free play.
