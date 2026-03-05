@@ -166,6 +166,11 @@ input {
   font: inherit;
 }
 
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 .gameScreen {
   height: 100vh;
   width: 100%;
