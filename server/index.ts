@@ -2229,7 +2229,9 @@ nextApp.prepare().then(() => {
     }
   });
 
-  app.all('{*path}', (req, res) => {
+  // Important: use a plain catch-all middleware so Next can serve /_next static assets correctly
+  // in custom-server mode (Express 5 path patterns can mis-handle some asset URLs).
+  app.use((req, res) => {
     return handle(req, res);
   });
 
