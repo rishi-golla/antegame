@@ -110,6 +110,14 @@ export default function RefundModal({ refund, onDone }: RefundModalProps) {
       setStatus('Claiming refund...');
       await claimRefundOnSolana(wallet as any, refund.roomCode);
 
+      // Step 3: Auto-close game account to reclaim rent (fire-and-forget)
+      setStatus('Reclaiming account rent...');
+      fetch('/api/contracts/solana/close-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode: refund.roomCode }),
+      }).catch((err) => console.log('[RefundModal] close-game best-effort failed:', err));
+
       setStatus('');
       setDone(true);
       setTimeout(onDone, 3000);

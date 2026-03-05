@@ -6,6 +6,7 @@
 import { Router, type Request, type Response } from 'express';
 import { signSettlement, signCancellation, signCancellationByGameId, getSignerAddress, roomCodeToGameId } from '../contracts';
 import { signSolanaSettlement, signSolanaCancellation, getSolanaSignerAddress, roomCodeToSolanaGameIdHex } from '../solana-contracts';
+import { closeGameOnSolana } from '../solana-closeGame';
 import { getSessionFromCookie, validateSession, isAdmin } from '../auth';
 import { appendPendingRefunds, readPendingRefunds, findSettlement, findCancellation, withRoomLock } from '../refundStore';
 import { db } from '../db';
@@ -624,6 +625,33 @@ router.post('/solana/cancellation-signature', async (req: Request, res: Response
 
     res.json({ nonce: result.nonce, signature: result.signature, gameId });
   });
+});
+
+router.post('/solana/close-game', async (req: Request, res: Response) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const ip = req.ip ?? 'unknown';
+  if (!contractRateLimit(`sol-close:${ip}`, 5, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
+  const { roomCode } = req.body ?? {};
+  if (!roomCode || typeof roomCode !== 'string' || roomCode.length < 1 || roomCode.length > 10) {
+    res.status(400).json({ error: 'roomCode must be a string (1-10 chars)' });
+    return;
+  }
+
+  try {
+    const txSignature = await closeGameOnSolana(roomCode);
+    res.json({ txSignature });
+  } catch (err: any) {
+    const msg = err?.message || 'close_game failed';
+    console.error('[contracts] solana/close-game error:', msg);
+    // Graceful: don't fail loudly -- the user already got their refund
+    res.status(500).json({ error: msg });
+  }
 });
 
 router.get('/solana/signer', (req: Request, res: Response) => {

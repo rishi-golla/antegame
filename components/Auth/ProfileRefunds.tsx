@@ -564,6 +564,14 @@ export default function ProfileRefunds() {
       await claimRefundOnSolana(wallet, game.roomCode);
     }
 
+    // Auto-close game account to reclaim rent (fire-and-forget, best-effort)
+    setStatusMsg('Reclaiming account rent...');
+    fetch('/api/contracts/solana/close-game', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomCode: game.roomCode }),
+    }).catch((err) => console.log('[ProfileRefunds] close-game best-effort failed:', err));
+
     return true;
   };
 

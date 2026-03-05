@@ -68,6 +68,7 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   const { publicKey: solPublicKey, connected: solConnected, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
   const { connection: solConnection } = useConnection();
   const [solBalance, setSolBalance] = useState<number>(0);
+  const [rentLamports, setRentLamports] = useState<number>(0);
 
   const char = CHARACTERS.find((c) => c.id === selectedChar) ?? CHARACTERS[1];
   const isBase = activeChain === 'base';
@@ -75,10 +76,11 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
   const balanceSol = solBalance / LAMPORTS_PER_SOL;
 
-  // Fetch SOL balance
+  // Fetch SOL balance and rent cost
   useEffect(() => {
     if (isSolana && solPublicKey && solConnection) {
       solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
+      solConnection.getMinimumBalanceForRentExemption(381).then(setRentLamports).catch(() => {});
     }
   }, [isSolana, solPublicKey, solConnection]);
 
@@ -340,9 +342,16 @@ export default function JoinRoom({ onJoined, onBack, initialCode }: JoinRoomProp
           </p>
         )}
         {isSolana && (
-          <p style={{ fontSize: '0.7rem', opacity: 0.7, textAlign: 'center' }}>
-            Balance: {balanceSol.toFixed(4)} SOL
-          </p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '0.7rem', opacity: 0.7 }}>
+              Balance: {balanceSol.toFixed(4)} SOL
+            </p>
+            {rentLamports > 0 && (
+              <p style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: 2 }}>
+                ~{(rentLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL network fee included
+              </p>
+            )}
+          </div>
         )}
 
         {isBase && !walletReady && (

@@ -20,6 +20,8 @@ interface SecureKeys {
   BASESCAN_API_KEY?: string;
   /** Solana Ed25519 keypair secret (JSON array or base58). Used by solana-contracts.ts. */
   SOLANA_GAME_SIGNER_SECRET?: string;
+  /** Solana authority keypair (config.authority) for close_game instruction. JSON array format. */
+  SOLANA_AUTHORITY_SECRET?: string;
   [key: string]: string | undefined;
 }
 

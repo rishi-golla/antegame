@@ -66,6 +66,7 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const { publicKey: solPublicKey, connected: solConnected, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
   const { connection: solConnection } = useConnection();
   const [solBalance, setSolBalance] = useState<number>(0);
+  const [rentLamports, setRentLamports] = useState<number>(0);
 
   const [name, setName] = useState(user?.displayName ?? '');
   const [selectedChar, setSelectedChar] = useState(
@@ -84,10 +85,11 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
   const balanceEth = balance ? parseFloat(balance.formatted) : 0;
   const balanceSol = solBalance / LAMPORTS_PER_SOL;
 
-  // Fetch SOL balance
+  // Fetch SOL balance and rent cost
   useEffect(() => {
     if (isSolana && solPublicKey && solConnection) {
       solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
+      solConnection.getMinimumBalanceForRentExemption(381).then(setRentLamports).catch(() => {});
       const interval = setInterval(() => {
         solConnection.getBalance(solPublicKey).then(setSolBalance).catch(() => {});
       }, 10_000);
@@ -373,6 +375,12 @@ export default function QuickPlay({ onMatched, onBack }: QuickPlayProps) {
                 <span style={{ color: '#ff4444' }}> (insufficient)</span>
               )}
             </p>
+            {rentLamports > 0 && (
+              <p style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: 2 }}>
+                Total: {(parseFloat(solBuyIn) + rentLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                ({solBuyIn} buy-in + ~{(rentLamports / LAMPORTS_PER_SOL).toFixed(4)} network fee)
+              </p>
+            )}
           </div>
         )}
 
