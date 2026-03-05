@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useBalance, useAccount } from 'wagmi';
 import { useAudio } from '@/context/AudioContext';
 import { GameProvider } from '@/context/GameContext';
@@ -126,6 +127,7 @@ function CampaignBanner({ onNavigate }: { onNavigate: (screen: Screen) => void }
 }
 
 function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
+  const router = useRouter();
   const { user } = useMultiChain();
   const { address } = useAccount();
   const { data: balanceData } = useBalance({ address });
@@ -135,6 +137,10 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
     const val = parseFloat(balanceData.formatted);
     return val > 0 ? val.toFixed(4) : null;
   }, [balanceData]);
+
+  useEffect(() => {
+    router.prefetch('/bridge');
+  }, [router]);
 
   return (
     <div className="menuScreen">
@@ -220,7 +226,7 @@ function MainMenu({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
             <img src="/assets/menu-icons/leaderboard.webp" alt="" className="menuGhostImg" />
             Leaderboard
           </button>
-          <button className="menuGhostBtn" onClick={() => window.location.assign('/bridge')}>
+          <button className="menuGhostBtn" onClick={() => router.push('/bridge')}>
             Bridge SOL → Base
           </button>
         </div>
