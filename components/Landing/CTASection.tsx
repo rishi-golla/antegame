@@ -5,11 +5,10 @@ import { motion } from 'framer-motion';
 interface CTASectionProps {
   onConnect: () => void;
   onConnectSolana: () => void;
-  onFreePlay?: () => void;
   connecting: boolean;
 }
 
-export default function CTASection({ onConnect, onConnectSolana, onFreePlay, connecting }: CTASectionProps) {
+export default function CTASection({ onConnect, onConnectSolana, connecting }: CTASectionProps) {
   return (
     <section className="ctaSection">
       <div className="ctaBg">
@@ -47,16 +46,6 @@ export default function CTASection({ onConnect, onConnectSolana, onFreePlay, con
           >
             {connecting ? 'Connecting...' : 'Connect with Solana'}
           </motion.button>
-          {onFreePlay && (
-            <motion.button
-              className="ctaBtnGhost"
-              onClick={onFreePlay}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Try Free Play
-            </motion.button>
-          )}
         </div>
       </motion.div>
     </section>

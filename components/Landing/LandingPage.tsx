@@ -101,7 +101,7 @@ export default function LandingPage({ onFreePlay }: LandingPageProps) {
       <StatsStrip />
       <HowItWorks />
       <FeatureStrip />
-      <CTASection onConnect={handleBase} onConnectSolana={handleSolana} onFreePlay={onFreePlay} connecting={connecting} />
+      <CTASection onConnect={handleBase} onConnectSolana={handleSolana} connecting={connecting} />
       <LandingFooter />
       {error && <div className="landingError">{error}</div>}
     </div>
