@@ -43,6 +43,46 @@ setRoomManager(rm);
 
 // Track which rooms already had results recorded (prevent double-recording)
 const recordedRooms = new Set<string>();
+
+// --- Slot reservation system for on-chain rooms ---
+// Prevents race conditions between validate-join and room:join
+interface SlotReservation {
+  socketId: string;
+  name: string;
+  color: string;
+  characterId?: string;
+  expiresAt: number;
+}
+const roomReservations = new Map<string, SlotReservation[]>();
+
+function addReservation(roomCode: string, res: SlotReservation) {
+  const list = roomReservations.get(roomCode) ?? [];
+  // Remove any existing reservation for this socket
+  const filtered = list.filter((r) => r.socketId !== res.socketId);
+  filtered.push(res);
+  roomReservations.set(roomCode, filtered);
+}
+
+function getReservations(roomCode: string): SlotReservation[] {
+  return roomReservations.get(roomCode) ?? [];
+}
+
+function cleanExpiredReservations(roomCode: string) {
+  const list = roomReservations.get(roomCode);
+  if (!list) return;
+  const now = Date.now();
+  const active = list.filter((r) => r.expiresAt > now);
+  if (active.length === 0) roomReservations.delete(roomCode);
+  else roomReservations.set(roomCode, active);
+}
+
+function clearReservation(roomCode: string, socketId: string) {
+  const list = roomReservations.get(roomCode);
+  if (!list) return;
+  const filtered = list.filter((r) => r.socketId !== socketId);
+  if (filtered.length === 0) roomReservations.delete(roomCode);
+  else roomReservations.set(roomCode, filtered);
+}
 // Assigned inside nextApp.prepare() closure
 let _persistSettlementForWinner: (code: string) => Promise<void> = async () => {};
 
@@ -1169,6 +1209,9 @@ nextApp.prepare().then(() => {
         }
       }
 
+      // Clear reservation before joining (so our own reservation doesn't block us)
+      clearReservation(code, socket.id);
+
       const result = rm.joinRoom(code, socket.id, parsed.data.name, parsed.data.color, {
         walletAddress: joinRoom?.isOnChain ? sessionWallet : parsed.data.walletAddress,
         onChainTxHash: parsed.data.onChainTxHash,
@@ -1183,11 +1226,17 @@ nextApp.prepare().then(() => {
         }
         broadcastRoomState(code);
         systemMessage(code, `${parsed.data.name} joined the room.`);
+      } else if (joinRoom?.isOnChain) {
+        // Join failed after player may have deposited on-chain.
+        // Cancel the game so all deposited players can claim refunds.
+        console.error(`[room:join] On-chain join rejected for ${code}: ${result.error}. Cancelling game for refunds.`);
+        forceGameCancellation(code, `join_rejected: ${result.error}`);
       }
       cb(result);
     });
 
     // Room: Pre-validate join (check color/capacity before on-chain deposit)
+    // For on-chain rooms, also reserves the slot for 60s to prevent race conditions
     (socket as any).on('room:validate-join', (data: unknown, cb: (res: { ok: boolean; error?: string }) => void) => {
       const parsed = validateJoinSchema.safeParse(data);
       if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
@@ -1195,10 +1244,29 @@ nextApp.prepare().then(() => {
       const room = rm.getRoom(code);
       if (!room) { cb({ ok: false, error: 'Room not found' }); return; }
       if (room.phase !== 'lobby') { cb({ ok: false, error: 'Game already started' }); return; }
-      if (room.players.length >= room.maxPlayers) { cb({ ok: false, error: 'Room is full' }); return; }
-      if (room.players.some((p: any) => p.name.toLowerCase() === parsed.data.name.toLowerCase())) { cb({ ok: false, error: 'Name already taken in this room' }); return; }
-      if (room.players.some((p: any) => p.color === parsed.data.color)) { cb({ ok: false, error: 'Color already taken in this room' }); return; }
-      if (parsed.data.characterId && room.players.some((p: any) => p.characterId === parsed.data.characterId)) { cb({ ok: false, error: 'Character already taken in this room' }); return; }
+
+      // Clean expired reservations for this room
+      cleanExpiredReservations(code);
+
+      const existingReservations = getReservations(code);
+      const allPlayers = [...room.players, ...existingReservations];
+
+      if (room.players.length + existingReservations.length >= room.maxPlayers) { cb({ ok: false, error: 'Room is full' }); return; }
+      if (allPlayers.some((p: any) => p.name.toLowerCase() === parsed.data.name.toLowerCase())) { cb({ ok: false, error: 'Name already taken in this room' }); return; }
+      if (allPlayers.some((p: any) => p.color === parsed.data.color)) { cb({ ok: false, error: 'Color already taken in this room' }); return; }
+      if (parsed.data.characterId && allPlayers.some((p: any) => p.characterId === parsed.data.characterId)) { cb({ ok: false, error: 'Character already taken in this room' }); return; }
+
+      // For on-chain rooms, reserve the slot so no one else can take it during deposit
+      if (room.isOnChain) {
+        addReservation(code, {
+          socketId: socket.id,
+          name: parsed.data.name,
+          color: parsed.data.color,
+          characterId: parsed.data.characterId,
+          expiresAt: Date.now() + 60_000, // 60s reservation
+        });
+      }
+
       cb({ ok: true });
     });
 

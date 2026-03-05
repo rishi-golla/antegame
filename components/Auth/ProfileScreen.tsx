@@ -74,7 +74,8 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    const chainParam = activeChain ? `?chain=${activeChain}` : '';
+    if (!chain) return; // wait until chain is known
+    const chainParam = `?chain=${chain}`;
     fetch(`/api/stats/me${chainParam}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -92,7 +93,7 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setCampaign(data); })
       .catch(() => {});
-  }, [activeChain]);
+  }, [chain]);
 
   // Countdown timer
   useEffect(() => {

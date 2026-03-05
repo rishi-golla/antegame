@@ -31,14 +31,14 @@ export default function CampaignLeaderboardScreen({ onBack }: { onBack: () => vo
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
+    if (!chain) return;
     setLoading(true);
-    const chainParam = activeChain ? `?chain=${activeChain}` : '';
-    fetch(`/api/auth/referrals/campaign${chainParam}`)
+    fetch(`/api/auth/referrals/campaign?chain=${chain}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setData(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [activeChain]);
+  }, [chain]);
 
   useEffect(() => {
     if (!data || data.phase === 'none' || data.phase === 'ended') return;

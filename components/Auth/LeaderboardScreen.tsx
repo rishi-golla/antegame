@@ -25,14 +25,14 @@ export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!chain) return;
     setLoading(true);
-    const chainParam = activeChain ? `?chain=${activeChain}` : '';
-    fetch(`/api/stats/leaderboard${chainParam}`)
+    fetch(`/api/stats/leaderboard?chain=${chain}`)
       .then((r) => (r.ok ? r.json() : { leaderboard: [] }))
       .then((data) => setEntries(data.leaderboard ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [activeChain]);
+  }, [chain]);
 
   const medalColors = ['var(--gold-bright)', '#c0c0c0', '#cd7f32'];
 
