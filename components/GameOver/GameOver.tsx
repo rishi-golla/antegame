@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useMultiChain } from '@/context/MultiChainContext';
+import { useSocket } from '@/context/SocketContext';
 import { getNetWorth } from '@/lib/gameEngine';
 import { useWalletClient } from 'wagmi';
 import { claimWinnings } from '@/lib/contracts/monopolyGame';
@@ -19,6 +20,7 @@ interface GameOverProps {
 export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
   const { state } = useGame();
   const { user, activeChain } = useMultiChain();
+  const { roomState } = useSocket();
   const { data: walletClient } = useWalletClient();
   const { publicKey: solPublicKey, signTransaction: solSignTransaction, signAllTransactions: solSignAllTransactions } = useWallet();
 
@@ -33,7 +35,12 @@ export default function GameOver({ onPlayAgain, roomCode }: GameOverProps) {
   const isBase = activeChain === 'base';
   const isSolana = activeChain === 'solana';
   const isOnChain = isBase || isSolana;
-  const isWinner = user?.walletAddress && winner.name === user.displayName;
+  // Use room state's isYou to reliably identify the current player's index,
+  // then compare with the winner index. Falls back to name match for free play.
+  const myPlayerIndex = roomState?.players.findIndex((p: any) => p.isYou) ?? -1;
+  const isWinner = myPlayerIndex >= 0
+    ? myPlayerIndex === state.winner
+    : !!(user?.displayName && winner.name === user.displayName);
 
   const rankings = [...state.players]
     .sort((a, b) => {

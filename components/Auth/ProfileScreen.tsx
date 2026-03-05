@@ -60,8 +60,9 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onBack }: ProfileScreenProps) {
   const { user, updateProfile } = useAuth();
-  const { activeChain } = useMultiChain();
-  const currencyLabel = activeChain === 'solana' ? 'SOL' : 'ETH';
+  const { activeChain, user: mcUser } = useMultiChain();
+  const chain = activeChain ?? mcUser?.chain;
+  const currencyLabel = chain === 'solana' ? 'SOL' : 'ETH';
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [editing, setEditing] = useState(false);

@@ -24,7 +24,8 @@ interface CampaignData {
 
 export default function CampaignLeaderboardScreen({ onBack }: { onBack: () => void }) {
   const { user, activeChain } = useMultiChain();
-  const currencyLabel = activeChain === 'solana' ? 'SOL' : 'ETH';
+  const chain = activeChain ?? user?.chain;
+  const currencyLabel = chain === 'solana' ? 'SOL' : 'ETH';
   const [data, setData] = useState<CampaignData | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
