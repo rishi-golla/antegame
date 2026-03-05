@@ -1197,7 +1197,10 @@ nextApp.prepare().then(() => {
         return cb({ ok: false, error: 'Too many join attempts. Try again later.' });
       }
       const parsed = roomJoinSchema.safeParse(data);
-      if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
+      if (!parsed.success) {
+        console.warn('[room:join] Validation failed:', parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '), 'raw:', JSON.stringify(data));
+        return cb({ ok: false, error: 'Invalid input' });
+      }
       const code = parsed.data.code.toUpperCase();
 
       // C3+C4: On-chain rooms require authenticated session; wallet comes from session
@@ -1240,7 +1243,10 @@ nextApp.prepare().then(() => {
     // For on-chain rooms, also reserves the slot for 60s to prevent race conditions
     (socket as any).on('room:validate-join', (data: unknown, cb: (res: { ok: boolean; error?: string }) => void) => {
       const parsed = validateJoinSchema.safeParse(data);
-      if (!parsed.success) return cb({ ok: false, error: 'Invalid input' });
+      if (!parsed.success) {
+        console.warn('[room:validate-join] Validation failed:', parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '), 'raw:', JSON.stringify(data));
+        return cb({ ok: false, error: 'Invalid input' });
+      }
       const code = parsed.data.code.toUpperCase();
       const room = rm.getRoom(code);
       if (!room) { cb({ ok: false, error: 'Room not found' }); return; }
