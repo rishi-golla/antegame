@@ -9888,9 +9888,9 @@ img[src*="/assets/"] {
 /* Hero buttons */
 .heroButtons {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .heroCampaignNotice {
@@ -9909,18 +9909,17 @@ img[src*="/assets/"] {
 
 .heroBtnPrimary {
   font-family: 'Cinzel', serif;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  padding: 10px 24px;
-  min-width: 188px;
+  padding: 14px 40px;
   background: linear-gradient(135deg, #d4af37 0%, #b8941e 100%);
   color: #0a0507;
   border: 1px solid rgba(212, 175, 55, 0.5);
-  border-radius: 36px;
+  border-radius: 50px;
   cursor: pointer;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  box-shadow: 0 3px 16px rgba(212, 175, 55, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 24px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .heroBtnPrimary:disabled {
@@ -9930,20 +9929,18 @@ img[src*="/assets/"] {
 
 .heroBtnSecondary {
   font-family: 'Cinzel', serif;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  padding: 10px 24px;
-  min-width: 146px;
+  padding: 14px 40px;
   background: transparent;
   color: rgba(212, 175, 55, 0.8);
   border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 36px;
+  border-radius: 50px;
   cursor: pointer;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   backdrop-filter: blur(4px);
 }
 
