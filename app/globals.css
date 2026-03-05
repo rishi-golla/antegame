@@ -1740,7 +1740,7 @@ input {
   place-items: center;
   padding: 20px;
   overflow-y: auto;
-  background: url('/assets/landing/menu-bg.webp') center/cover no-repeat fixed;
+  background: #0d0608;
   position: relative;
 }
 
@@ -1748,7 +1748,8 @@ input {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(8, 4, 4, 0.55);
+  background: url('/assets/landing/menu-bg.webp') center/cover no-repeat;
+  opacity: 0.2;
   pointer-events: none;
 }
 
