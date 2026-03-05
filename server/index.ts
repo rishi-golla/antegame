@@ -1227,10 +1227,11 @@ nextApp.prepare().then(() => {
         broadcastRoomState(code);
         systemMessage(code, `${parsed.data.name} joined the room.`);
       } else if (joinRoom?.isOnChain) {
-        // Join failed after player may have deposited on-chain.
-        // Cancel the game so all deposited players can claim refunds.
-        console.error(`[room:join] On-chain join rejected for ${code}: ${result.error}. Cancelling game for refunds.`);
-        forceGameCancellation(code, `join_rejected: ${result.error}`);
+        // Join failed on an on-chain room. Log it but do NOT cancel the game —
+        // that would nuke the host's deposit. The validate-join + reservation
+        // system prevents deposits before join failures. If a player somehow
+        // deposited but can't join, they use the existing refund flow.
+        console.warn(`[room:join] On-chain join rejected for ${code}: ${result.error}`);
       }
       cb(result);
     });
