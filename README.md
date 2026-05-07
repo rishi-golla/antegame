@@ -1,2 +1,5 @@
-# monopolygame
-3rd times the charm ig
+# Ante
+
+ante.wtf 
+
+NOTE: no longer hosting due to sudden increase of hosting prices.
